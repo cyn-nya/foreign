@@ -1,3 +1,14 @@
+# NOT ACTIVE. GitHub refuses to let an OAuth app push to `.github/workflows/`
+# without the `workflow` token scope, so this lives here as a reference rather
+# than at its executing path.
+#
+# The deployed site is published from the `gh-pages` branch by
+# `npm run deploy` instead, which needs no extra scope.
+#
+# To switch to Actions: run `gh auth refresh -s workflow`, move this file back to
+# .github/workflows/pages.yml, and set Settings -> Pages -> Source to
+# "GitHub Actions".
+
 name: Deploy demo to GitHub Pages
 
 # Publishes the playable demo. The room itself is not in this repository — the
