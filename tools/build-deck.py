@@ -202,20 +202,21 @@ def build():
     s = slide(prs)
     y = head(s, "用到的 Manycore / Aholo 工具", "工具使用", 5, "技术")
     rows = [
-        ("Aholo Lux3D", "文生 3D", "全部异物资产的唯一来源。运行时按 key 替换占位模型。"),
+        ("Aholo Lux3D", "文生 3D · 必需", "异物资产的唯一来源。两条接入路径：Open API 批处理，或网页版导出后导入。"),
+        ("Aholo Open API", "REST · 已对真实接口验证", "创建 → 轮询 → 立刻下载（结果 URL 2 小时过期）。认证头与错误映射已实测。"),
         ("@manycore/aholo-viewer", "3DGS 渲染", "在浏览器里渲染真实重建的房间，第一人称行走。"),
         ("官方开源 3DGS 场景", "scene.7c26e842.spz", "63 MB 室内高斯泼溅场景，运行时流式加载。"),
         ("官方体素碰撞场", "collision.voxel.bin", "304 KB，八叉树 + 叶位。地板、墙体、天花板都是它。"),
     ]
     for i, (name, tag, desc) in enumerate(rows):
-        by = y + Inches(i * 1.14)
-        panel(s, MARGIN, by, CONTENT_W, Inches(0.98))
-        text(s, MARGIN + Inches(0.26), by + Inches(0.12), Inches(3.5), Inches(0.4),
-             [(name, {"size": 15, "bold": True})], space=0)
-        text(s, MARGIN + Inches(0.26), by + Inches(0.52), Inches(3.5), Inches(0.34),
-             [(tag, {"size": 11, "color": ACCENT})], space=0)
-        text(s, MARGIN + Inches(4.0), by + Inches(0.28), CONTENT_W - Inches(4.3), Inches(0.6),
-             [(desc, {"size": 13, "color": DIM})], space=0)
+        by = y + Inches(i * 0.95)
+        panel(s, MARGIN, by, CONTENT_W, Inches(0.82))
+        text(s, MARGIN + Inches(0.26), by + Inches(0.09), Inches(3.5), Inches(0.36),
+             [(name, {"size": 14, "bold": True})], space=0)
+        text(s, MARGIN + Inches(0.26), by + Inches(0.46), Inches(3.5), Inches(0.3),
+             [(tag, {"size": 10, "color": ACCENT})], space=0)
+        text(s, MARGIN + Inches(4.0), by + Inches(0.2), CONTENT_W - Inches(4.3), Inches(0.6),
+             [(desc, {"size": 12, "color": DIM})], space=0)
 
     # 6 — architecture
     s = slide(prs)
@@ -242,18 +243,21 @@ def build():
 
     # 7 — asset iteration
     s = slide(prs)
-    y = head(s, "占位模型 → 相机实测锚点 → 运行时摆放", "资产迭代", 7, "资产")
+    y = head(s, "占位模型 → 相机实测锚点 → Lux3D 生成 → 运行时替换", "资产迭代", 7, "资产")
     steps = [
         ("1 · 占位", "21 个程序化 GLB 烘焙进构建，688 KB。任何时候都可玩，不依赖网络。"),
         ("2 · 锚点", "0.25 m 网格向下投射得 219 个候选面 → 楼层带筛到 112 → 胶囊可站立 97 → "
                      "排除离入口 1.6 m 内 → 最远点贪心取 9 个。"),
-        ("3 · 替换", "Lux3D 资产按同一个 key 放进 public/assets/foreign/，不改动任何玩法逻辑。"),
+        ("3 · 生成", "Lux3D text-to-3D。有 API key 时 npm run assets:generate 一条命令跑完；"
+                     "没有 key 时用网页版导出，assets:import 校验并归位。"),
+        ("4 · 替换", "同一个 key 放回 public/assets/foreign/ 即自动生效，不改动任何玩法逻辑。"
+                     "来源记在 manifest，assets:check 断言真假。"),
     ]
     for i, (t, d) in enumerate(steps):
-        by = y + Inches(i * 1.14)
-        panel(s, MARGIN, by, Inches(6.5), Inches(0.98))
-        text(s, MARGIN + Inches(0.24), by + Inches(0.13), Inches(6.0), Inches(0.75),
-             [(t, {"size": 14, "bold": True, "space": 3}), (d, {"size": 11, "color": DIM})], space=0)
+        by = y + Inches(i * 0.86)
+        panel(s, MARGIN, by, Inches(6.5), Inches(0.74))
+        text(s, MARGIN + Inches(0.24), by + Inches(0.1), Inches(6.0), Inches(0.6),
+             [(t, {"size": 13, "bold": True, "space": 2}), (d, {"size": 10, "color": DIM})], space=0)
     picture(s, "artifacts/probe/room-glb.png", Inches(7.8), y, Inches(4.8), Inches(2.3))
     picture(s, "artifacts/splat/05-watcher.png", Inches(7.8), y + Inches(2.5), Inches(4.8), Inches(2.3))
 
@@ -261,15 +265,16 @@ def build():
     s = slide(prs)
     y = head(s, "验收不是「我看过了」", "工程严谨性", 8, "质量")
     text(s, MARGIN, y, Inches(7.3), Inches(0.6),
-         ["npm run verify  =  类型检查 → 单测 → 构建 → 三个无头实机验收"],
+         ["npm run verify  =  类型检查 → 单测 → 构建 → 验收，共 161 项断言"],
          size=14, color=INK, space=8)
-    stats = [("85", "单元测试"), ("10", "体素检查"), ("5", "splat/拾取"), ("29", "真实房间"), ("15", "程序化房间")]
+    stats = [("85", "单元测试"), ("10", "体素"), ("10", "资产"), ("5", "splat"),
+             ("29", "真实房间"), ("15", "程序化"), ("7", "部署")]
     for i, (v, k) in enumerate(stats):
-        bx = MARGIN + Inches(i * 1.5)
-        panel(s, bx, Inches(2.5), Inches(1.34), Inches(1.05))
-        text(s, bx, Inches(2.62), Inches(1.34), Inches(0.45), [v], size=22, bold=True,
+        bx = MARGIN + Inches(i * 1.42)
+        panel(s, bx, Inches(2.5), Inches(1.28), Inches(1.05))
+        text(s, bx, Inches(2.62), Inches(1.28), Inches(0.45), [v], size=20, bold=True,
              align=PP_ALIGN.CENTER, space=0)
-        text(s, bx, Inches(3.1), Inches(1.34), Inches(0.34), [k], size=10, color=DIM,
+        text(s, bx, Inches(3.1), Inches(1.28), Inches(0.34), [k], size=10, color=DIM,
              align=PP_ALIGN.CENTER, space=0)
     for i, (t, d) in enumerate([
         ("每条移动断言都带双边界限",
@@ -278,19 +283,24 @@ def build():
         ("对照是必需项",
          "「异常朝向玩家」只有在「地面物体不转头」也成立时才有意义，"
          "否则整个房间一起转也会通过。"),
+        ("静默失效比崩溃更危险",
+         "「文件存在 = 已生成」让整个 Lux3D 环节变成空操作，且不报错。"
+         "现在由来源记录判定，并配一条「真资产必须被跳过」的反向断言。"),
     ]):
-        by = Inches(3.85) + Inches(i * 0.98)
-        panel(s, MARGIN, by, Inches(7.3), Inches(0.84))
-        text(s, MARGIN + Inches(0.22), by + Inches(0.1), Inches(6.9), Inches(0.68),
-             [(t, {"size": 13, "bold": True, "space": 2}), (d, {"size": 11, "color": DIM})], space=0)
-    panel(s, Inches(8.4), Inches(2.5), Inches(4.2), Inches(3.3), RGBColor(0x1C, 0x12, 0x12))
-    text(s, Inches(8.65), Inches(2.7), Inches(3.75), Inches(3.0),
-         [("实测抓到的真 bug", {"size": 14, "bold": True, "color": ACCENT, "space": 6}),
+        by = Inches(3.78) + Inches(i * 0.84)
+        panel(s, MARGIN, by, Inches(7.3), Inches(0.72))
+        text(s, MARGIN + Inches(0.22), by + Inches(0.08), Inches(6.9), Inches(0.6),
+             [(t, {"size": 12, "bold": True, "space": 2}), (d, {"size": 10, "color": DIM})], space=0)
+    panel(s, Inches(8.4), Inches(2.5), Inches(4.2), Inches(3.6), RGBColor(0x1C, 0x12, 0x12))
+    text(s, Inches(8.65), Inches(2.66), Inches(3.75), Inches(3.35),
+         [("实测抓到的真 bug", {"size": 14, "bold": True, "color": ACCENT, "space": 5}),
           ("?autostart=1 直接崩溃：let plan 声明在 autostart 块之后，"
-           "而这条路径是同步调用，变量还在暂时性死区。", {"size": 11, "color": DIM, "space": 6}),
-          ("菜单路径永远碰不到它 —— 按钮回调跑得晚。"
-           "只有真的去走演示链接那条捷径才会。", {"size": 11, "color": DIM, "space": 6}),
-          ("而演示链接正是评审会点开的东西。", {"size": 12, "bold": True})], space=0)
+           "而这条路径是同步调用，变量还在暂时性死区。菜单路径永远碰不到它 —— "
+           "按钮回调跑得晚。", {"size": 10, "color": DIM, "space": 4}),
+          ("而演示链接正是评审会点开的东西。", {"size": 11, "bold": True, "space": 5}),
+          ("另一个相反的例子：低帧率下 setTension 每帧重新锚定指数曲线，"
+           "收敛变成按帧数而不是按时间，音效滞后好几秒。"
+           "测试一直红，但红的不是测试写错了。", {"size": 10, "color": DIM})], space=0)
 
     # 9 — depth
     s = slide(prs)
@@ -320,17 +330,18 @@ def build():
     for i, (t, st, d, c) in enumerate([
         ("A · 真实 3DGS 房间", "完成", "默认入口就是重建房间，行走、碰撞、玩法闭环全部实测通过。", GOOD),
         ("C · 玩法深化", "完成", "音效、注视者动画、异常类型 5 → 7 种。", GOOD),
+        ("D · 部署 / 报告", "完成", "cyn-nya.github.io/foreign/ —— 在真实浏览器里实测可玩。", GOOD),
         ("demo 视频", "完成", "78 秒真实游玩，清过第 1 层。机器无 GPU，帧率受限。", GOOD),
-        ("B · Lux3D 生成 15 个资产", "待 key", "占位模型已就位，游戏完整可玩；生成后按 key 替换即可。", ACCENT),
-        ("D · 部署 / 报告 / X", "进行中", "本报告即其一。部署与发帖需要账号。", ACCENT),
+        ("B · Lux3D 资产", "待生成", "两条接入路径都已就绪并验证；占位模型保证游戏完整可玩。", ACCENT),
+        ("X 发帖", "待发", "文案已备好，对传播分（5%）。需要账号。", ACCENT),
     ]):
-        by = y + Inches(i * 0.92)
-        panel(s, MARGIN, by, CONTENT_W, Inches(0.78))
-        text(s, MARGIN + Inches(0.24), by + Inches(0.2), Inches(4.4), Inches(0.4),
-             [(t, {"size": 14, "bold": True})], space=0)
-        text(s, MARGIN + Inches(4.7), by + Inches(0.22), Inches(1.2), Inches(0.36),
+        by = y + Inches(i * 0.78)
+        panel(s, MARGIN, by, CONTENT_W, Inches(0.68))
+        text(s, MARGIN + Inches(0.24), by + Inches(0.17), Inches(4.4), Inches(0.36),
+             [(t, {"size": 13, "bold": True})], space=0)
+        text(s, MARGIN + Inches(4.7), by + Inches(0.19), Inches(1.2), Inches(0.32),
              [(st, {"size": 12, "bold": True, "color": c})], space=0)
-        text(s, MARGIN + Inches(6.0), by + Inches(0.22), CONTENT_W - Inches(6.3), Inches(0.4),
+        text(s, MARGIN + Inches(6.0), by + Inches(0.19), CONTENT_W - Inches(6.3), Inches(0.36),
              [(d, {"size": 11, "color": DIM})], space=0)
 
     # 11 — closing
