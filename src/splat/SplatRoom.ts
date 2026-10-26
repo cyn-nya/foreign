@@ -93,6 +93,17 @@ export class SplatRoom {
     return this.placed;
   }
 
+  /**
+   * Hide every placed model at once, for measuring what they cost.
+   *
+   * Anomalies and bystanders together, because the question is the price of the
+   * floor rather than of either role.
+   */
+  setVisible(visible: boolean): void {
+    for (const item of this.placed) item.node.visible = visible;
+    for (const node of this.bystanderNodes) node.visible = visible;
+  }
+
   /** The innocent objects, for the acceptance check to aim at. */
   get bystanders(): readonly { node: Object3D; slotId: string }[] {
     return this.bystanderNodes.map((node) => ({ node, slotId: String(node.userData.slotId) }));

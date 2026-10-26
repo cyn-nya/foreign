@@ -118,6 +118,10 @@ interface SplatDebug {
   culling: () => Record<string, boolean>;
   setSplatVisible: (visible: boolean) => void;
   splatVisible: () => boolean;
+  removeSplat: () => void;
+  restoreSplat: () => void;
+  splatPresent: () => boolean;
+  setObjectsVisible: (visible: boolean) => void;
   lookBy: (dx: number, dy: number) => void;
 
   anchors: () => { id: string; floor: { x: number; y: number; z: number }; eye: { x: number; y: number; z: number } }[];
@@ -192,6 +196,10 @@ const debug: SplatDebug = {
   culling: () => ({}),
   setSplatVisible: () => undefined,
   splatVisible: () => false,
+  removeSplat: () => undefined,
+  restoreSplat: () => undefined,
+  splatPresent: () => false,
+  setObjectsVisible: () => undefined,
   lookBy: () => undefined,
 
   anchors: () => [],
@@ -756,6 +764,11 @@ async function main(): Promise<void> {
   debug.culling = () => scene.culling;
   debug.setSplatVisible = (visible) => scene.setSplatVisible(visible);
   debug.splatVisible = () => scene.splatVisible;
+  debug.removeSplat = () => scene.removeSplat();
+  debug.restoreSplat = () => scene.restoreSplat();
+  debug.splatPresent = () => scene.splatPresent;
+  /** Hide the placed models too, so their cost can be separated from the scan's. */
+  debug.setObjectsVisible = (visible) => room.setVisible(visible);
   /** Move the camera without the collision walker, to separate move from idle. */
   debug.lookBy = (dx, dy) => {
     player.look(dx, dy);

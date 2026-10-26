@@ -61,9 +61,48 @@ await page.waitForFunction(() => window.__splat && window.__splat.stage === 'rea
 await page.evaluate(() => window.__splat.start(3, 999));
 await page.waitForTimeout(2_000);
 
+/**
+ * Four states of the same room, isolated one factor at a time.
+ *
+ * Hiding the scan changed nothing measurable, which is most likely because a
+ * hidden object still pays its per-frame cost — the sort and LOD scheduling run
+ * whether or not the result is drawn. So the scan is *detached* rather than
+ * hidden, and the models are hidden separately, which gives a 2x2:
+ *
+ *   everything / no models / no scan / neither
+ *
+ * If neither state is faster than `everything`, the cost is in the engine and
+ * the room, and no amount of asset work will touch it.
+ */
 const CONDITIONS = [
-  { name: 'scan visible', setup: () => window.__splat.setSplatVisible(true) },
-  { name: 'scan hidden ', setup: () => window.__splat.setSplatVisible(false) },
+  {
+    name: 'everything      ',
+    setup: () => {
+      window.__splat.restoreSplat();
+      window.__splat.setObjectsVisible(true);
+    },
+  },
+  {
+    name: 'no models       ',
+    setup: () => {
+      window.__splat.restoreSplat();
+      window.__splat.setObjectsVisible(false);
+    },
+  },
+  {
+    name: 'no scan         ',
+    setup: () => {
+      window.__splat.removeSplat();
+      window.__splat.setObjectsVisible(true);
+    },
+  },
+  {
+    name: 'neither         ',
+    setup: () => {
+      window.__splat.removeSplat();
+      window.__splat.setObjectsVisible(false);
+    },
+  },
 ];
 
 /** Frames per second from the game's own counter, never the rAF cadence. */
@@ -112,18 +151,69 @@ for (const condition of CONDITIONS) {
   );
 }
 
-const [visible, hidden] = summary;
-const spread = Math.max(visible.max - visible.min, hidden.max - hidden.min);
-const gap = hidden.median - visible.median;
+const [everything, noModels, noScan, neither] = summary;
+const spread = Math.max(...summary.map((s) => s.max - s.min));
+
 console.log(
-  `\nscan share: ${gap.toFixed(2)} fps (${((gap / Math.max(hidden.median, 1e-6)) * 100).toFixed(0)}% of the hidden rate)`,
+  `\nengine floor: ${neither.median.toFixed(2)} fps with nothing in the room ` +
+    `(spread ${spread.toFixed(2)})`,
 );
-console.log(
-  gap > spread
-    ? `VERDICT: the gap (${gap.toFixed(2)}) exceeds the spread (${spread.toFixed(2)}) — the scan is the bottleneck.`
-    : `VERDICT: the gap (${gap.toFixed(2)}) does NOT exceed the spread (${spread.toFixed(2)}). ` +
-      'The scan is not shown to be the cost; do not act on this difference.',
-);
+
+/**
+ * Can this environment measure performance at all?
+ *
+ * It usually cannot. Under SwiftShader an empty scene — no scan, no models,
+ * nothing to draw — still runs at about 2 fps, so every condition lands in the
+ * same 1-2 fps band whatever it contains and the comparisons above are noise
+ * wearing numbers. A rig that does not say this out loud invites exactly the
+ * mistake it was built to prevent: reading a 0.4 fps difference as a result and
+ * changing the game because of it.
+ *
+ * The empty-scene rate is the control. If it is low, the environment is the
+ * bottleneck, not the game.
+ */
+const SELF_TEST_MIN_FPS = 15;
+if (neither.median < SELF_TEST_MIN_FPS) {
+  console.log(
+    `\n*** THIS RIG CANNOT MEASURE PERFORMANCE HERE ***\n` +
+      `An empty room renders at ${neither.median.toFixed(2)} fps (needs > ${SELF_TEST_MIN_FPS}). ` +
+      `The environment is the bottleneck, so every number above is dominated by\n` +
+      `it and none of the comparisons mean anything. Do not change the game based\n` +
+      `on this run. Measure on a machine with a real GPU, or run with GPU\n` +
+      `acceleration instead of --use-angle=swiftshader.`,
+  );
+} else {
+  console.log(
+    `\nSelf-test passed: an empty room renders at ${neither.median.toFixed(2)} fps, ` +
+      `so the environment is fast enough for the comparisons to be about the game.`,
+  );
+
+  // Verdicts are printed only after the environment has proved it can support
+  // them. They used to print before the self-test, and with a single repeat the
+  // spread was 0.00 — so every comparison was labelled REAL against an empty room
+  // running at 0.5 fps. A measurement tool that reports confident nonsense is
+  // worse than one that reports nothing.
+  console.log('');
+  if (REPEATS < 2) {
+    console.log(
+      `No verdicts: --repeats ${REPEATS} gives a spread of ${spread.toFixed(2)}, which ` +
+        'cannot distinguish a real difference from a single sample. Use --repeats 3.',
+    );
+  } else {
+    /** A difference is only reported as real when it clears the worst spread seen. */
+    const verdict = (label, candidate, baseline) => {
+      const gap = candidate.median - baseline.median;
+      const real = gap > spread;
+      console.log(
+        `${label}: ${gap >= 0 ? '+' : ''}${gap.toFixed(2)} fps vs "${baseline.name.trim()}" ` +
+          `(${real ? 'REAL' : `within the ${spread.toFixed(2)} spread — not shown to be real`})`,
+      );
+    };
+    verdict('scan cost  (no scan vs everything)   ', noScan, everything);
+    verdict('model cost (no models vs everything) ', noModels, everything);
+    verdict('floor cost (neither vs everything)   ', neither, everything);
+  }
+}
 
 await browser.close();
 await server.close();

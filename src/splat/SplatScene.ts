@@ -88,6 +88,8 @@ export class SplatScene {
   collision: VoxelCollision | null = null;
   /** The splat object, kept so the harness can remove it as a control. */
   splat: unknown = null;
+  /** Held while the scan is detached, so removing it can be undone. */
+  private detachedSplat: unknown = null;
 
   /**
    * The viewer's culling switches, reached through an untyped internal.
@@ -252,6 +254,45 @@ export class SplatScene {
   setSplatVisible(visible: boolean): void {
     if (!this.splat) return;
     (this.splat as { visible?: boolean }).visible = visible;
+  }
+
+  /**
+   * Take the scan out of the scene entirely.
+   *
+   * `setSplatVisible(false)` changes nothing measurable, and the likely reason
+   * is that a hidden object still costs its per-frame work — the scan's sort and
+   * LOD scheduling run whether or not the result is drawn. Hiding it therefore
+   * proved nothing. Removing it is the test that can actually answer whether the
+   * scan is the cost, so this exists alongside the visibility switch rather than
+   * replacing it.
+   */
+  removeSplat(): void {
+    if (!this.splat) return;
+    this.detachedSplat = this.splat;
+    this.viewer.getScene().remove(this.splat as never);
+    this.splat = null;
+    this.viewer.render();
+  }
+
+  /**
+   * Put it back.
+   *
+   * Reversible on purpose: the rig measures its conditions interleaved and
+   * repeated, because the same configuration measured 2.79 fps and 0.67 fps in
+   * different sessions. A one-way condition cannot be interleaved, and comparing
+   * a one-way measurement in one page against a baseline in another re-creates
+   * exactly the error the interleaving exists to remove.
+   */
+  restoreSplat(): void {
+    if (this.splat || !this.detachedSplat) return;
+    this.splat = this.detachedSplat;
+    this.detachedSplat = null;
+    this.viewer.getScene().add(this.splat as never);
+    this.viewer.render();
+  }
+
+  get splatPresent(): boolean {
+    return this.splat !== null;
   }
 
   get splatVisible(): boolean {
