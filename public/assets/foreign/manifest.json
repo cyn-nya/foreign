@@ -1,0 +1,216 @@
+{
+  "source": "procedural placeholders",
+  "canonicalHeight": 1,
+  "assets": [
+    {
+      "key": "duck",
+      "name": "巨型橡皮鸭",
+      "placeholder": "duck",
+      "file": "duck.glb",
+      "height": 1.05,
+      "color": 16767291,
+      "weirdness": 1,
+      "bytes": 46528
+    },
+    {
+      "key": "cone",
+      "name": "交通锥",
+      "placeholder": "cone",
+      "file": "cone.glb",
+      "height": 0.72,
+      "color": 16739130,
+      "weirdness": 1,
+      "bytes": 16164
+    },
+    {
+      "key": "gnome",
+      "name": "花园地精",
+      "placeholder": "gnome",
+      "file": "gnome.glb",
+      "height": 0.68,
+      "color": 14173743,
+      "weirdness": 2,
+      "bytes": 50440
+    },
+    {
+      "key": "milk",
+      "name": "牛奶盒",
+      "placeholder": "milk",
+      "file": "milk.glb",
+      "height": 0.26,
+      "color": 15922424,
+      "weirdness": 2,
+      "bytes": 7724
+    },
+    {
+      "key": "cactus",
+      "name": "仙人掌",
+      "placeholder": "cactus",
+      "file": "cactus.glb",
+      "height": 0.85,
+      "color": 4165458,
+      "weirdness": 1,
+      "bytes": 30792
+    },
+    {
+      "key": "vending",
+      "name": "自动贩卖机",
+      "placeholder": "vending",
+      "file": "vending.glb",
+      "height": 1.85,
+      "color": 14826299,
+      "weirdness": 1,
+      "bytes": 15804
+    },
+    {
+      "key": "washer",
+      "name": "洗衣机",
+      "placeholder": "washer",
+      "file": "washer.glb",
+      "height": 0.88,
+      "color": 14673130,
+      "weirdness": 2,
+      "bytes": 25220
+    },
+    {
+      "key": "toilet",
+      "name": "马桶",
+      "placeholder": "toilet",
+      "file": "toilet.glb",
+      "height": 0.78,
+      "color": 16054008,
+      "weirdness": 2,
+      "bytes": 22816
+    },
+    {
+      "key": "flamingo",
+      "name": "塑料火烈鸟",
+      "placeholder": "flamingo",
+      "file": "flamingo.glb",
+      "height": 0.95,
+      "color": 16744368,
+      "weirdness": 2,
+      "bytes": 45700
+    },
+    {
+      "key": "astronaut",
+      "name": "宇航员头盔",
+      "placeholder": "astronaut",
+      "file": "astronaut.glb",
+      "height": 0.45,
+      "color": 13620958,
+      "weirdness": 2,
+      "bytes": 30744
+    },
+    {
+      "key": "shark",
+      "name": "鲨鱼",
+      "placeholder": "shark",
+      "file": "shark.glb",
+      "height": 1.5,
+      "color": 8231833,
+      "weirdness": 2,
+      "bytes": 52000
+    },
+    {
+      "key": "horse",
+      "name": "木马",
+      "placeholder": "horse",
+      "file": "horse.glb",
+      "height": 1.35,
+      "color": 11893052,
+      "weirdness": 2,
+      "bytes": 15148
+    },
+    {
+      "key": "piano",
+      "name": "三角钢琴",
+      "placeholder": "piano",
+      "file": "piano.glb",
+      "height": 1,
+      "color": 1316378,
+      "weirdness": 2,
+      "bytes": 23360
+    },
+    {
+      "key": "mannequin",
+      "name": "人台模特",
+      "placeholder": "mannequin",
+      "file": "mannequin.glb",
+      "height": 1.65,
+      "color": 15526628,
+      "weirdness": 3,
+      "bytes": 36796
+    },
+    {
+      "key": "eye",
+      "name": "巨型眼球",
+      "placeholder": "eye",
+      "file": "eye.glb",
+      "height": 0.75,
+      "color": 15790581,
+      "weirdness": 3,
+      "bytes": 51796
+    },
+    {
+      "key": "face",
+      "name": "一张脸",
+      "placeholder": "face",
+      "file": "face.glb",
+      "height": 0.34,
+      "color": 14273220,
+      "weirdness": 3,
+      "bytes": 36052
+    },
+    {
+      "key": "figure",
+      "name": "站着的人影",
+      "placeholder": "figure",
+      "file": "figure.glb",
+      "height": 1.85,
+      "color": 658189,
+      "weirdness": 3,
+      "bytes": 31644
+    },
+    {
+      "key": "hand",
+      "name": "一只人手",
+      "placeholder": "hand",
+      "file": "hand.glb",
+      "height": 0.22,
+      "color": 13615798,
+      "weirdness": 3,
+      "bytes": 32540
+    },
+    {
+      "key": "doll",
+      "name": "裂开的玩偶",
+      "placeholder": "doll",
+      "file": "doll.glb",
+      "height": 0.58,
+      "color": 15261908,
+      "weirdness": 3,
+      "bytes": 47804
+    },
+    {
+      "key": "teeth",
+      "name": "一圈牙齿",
+      "placeholder": "teeth",
+      "file": "teeth.glb",
+      "height": 0.14,
+      "color": 15789026,
+      "weirdness": 3,
+      "bytes": 26968
+    },
+    {
+      "key": "stain",
+      "name": "一滩暗红",
+      "placeholder": "stain",
+      "file": "stain.glb",
+      "height": 0.05,
+      "color": 4650257,
+      "weirdness": 3,
+      "bytes": 15664
+    }
+  ]
+}

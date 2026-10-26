@@ -14,6 +14,7 @@
     "shoot": "node tools/shoot.mjs",
     "assets:plan": "node tools/generate-assets.mjs --dry-run",
     "assets:generate": "node tools/generate-assets.mjs",
+    "assets:placeholders": "node tools/build-placeholders.mjs",
     "verify": "npm run typecheck && npm run test && npm run build && npm run shoot"
   },
   "dependencies": {

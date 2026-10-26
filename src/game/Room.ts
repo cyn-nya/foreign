@@ -19,7 +19,12 @@ import type { Anomaly, FloorPlan, Vec3 } from './types';
 
 export type AABB = ReturnType<typeof rotatedFootprint>;
 
-const DEFAULT_FOREIGN_SIZE: Vec3 = { x: 0.8, y: 1.0, z: 0.8 };
+/**
+ * Canonical size a foreign placeholder is built at, before the catalogue's
+ * `height` scaling. tools/build-placeholders.mjs bakes the same size, so the
+ * baked .glb and this in-engine path stay interchangeable.
+ */
+export const DEFAULT_FOREIGN_SIZE: Vec3 = { x: 0.8, y: 1.0, z: 0.8 };
 
 export class Room {
   readonly root = new THREE.Group();
