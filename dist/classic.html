@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>FOREIGN · 异物 — 程序化房间（经典渲染后端）</title>
+    <meta
+      name="description"
+      content="同一套玩法与规则，房间改由 three.js 程序化搭建。用于对比 3DGS 重建后端。"
+    />
+    <script type="module" crossorigin src="./assets/classic-BdPsbDmd.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-P2Xu9kJm.js">
+    <link rel="modulepreload" crossorigin href="./assets/rules-CCLbYkPT.js">
+    <link rel="stylesheet" crossorigin href="./assets/rules-97M4B49G.css">
+  </head>
+  <body>
+    <canvas id="viewport"></canvas>
+
+    <div id="crosshair" aria-hidden="true">
+      <div class="ring"></div>
+      <div class="dot"></div>
+    </div>
+
+    <div id="hud" class="hidden">
+      <div class="hud-row">
+        <div class="stat">
+          <span class="label">楼层 FLOOR</span>
+          <span class="value" id="hud-floor">1</span>
+        </div>
+        <div class="stat">
+          <span class="label">异物 FOREIGN</span>
+          <span class="value"><b id="hud-found">0</b>/<span id="hud-total">1</span></span>
+        </div>
+        <div class="stat">
+          <span class="label">时间 TIME</span>
+          <span class="value" id="hud-time">04:00</span>
+        </div>
+        <div class="stat">
+          <span class="label">标记次数 MARKS</span>
+          <span class="value marks" id="hud-marks">●●●</span>
+        </div>
+      </div>
+      <div id="hud-toast" class="toast"></div>
+      <div class="hint">
+        只标记<strong>不属于这个家</strong>的东西 · WASD 移动 · 左键标记 · Shift 疾走 · Esc 暂停
+      </div>
+    </div>
+
+    <!-- Every screen is rendered by the Game; keeps state in one place. -->
+    <div id="overlay" class="overlay"></div>
+
+  </body>
+</html>

@@ -1,0 +1,198 @@
+{
+  "url": "http://127.0.0.1:12343",
+  "views": [
+    {
+      "name": "01-hall-into-apartment",
+      "raysHit": "45/45",
+      "seen": [
+        "sofa",
+        "rug",
+        "bookshelf",
+        "tv"
+      ]
+    },
+    {
+      "name": "02-living-room",
+      "raysHit": "45/45",
+      "seen": [
+        "tv",
+        "sofa",
+        "coffee_table",
+        "rug",
+        "bookshelf",
+        "tv_stand"
+      ]
+    },
+    {
+      "name": "03-living-left-wall",
+      "raysHit": "45/45",
+      "seen": [
+        "rug",
+        "sofa",
+        "bookshelf",
+        "coffee_table",
+        "side_table",
+        "ceiling_light",
+        "fx_living_centre",
+        "armchair"
+      ]
+    },
+    {
+      "name": "04-kitchen",
+      "raysHit": "45/45",
+      "seen": [
+        "upper_cabinet",
+        "counter",
+        "fridge",
+        "stove",
+        "kettle"
+      ]
+    },
+    {
+      "name": "05-bedroom",
+      "raysHit": "45/45",
+      "seen": [
+        "wardrobe",
+        "bed",
+        "nightstand",
+        "desk_chair",
+        "mirror"
+      ]
+    },
+    {
+      "name": "06-hall-and-entry",
+      "raysHit": "45/45",
+      "seen": [
+        "tv",
+        "coat_hook",
+        "tv_stand",
+        "umbrella_stand",
+        "shoe_rack"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "name": "boots into a live floor",
+      "ok": true,
+      "detail": "state=playing floor=1 anomalies=1"
+    },
+    {
+      "name": "01-hall-into-apartment: renders a furnished view",
+      "ok": true,
+      "detail": "rays 45/45, 4 distinct props: sofa, rug, bookshelf, tv"
+    },
+    {
+      "name": "02-living-room: renders a furnished view",
+      "ok": true,
+      "detail": "rays 45/45, 6 distinct props: tv, sofa, coffee_table, rug, bookshelf, tv_stand"
+    },
+    {
+      "name": "03-living-left-wall: renders a furnished view",
+      "ok": true,
+      "detail": "rays 45/45, 8 distinct props: rug, sofa, bookshelf, coffee_table, side_table, ceiling_light"
+    },
+    {
+      "name": "04-kitchen: renders a furnished view",
+      "ok": true,
+      "detail": "rays 45/45, 5 distinct props: upper_cabinet, counter, fridge, stove, kettle"
+    },
+    {
+      "name": "05-bedroom: renders a furnished view",
+      "ok": true,
+      "detail": "rays 45/45, 5 distinct props: wardrobe, bed, nightstand, desk_chair, mirror"
+    },
+    {
+      "name": "06-hall-and-entry: renders a furnished view",
+      "ok": true,
+      "detail": "rays 45/45, 5 distinct props: tv, coat_hook, tv_stand, umbrella_stand, shoe_rack"
+    },
+    {
+      "name": "every findable prop is visible from somewhere the player can stand",
+      "ok": true,
+      "detail": "15/15 props visible across 52 viewpoints"
+    },
+    {
+      "name": "every view renders geometry",
+      "ok": true,
+      "detail": "6 views ok"
+    },
+    {
+      "name": "a wrong mark costs time and does not score",
+      "ok": true,
+      "detail": "score 0 -> 0, time 231.9 -> 223.8"
+    },
+    {
+      "name": "marking the anomaly scores and clears the floor",
+      "ok": true,
+      "detail": "state=floorClear score=1085 found=1"
+    },
+    {
+      "name": "a wrong mark spends exactly one of the limited marks",
+      "ok": true,
+      "detail": "marks 3 -> 2, state=playing"
+    },
+    {
+      "name": "running out of marks ends the run",
+      "ok": true,
+      "detail": "state=gameOver reason=marks marksLeft=0"
+    },
+    {
+      "name": "a stare anomaly hangs at head height and is seeable from the floor",
+      "ok": true,
+      "detail": "asset=eye y=1.77 stance=(2.7, -1) ray=[{\"slot\":\"fx_bedroom_corner\",\"distance\":1.41},{\"slot\":null,\"distance\":2.54}]"
+    },
+    {
+      "name": "no page or console errors",
+      "ok": true,
+      "detail": "clean"
+    }
+  ],
+  "anomalies": [
+    {
+      "id": "intrude:fx_living_centre:1",
+      "kind": "intrude",
+      "slotId": "fx_living_centre",
+      "assetKey": "duck",
+      "rotY": 0,
+      "label": "客厅有一只不该在这里的巨型橡皮鸭",
+      "pos": {
+        "x": -2.4,
+        "y": 0,
+        "z": -1.6
+      }
+    }
+  ],
+  "assets": {
+    "loaded": [
+      "astronaut",
+      "cactus",
+      "cone",
+      "doll",
+      "duck",
+      "eye",
+      "face",
+      "figure",
+      "flamingo",
+      "gnome",
+      "hand",
+      "horse",
+      "mannequin",
+      "milk",
+      "piano",
+      "shark",
+      "stain",
+      "teeth",
+      "toilet",
+      "vending",
+      "washer"
+    ],
+    "missing": []
+  },
+  "coverage": {
+    "considered": 15,
+    "seen": 15,
+    "neverSeen": [],
+    "totalDistinctPropsSeen": 21
+  }
+}

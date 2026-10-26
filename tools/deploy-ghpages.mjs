@@ -84,7 +84,9 @@ copyTree(dist, staging);
 // directories beginning with an underscore.
 writeFileSync(join(staging, '.nojekyll'), '');
 
-const stamp = run('git log -1 --pretty=%h %s');
+// `--oneline`, not `--pretty=%h %s`: these run through cmd.exe, which treats
+// `%s` as a variable reference and hands git a stray argument instead.
+const stamp = run('git log -1 --oneline');
 const steps = [
   'git init -q',
   `git checkout -q -b ${branch}`,
