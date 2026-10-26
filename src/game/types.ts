@@ -129,7 +129,7 @@ export interface Anomaly {
   kind: AnomalyKind;
   /** The slot the player must mark. For 'intrude'/'stare' this is a synthetic anchor id. */
   slotId: string;
-  /** For 'intrude' and 'stare': which AI-generated asset to place. */
+  /** Which AI-generated asset to place. Used by 'intrude' and by any horror prop. */
   assetKey?: string;
   /** Reveal text shown after the round. */
   label: string;
@@ -161,6 +161,14 @@ export interface Anomaly {
 export interface Bystander {
   /** The anchor it stands on — also the id the player marks. */
   slotId: string;
+  /**
+   * The household prop it is.
+   *
+   * Deliberately drawn from the household pool rather than the generated one.
+   * While bystanders were the same absurd objects as the anomalies, "does this
+   * belong?" had no answer — a playtester said so directly. Innocence has to look
+   * ordinary for guilt to look obvious.
+   */
   assetKey: string;
   /** Shown when the player marks it, so the miss teaches instead of scolding. */
   label: string;

@@ -1,5 +1,5 @@
 {
-  "url": "http://127.0.0.1:14012",
+  "url": "http://127.0.0.1:7487",
   "views": [
     {
       "name": "01-hall-into-apartment",
@@ -120,7 +120,7 @@
     {
       "name": "a wrong mark costs time and does not score",
       "ok": true,
-      "detail": "score 0 -> 0, time 234.6 -> 226.5"
+      "detail": "score 0 -> 0, time 234.5 -> 226.4"
     },
     {
       "name": "marking the anomaly scores and clears the floor",
@@ -179,6 +179,19 @@
       "horse",
       "mannequin",
       "milk",
+      "mundane_desk_chair",
+      "mundane_dining_chair",
+      "mundane_floor_lamp",
+      "mundane_kettle",
+      "mundane_key_bowl",
+      "mundane_microwave",
+      "mundane_nightstand",
+      "mundane_plant",
+      "mundane_shoe_rack",
+      "mundane_side_table",
+      "mundane_table_lamp",
+      "mundane_trash_bin",
+      "mundane_umbrella_stand",
       "piano",
       "shark",
       "stain",

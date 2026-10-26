@@ -110,6 +110,22 @@ interface SplatDebug {
   aimAt: (index: number) => string | null;
   /** Look at an innocent object. Returns its slot id, for the miss assertion. */
   aimAtBystander: (index: number) => string | null;
+  /**
+   * How strange a catalogue asset is: 0 is household furniture, 3 is horror.
+   *
+   * Exposed so the acceptance run can assert the property the game rests on —
+   * that the room's furniture and its intruders are disjoint sets — against the
+   * real catalogue rather than against a copy of it kept in the harness.
+   */
+  assetWeirdness: (key: string) => number | null;
+  /**
+   * What the frame-rate counter is actually looking at.
+   *
+   * Exposed so a disagreement between the counter and the frame counter can be
+   * diagnosed instead of argued about: `samples` is how much history exists and
+   * `spanMs` is the window it divided by.
+   */
+  perfWindow: () => { samples: number; spanMs: number; intervals: number; historyMs: number };
   bystanderCount: number;
   /**
    * The watchers, with where each is looking and where it should be looking.
@@ -212,6 +228,8 @@ const debug: SplatDebug = {
   mark: () => ({ result: 'miss', slotId: null, found: 0, marksLeft: MAX_MISTAKES, state: 'menu' }),
   aimAt: () => null,
   aimAtBystander: () => null,
+  assetWeirdness: () => null,
+  perfWindow: () => ({ samples: 0, spanMs: 0, intervals: 0, historyMs: 0 }),
   bystanderCount: 0,
   watchers: () => [],
   crosshair: () => null,
@@ -963,6 +981,25 @@ async function main(): Promise<void> {
     if (!target) return null;
     aimAtNode(target.node);
     return target.slotId;
+  };
+
+  debug.assetWeirdness = (key) =>
+    FOREIGN_ASSETS.find((asset) => asset.key === key)?.weirdness ?? null;
+
+  debug.perfWindow = () => {
+    if (frameTimes.length < 2) {
+      return { samples: frameTimes.length, spanMs: 0, intervals: 0, historyMs: 0 };
+    }
+    const newest = frameTimes[frameTimes.length - 1];
+    const from = newest - PERF_WINDOW_MS;
+    const recent = frameTimes.filter((t) => t >= from);
+    const oldest = Math.max(frameTimes[0], from);
+    return {
+      samples: recent.length,
+      spanMs: newest - oldest,
+      intervals: Math.max(0, recent.length - 1),
+      historyMs: newest - frameTimes[0],
+    };
   };
 
   debug.aimAtBystander = (index) => {

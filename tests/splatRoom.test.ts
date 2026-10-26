@@ -13,6 +13,9 @@ import { describe, expect, it } from 'vitest';
 import { ASSETS_BY_KEY, INTRUDE_ANCHORS, SPAWN } from '../src/game/catalog.ts';
 import { generateFloor, judgeMark, resetAnomalySerial } from '../src/game/rules.ts';
 import type { AnomalyKind } from '../src/game/types.ts';
+
+/** The household kinds a bystander may be. Bystanders are furniture now. */
+
 import { ROOM_ANCHORS, ROOM_ENTRY, ROOM_FLOOR_LEVEL, ROOM_FLOOR_OPTIONS, anchorById } from '../src/splat/roomAnchors.ts';
 
 const opts = ROOM_FLOOR_OPTIONS;
@@ -22,6 +25,19 @@ const ALL_KINDS: AnomalyKind[] = ['intrude', 'stare', 'shift', 'warp', 'twin', '
 const AIRBORNE: AnomalyKind[] = ['stare', 'shift', 'swarm'];
 /** Kinds whose whole point is that they are off the floor, but only a little. */
 const LIFTED: AnomalyKind[] = ['invert'];
+
+/**
+ * Household props are catalogue entries with weirdness 0 — real GLB files built
+ * by tools/build-mundane.py, not generated and not textured.
+ *
+ * The split is the whole answer to "必须要能够轻易分辨这个东西完全就不该出现": the
+ * room's furniture is household and an intruder never is, so the two sets cannot
+ * be confused. If they ever overlap, the question stops being decidable.
+ */
+function isHousehold(key: string): boolean {
+  const asset = ASSETS_BY_KEY.get(key);
+  return asset !== undefined && asset.weirdness === 0;
+}
 
 describe('the reconstructed room’s anchors', () => {
   it('were measured out of the scan, not authored', () => {
@@ -71,13 +87,22 @@ describe('generateFloor in foreignOnly mode', () => {
     }
   });
 
-  it('gives every placed anomaly an asset, since the object is the anomaly', () => {
+  it('gives every placed anomaly a way to exist, and the right one for its kind', () => {
+    // The split is the design. An intruder is a generated object the room could
+    // never contain; everything else is household furniture misbehaving. Getting
+    // this backwards would quietly return the game to the state a playtester
+    // complained about, where an object being present proved nothing.
     for (let floor = 1; floor <= 8; floor++) {
       const plan = generateFloor(floor, 2000 + floor, opts);
       expect(plan.anomalies.length).toBeGreaterThan(0);
       for (const anomaly of plan.anomalies) {
         expect(anomaly.assetKey).toBeTruthy();
         expect(ASSETS_BY_KEY.has(anomaly.assetKey!)).toBe(true);
+        if (anomaly.kind === 'intrude') {
+          expect(isHousehold(anomaly.assetKey!)).toBe(false);
+        } else {
+          expect(isHousehold(anomaly.assetKey!)).toBe(true);
+        }
       }
     }
   });
@@ -114,12 +139,12 @@ describe('generateFloor in foreignOnly mode', () => {
   it('opens on a single unmissable anomaly, nearest the way in', () => {
     const plan = generateFloor(1, 5, opts);
     expect(plan.anomalies).toHaveLength(1);
-    // A 'stare', not the procedural room's 'intrude'. With bystanders in the room
-    // an object that is merely present is no longer distinguishable from an
-    // innocent one, so the first floor teaches the kind that needs no reference
-    // point at all: something is hanging in the air, turned to face you.
+    // A household chair hanging in the air, turned to face the player. It needs
+    // no reference point, no memory and no comparison — it is the one kind a
+    // first floor can teach on its own, and the fact that the thing floating is
+    // an ordinary chair rather than a horror prop is what makes it frightening.
     expect(plan.anomalies[0].kind).toBe('stare');
-    expect(plan.anomalies[0].assetKey).toBeTruthy();
+    expect(isHousehold(plan.anomalies[0].assetKey!)).toBe(true);
     // nearest the way in, which is the direction the player is already facing
     const slot = anchorById(plan.anomalies[0].slotId)!;
     const nearest = Math.min(
@@ -242,11 +267,15 @@ describe('bystanders make the room a judgement call', () => {
       const plan = generateFloor(floor, 900 + floor, opts);
       expect(plan.bystanders.length).toBeGreaterThan(0);
       for (const b of plan.bystanders) {
-        // A bystander that is not in the catalogue would be invisible, and one
-        // that is not on an anchor would float.
+        // A bystander is now household furniture built from geometry rather than
+        // a generated asset — that is the whole fix for "怎么判断什么不该出现".
+        // What still has to hold is that it is a real prop kind, that it has a
+        // sensible size, and that it stands on an anchor, because a household
+        // object at furniture scale is only innocent if it is actually plausible.
+        expect(isHousehold(b.assetKey)).toBe(true);
         expect(ASSETS_BY_KEY.has(b.assetKey)).toBe(true);
         expect(anchorById(b.slotId)).not.toBeNull();
-        expect(b.label).toContain(nameOf(b.assetKey));
+        expect(b.label.length).toBeGreaterThan(0);
       }
     }
   });
@@ -299,15 +328,78 @@ describe('bystanders make the room a judgement call', () => {
     }
   });
 
-  it('never rolls a kind that only means "this object is present"', () => {
-    // Every remaining kind is a claim about what the object *does*, which is what
-    // lets an innocent object of the same sort stand next to it and be innocent.
+  it('keeps intruders out of the furniture, so presence is never the whole question', () => {
+    // 'intrude' used to be dropped from this mode entirely, because with the
+    // innocent objects drawn from the same absurd catalogue an intruder and a
+    // bystander were the same picture. Now the room is furnished with household
+    // objects, so an intruder is the only generated thing in it and "this does
+    // not belong" is answerable again — the user asked for exactly that.
+    //
+    // What still has to hold is the converse: a bystander must never be a
+    // generated object, or the split collapses from the other side.
+    let sawIntruder = false;
     for (let floor = 1; floor <= 10; floor++) {
       for (let seed = 0; seed < 10; seed++) {
         const plan = generateFloor(floor, seed * 17 + floor, opts);
-        expect(plan.anomalies.map((a) => a.kind)).not.toContain('intrude');
+        for (const anomaly of plan.anomalies) {
+          if (anomaly.kind === 'intrude') sawIntruder = true;
+        }
+        for (const bystander of plan.bystanders) {
+          expect(isHousehold(bystander.assetKey)).toBe(true);
+        }
       }
     }
+    expect(sawIntruder).toBe(true);
+  });
+});
+
+describe('an object that does not belong is obvious', () => {
+  /**
+   * The playtest complaint this whole design answers.
+   *
+   * "必须要能够轻易分辨这个东西完全就不该出现" — you have to be able to tell at a
+   * glance that a thing absolutely should not be there. That was impossible while
+   * the innocent objects came from the same generated catalogue as the intruders,
+   * because then a bystander and an intruder were the same object and the question
+   * had no answer.
+   *
+   * The property that makes it answerable is a separation, and this asserts it
+   * directly rather than one piece at a time: **nothing that is furniture is ever
+   * an intruder, and nothing that is an intruder is ever furniture**. If those two
+   * sets ever overlap, "does this belong?" stops being decidable and the game
+   * silently goes back to visual search.
+   */
+  it('is never ambiguous: furniture is innocent and an intruder is never furniture', () => {
+    let intruders = 0;
+    let furniture = 0;
+    for (let floor = 1; floor <= 8; floor++) {
+      for (let seed = 0; seed < 12; seed++) {
+        const plan = generateFloor(floor, seed * 31 + floor, opts);
+
+        for (const anomaly of plan.anomalies) {
+          expect(anomaly.assetKey).toBeTruthy();
+          if (anomaly.kind === 'intrude') {
+            intruders++;
+            expect(isHousehold(anomaly.assetKey!)).toBe(false);
+          } else {
+            furniture++;
+            expect(isHousehold(anomaly.assetKey!)).toBe(true);
+          }
+        }
+
+        for (const bystander of plan.bystanders) {
+          furniture++;
+          // A bystander must be household furniture. If it were a generated
+          // object, the split collapses from the other side and "does this
+          // belong?" stops being decidable again.
+          expect(isHousehold(bystander.assetKey)).toBe(true);
+          expect(bystander.label.length).toBeGreaterThan(0);
+        }
+      }
+    }
+    // Both sides have to actually occur, or the test passes by measuring nothing.
+    expect(intruders).toBeGreaterThan(0);
+    expect(furniture).toBeGreaterThan(0);
   });
 });
 

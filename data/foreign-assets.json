@@ -1,5 +1,5 @@
 {
-  "$comment": "The foreign-object catalogue. This is DATA, shared by two consumers: the game (src/game/catalog.ts) and the asset generator (tools/generate-assets.mjs). `prompt` is sent verbatim to Aholo Lux3D text-to-3D; `height` is the metres the loaded model is normalised to, because generation output has no canonical scale. `weirdness` 3 entries are the horror pool used by the 'stare' anomaly. faceCount is the Lux3D triangle budget: omitting it lets the API use its 300k maximum, which is ~16 MB per asset.",
+  "$comment": "The object catalogue. Two consumers: the game (src/game/catalog.ts) and the asset generator (tools/generate-assets.mjs). `prompt` is sent verbatim to Aholo Lux3D text-to-3D; `height` is the metres the loaded model is normalised to, because generation output has no canonical scale. faceCount is the Lux3D triangle budget: omitting it lets the API use its 300k maximum, which is ~16 MB per asset. `weirdness` 3 is the horror pool, used by the intruder; `weirdness` 0 is household furniture, built by tools/build-mundane.py rather than generated, and carries no prompt. The household pool is what makes \"this does not belong\" a question with an answer.",
   "assets": [
     {
       "key": "duck",
@@ -232,6 +232,97 @@
       "height": 0.05,
       "color": 4650257,
       "weirdness": 3
+    },
+    {
+      "key": "mundane_plant",
+      "name": "盆栽",
+      "height": 0.9,
+      "weirdness": 0,
+      "mundane": true
+    },
+    {
+      "key": "mundane_trash_bin",
+      "name": "垃圾桶",
+      "height": 0.61,
+      "weirdness": 0,
+      "mundane": true
+    },
+    {
+      "key": "mundane_side_table",
+      "name": "边桌",
+      "height": 0.55,
+      "weirdness": 0,
+      "mundane": true
+    },
+    {
+      "key": "mundane_dining_chair",
+      "name": "餐椅",
+      "height": 0.98,
+      "weirdness": 0,
+      "mundane": true
+    },
+    {
+      "key": "mundane_desk_chair",
+      "name": "书桌椅",
+      "height": 0.96,
+      "weirdness": 0,
+      "mundane": true
+    },
+    {
+      "key": "mundane_floor_lamp",
+      "name": "落地灯",
+      "height": 1.59,
+      "weirdness": 0,
+      "mundane": true
+    },
+    {
+      "key": "mundane_table_lamp",
+      "name": "台灯",
+      "height": 0.47,
+      "weirdness": 0,
+      "mundane": true
+    },
+    {
+      "key": "mundane_kettle",
+      "name": "水壶",
+      "height": 0.2,
+      "weirdness": 0,
+      "mundane": true
+    },
+    {
+      "key": "mundane_microwave",
+      "name": "微波炉",
+      "height": 0.3,
+      "weirdness": 0,
+      "mundane": true
+    },
+    {
+      "key": "mundane_key_bowl",
+      "name": "钥匙碗",
+      "height": 0.07,
+      "weirdness": 0,
+      "mundane": true
+    },
+    {
+      "key": "mundane_umbrella_stand",
+      "name": "伞架",
+      "height": 1.05,
+      "weirdness": 0,
+      "mundane": true
+    },
+    {
+      "key": "mundane_shoe_rack",
+      "name": "鞋架",
+      "height": 0.49,
+      "weirdness": 0,
+      "mundane": true
+    },
+    {
+      "key": "mundane_nightstand",
+      "name": "床头柜",
+      "height": 0.52,
+      "weirdness": 0,
+      "mundane": true
     }
   ]
 }

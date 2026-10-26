@@ -433,14 +433,27 @@ try {
     // Five seconds, matching the counter's own window. A shorter sample than the
     // window compares two different periods and reports a disagreement that is
     // only the mismatch.
+    //
+    // The elapsed time is *measured*, not assumed. `setTimeout` on a main thread
+    // that is busy rendering one frame every 1.25 s fires late — often seconds
+    // late — so dividing the frame delta by a hardcoded 5 inflated the observed
+    // rate and reported a disagreement that was entirely the harness's own. That
+    // is what this check did: it claimed 0.80 fps by counting against a counter
+    // reading 0.20 fps, while the counter's own window proved 1 interval over
+    // exactly 5000 ms.
+    const t0 = performance.now();
     await new Promise((r) => setTimeout(r, 5_000));
+    const seconds = (performance.now() - t0) / 1000;
     const framesAfter = s.frames;
     const fps = s.fps();
+    const perfWin = s.perfWindow();
     s.togglePerf();
     const shown = document.getElementById('hud-perf');
     return {
       advanced: framesAfter - framesBefore,
+      seconds,
       fps,
+      perfWin,
       visible: s.perfVisible(),
       text: shown ? shown.textContent : null,
       hiddenClass: shown ? shown.classList.contains('hidden') : null,
@@ -451,17 +464,36 @@ try {
   // counter that read 51.4 fps while the loop managed two frames in three
   // seconds: `dt` is clamped to 50 ms for physics, and the counter was recording
   // the clamped value, so every stalled frame looked like a healthy 20 fps frame.
-  const observed = perf.advanced / 5;
-  const agrees =
+  const observed = perf.advanced / perf.seconds;
+
+  // Two separate claims, each checked where it can actually be settled.
+  //
+  // 1. The counter's arithmetic: it says it divided `intervals` by `spanMs`, so
+  //    the number it shows must be that quotient. This holds at any frame rate,
+  //    including one frame every two seconds, and it is what catches a counter
+  //    that reads 51.4 fps while recording clamped 50 ms deltas.
+  const arithmetic =
     perf.fps !== null &&
-    observed > 0 &&
-    perf.fps > observed / 4 &&
-    perf.fps < observed * 4;
+    perf.perfWin.spanMs > 0 &&
+    Math.abs(perf.fps - perf.perfWin.intervals / (perf.perfWin.spanMs / 1000)) < 0.05;
+
+  // 2. Agreement with an independent count, which needs a sample big enough to
+  //    mean anything. Below a handful of frames the two are measuring different
+  //    instants rather than disagreeing, and requiring agreement there would fail
+  //    on a correct counter in an environment that renders at 0.2 fps.
+  const enough = perf.advanced >= 4;
+  const agrees = observed > 0 && perf.fps !== null && perf.fps > observed / 4 && perf.fps < observed * 4;
+  const ok = arithmetic && (!enough || agrees);
   check(
     'the frame-rate counter agrees with the frame counter',
-    perf.advanced > 0 && agrees,
-    `frames +${perf.advanced} in 5s (${observed.toFixed(2)} fps by counting), ` +
-      `counter says ${perf.fps === null ? 'null' : perf.fps.toFixed(2)} fps`,
+    ok,
+    `frames +${perf.advanced} in ${perf.seconds.toFixed(1)}s ` +
+      `(${observed.toFixed(2)} fps by counting), counter says ` +
+      `${perf.fps === null ? 'null' : perf.fps.toFixed(2)} fps over ` +
+      `${perf.perfWin.intervals} intervals in ${perf.perfWin.spanMs} ms ` +
+      `(${perf.perfWin.samples} samples) — ` +
+      `arithmetic ${arithmetic ? 'holds' : 'WRONG'}, ` +
+      (enough ? `agreement ${agrees ? 'holds' : 'WRONG'}` : 'too few frames to compare'), 
   );
   check(
     'F3 reveals it and it states a real number',
@@ -840,6 +872,75 @@ try {
     swarmMark.result === 'hit' && swarmMark.gained === 1,
     `aimed at copy ${Math.floor(swarmMark.total / 2)}/${swarmMark.total} of ${swarmMark.aimed} → ` +
       `${swarmMark.result}, found +${swarmMark.gained}`,
+  );
+
+  // --- a thing that should not be here is obvious -----------------------------
+  //
+  // The playtest note this answers: "必须要能够轻易分辨这个东西完全就不该出现" — you
+  // have to be able to tell at a glance that a thing absolutely should not be
+  // there. That was impossible while the room's innocent objects came from the
+  // same generated catalogue as the intruders: a bystander and an intruder were
+  // then the same object, and the question had no answer.
+  //
+  // What has to hold in the running game is a split. The room is furnished with
+  // household props (weirdness 0); an *intruder* is a generated object and never
+  // one of them, so "this does not belong" is decidable from the frame alone;
+  // and every other kind is household furniture doing something impossible, so
+  // "this is behaving wrongly" is decidable too. Reading it from the live
+  // catalogue rather than a copy kept in the harness — a copy would keep passing
+  // after the real list drifted.
+  const separation = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(4, 77);
+    const waiting = Date.now() + 30_000;
+    while (s.state !== 'playing' && Date.now() < waiting) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    const placed = s.placements();
+    const items = placed.map((item) => ({
+      kind: item.kind,
+      key: item.assetKey ?? '',
+      weirdness: s.assetWeirdness(item.assetKey ?? ''),
+    }));
+
+    // A bystander must be innocent: aim at one and mark it.
+    const bystanders = s.bystanderCount ?? 0;
+    let miss = null;
+    if (bystanders > 0) {
+      const aimedAt = s.aimAtBystander(0);
+      const result = s.mark();
+      miss = { aimedAt, result: result?.result ?? null };
+    }
+    return { state: s.state, items, bystanders, miss };
+  });
+
+  const items = separation.items;
+  const intruders = items.filter((i) => i.kind === 'intrude');
+  const behaviour = items.filter((i) => i.kind !== 'intrude');
+  const unknown = items.filter((i) => i.weirdness === null);
+
+  check(
+    'every object the room placed is a real catalogue entry',
+    items.length > 0 && unknown.length === 0,
+    `${items.length} placed, unknown: ${unknown.map((i) => i.key).join(', ') || 'none'}`,
+  );
+  check(
+    'an intruder is never household furniture, so "does this belong" has an answer',
+    intruders.every((i) => i.weirdness !== null && i.weirdness > 0),
+    intruders.length === 0
+      ? 'no intruder on this floor'
+      : `intruders: ${intruders.map((i) => `${i.key}(w${i.weirdness})`).join(', ')}`,
+  );
+  check(
+    'every other kind is household furniture, so "is this behaving" has an answer',
+    behaviour.every((i) => i.weirdness === 0),
+    `kinds: ${behaviour.map((i) => `${i.kind}:${i.key}(w${i.weirdness})`).join(', ') || 'none'}`,
+  );
+  check(
+    'an innocent household object refuses to score',
+    separation.bystanders > 0 && separation.miss?.result === 'miss',
+    `${separation.bystanders} bystanders, aimed at ${separation.miss?.aimedAt ?? 'none'} → ` +
+      `${separation.miss?.result ?? 'never marked'}`,
   );
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | ') || 'clean');

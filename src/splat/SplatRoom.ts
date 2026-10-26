@@ -206,11 +206,13 @@ export class SplatRoom {
 
     for (const bystander of plan.bystanders) {
       const anchor = byId.get(bystander.slotId);
-      const buffer = this.bytes.get(bystander.assetKey);
-      if (!anchor || !buffer) continue;
+      if (!anchor) continue;
 
       // Placed for its looks only: no entry in `placed`, so it can never be
       // counted as found, cannot be the target of a hit, and is never animated.
+      //
+      const buffer = this.bytes.get(bystander.assetKey);
+      if (!buffer) continue;
       const parsed = await loadGLTF(buffer.slice(0), { textureLoader: downloadTexture });
       const node = parsed.scene as unknown as Object3D;
       node.position.set(anchor.pos.x, anchor.pos.y, anchor.pos.z);
@@ -227,6 +229,9 @@ export class SplatRoom {
     copyIndex: number,
     copies: number,
   ): Promise<Object3D> {
+    // Household props arrive through the same path as the generated assets. They
+    // are built offline as GLB rather than with three.js at runtime, because this
+    // scene only accepts the Aholo viewer's own objects.
     const parsed = await loadGLTF(buffer.slice(0), { textureLoader: downloadTexture });
     const node = parsed.scene as unknown as Object3D;
 

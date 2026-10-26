@@ -182,11 +182,16 @@ export interface ForeignAsset {
   key: string;
   /** Chinese name shown in the round report. */
   name: string;
-  /** Prompt handed to Aholo Lux3D text-to-3D, verbatim. */
-  prompt: string;
-  placeholder: PropKind;
+  /** Prompt handed to Aholo Lux3D text-to-3D, verbatim. Absent on household props. */
+  prompt?: string;
+  /**
+   * The procedural stand-in used until the .glb lands. Absent on household props,
+   * which ship as real geometry built by tools/build-mundane.py and never need
+   * a stand-in.
+   */
+  placeholder?: PropKind;
   /** Uniform scale applied to the procedural placeholder. */
-  scale: number;
+  scale?: number;
   /**
    * Target height in metres for the loaded .glb. Generation output has no
    * canonical scale, so every model is normalised to this before it enters
@@ -195,8 +200,17 @@ export interface ForeignAsset {
   height: number;
   /** Default tint for the procedural placeholder. */
   color: number;
-  /** 1 = screaming obvious, 3 = genuinely unsettling. */
-  weirdness: 1 | 2 | 3;
+  /**
+   * How strange the object is. 0 is household furniture, 1 = screaming obvious,
+   * 3 = genuinely unsettling.
+   *
+   * The zero is load-bearing rather than decorative. Household props make up the
+   * room's normal, and the split between 0 and everything above it is what lets
+   * "this does not belong" be answered from a single frame.
+   */
+  weirdness: 0 | 1 | 2 | 3;
+  /** True for the household props built by tools/build-mundane.py. */
+  mundane?: boolean;
 }
 
 /**

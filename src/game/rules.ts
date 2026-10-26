@@ -152,21 +152,58 @@ function allowedKinds(budget: number, foreignOnly = false): AnomalyKind[] {
     // belong?" (unanswerable, and what the playtest complained about) and becomes
     // "is this one behaving?" (answerable from the frame alone, which is the rule
     // the rest of this file is built on).
-    const observable = all.filter((kind) => kind !== 'intrude');
-    return observable.length > 0 ? observable : ['stare'];
+    // 'intrude' is back, and it is answerable now.
+    //
+    // It could not survive a room whose innocent objects were drawn from the same
+    // generated catalogue: a bystander and an intruder were then the same picture,
+    // and marking either was a coin flip. The fix was not to drop the kind but to
+    // change what innocence looks like — bystanders are household furniture now,
+    // so "this thing is not furniture" is a claim the frame can actually settle.
+    // It is also the one kind the player can judge with no reference point at all,
+    // which makes it the right thing to teach first.
+    return all;
   }
   const shared = all.filter((kind) => !FOREIGN_ONLY_KINDS.has(kind));
   // A floor with no kinds left would produce nothing at all.
   return shared.length > 0 ? shared : ['intrude'];
 }
 
-/** Colours that read as wrong on a household object. */
-const WRONG_TINTS = [0x8b0f14, 0x1f3a20, 0x4a4a52, 0x120b0b, 0xd9d2c4];
-
-/** The horror pool — weirdness 3, nothing here belongs in a home. */
+/**
+ * The household objects the room is furnished with.
+ *
+ * These are the room's *normal*. Everything the player is asked to judge is
+ * judged against them, so they have to be things nobody would look at twice: a
+ * plant, a bin, a chair, a lamp. They come from the procedural furniture library
+ * rather than the generated catalogue, because the generated catalogue is all
+ * horror — and while the innocent objects were drawn from it too, a bystander and
+ * an intruder were the same picture and "does this belong" had no answer.
+ *
+ * Sizes are real furniture sizes in metres. A household object at the wrong size
+ * would be an anomaly by accident.
+ */
+/**
+ * The horror pool — weirdness 3, nothing here belongs in a home.
+ *
+ * Still used by the procedural room, which has no household furniture to contrast
+ * against and so still tells its anomalies apart by what they are.
+ */
 function horrorAssets(): ForeignAsset[] {
   return FOREIGN_ASSETS.filter((a) => a.weirdness === 3);
 }
+
+function householdAssets(): ForeignAsset[] {
+  return FOREIGN_ASSETS.filter((a) => a.weirdness === 0);
+}
+
+/** A household object, as an anomaly payload: what it is, and what it does. */
+function mundanePayload(rng: RNG): { key: string; name: string } {
+  const pool = householdAssets();
+  const item = pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))];
+  return { key: item.key, name: item.name };
+}
+
+/** Colours that read as wrong on a household object. */
+const WRONG_TINTS = [0x8b0f14, 0x1f3a20, 0x4a4a52, 0x120b0b, 0xd9d2c4];
 
 let anomalySerial = 0;
 function nextId(kind: AnomalyKind, slotId: string): string {
@@ -236,9 +273,12 @@ function buildIntrude(
 
 /** Which assets a floor is allowed to draw from, by how strange it may get. */
 function foreignPool(budget: number): ForeignAsset[] {
-  if (budget <= 0) return FOREIGN_ASSETS.filter((a) => a.weirdness === 1);
-  if (budget === 1) return FOREIGN_ASSETS.filter((a) => a.weirdness <= 2);
-  return FOREIGN_ASSETS;
+  // Household props are excluded. This is the intruder's pool, and an intruder
+  // that was household furniture would collapse the split the game rests on.
+  const generated = FOREIGN_ASSETS.filter((a) => a.weirdness > 0);
+  if (budget <= 0) return generated.filter((a) => a.weirdness === 1);
+  if (budget === 1) return generated.filter((a) => a.weirdness <= 2);
+  return generated;
 }
 
 /**
@@ -253,13 +293,26 @@ function buildStare(
   spawn: Vec3,
   /** Pin it to one anchor — floor 1 needs the spot nearest the way in. */
   pinned?: AnchorDef,
+  /**
+   * Build it from household geometry instead of a generated asset.
+   *
+   * Only the reconstruction passes this. The procedural room places its
+   * anomalies by asset key, so a household prop handed to it would render as
+   * nothing at all — and a floor that is quietly empty is worse than one that is
+   * ugly.
+   */
+  mundane = false,
 ): Anomaly | null {
   const free = pinned ? [pinned] : anchors.filter((a) => !usedAnchors.has(a.id));
   if (free.length === 0) return null;
   const anchor = pinned ?? pick(rng, free);
   usedAnchors.add(anchor.id);
 
-  const asset = pick(rng, horrorAssets());
+  // In the reconstruction this is a household chair, floating at head height,
+  // turned to face the way in — and that is the point. A chair hanging in the air
+  // and tracking you is far worse than a face, because the face was never going
+  // to be innocent and the chair was.
+  const asset = mundane ? mundanePayload(rng) : pick(rng, horrorAssets());
   const height = 1.15 + rng() * 0.7;
   const dx = spawn.x - anchor.pos.x;
   const dz = spawn.z - anchor.pos.z;
@@ -392,13 +445,14 @@ function buildSlotAnomaly(
  * all five kinds end up operating on the same thing, which is also easier to
  * read as a player: every anomaly is about an object that does not belong.
  */
-function buildForeignAnomaly(
-  rng: RNG,
-  anchor: AnchorDef,
-  budget: number,
-  kind: AnomalyKind,
-): Anomaly {
-  const asset = pick(rng, foreignPool(budget));
+function buildForeignAnomaly(rng: RNG, anchor: AnchorDef, kind: AnomalyKind): Anomaly {
+  // A household object doing something a household object does not do.
+  //
+  // Every kind except 'intrude' is a claim about behaviour, and behaviour is only
+  // legible against something ordinary. A chair hanging upside down in a room of
+  // chairs is a judgement; the same chair among giant eyes is just more weirdness.
+  const payload = mundanePayload(rng);
+  const asset = { key: payload.key, name: payload.name };
   const base = {
     id: nextId(kind, anchor.id),
     kind,
@@ -468,7 +522,6 @@ function buildForeignAnomaly(
 /** Consume a free anchor and build a non-object anomaly there. */
 function buildForeignAtAnchor(
   rng: RNG,
-  budget: number,
   usedAnchors: Set<string>,
   anchors: readonly AnchorDef[],
   kind: AnomalyKind,
@@ -477,7 +530,7 @@ function buildForeignAtAnchor(
   if (free.length === 0) return null;
   const anchor = pick(rng, free);
   usedAnchors.add(anchor.id);
-  return buildForeignAnomaly(rng, anchor, budget, kind);
+  return buildForeignAnomaly(rng, anchor, kind);
 }
 
 /* ------------------------------------------------------------------ *
@@ -531,7 +584,7 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
     // building it through the real builder rather than by hand is what keeps it
     // airborne, facing the way in, and labelled like every other stare.
     const first = foreignOnly
-      ? buildStare(rng, usedAnchors, anchors, spawn, anchor)
+      ? buildStare(rng, usedAnchors, anchors, spawn, anchor, true)
       : null;
     anomalies.push(
       first ?? {
@@ -568,10 +621,10 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
       const forced = requested ? requested[i % requested.length] : null;
       const kind = forced ?? pick(rng, kinds);
       const built = kind === 'stare'
-        ? buildStare(rng, usedAnchors, anchors, spawn)
+        ? buildStare(rng, usedAnchors, anchors, spawn, undefined, true)
         : kind === 'intrude'
           ? buildIntrude(rng, budget, usedAnchors, anchors)
-          : buildForeignAtAnchor(rng, budget, usedAnchors, anchors, kind);
+          : buildForeignAtAnchor(rng, usedAnchors, anchors, kind);
       // Running out of anchors ends the floor rather than repeating a place:
       // two anomalies at one spot read as one anomaly.
       if (!built) break;
@@ -636,11 +689,12 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
  * anomalies get lost in clutter. Floor 1 gets a single one, because teaching the
  * distinction is the point of that floor and two things to compare is enough.
  *
- * Deliberately drawn from the same catalogue as the anomalies. A bystander that
- * looked *different* from an anomaly — a tamer object, a duller colour — would
- * turn the game back into visual search with extra steps. These are the same
- * absurd objects, standing still and doing nothing, and that is the contrast the
- * player has to learn to read.
+ * Household furniture, standing still. Not drawn from the generated catalogue:
+ * that was the earlier design and it made the game unanswerable, because a
+ * bystander and an intruder were then the same absurd object and "does this
+ * belong?" had no truth to it. A room furnished with ordinary things is what
+ * gives "this does not belong" a meaning — and it is also what makes an object
+ * behaving impossibly legible, since the thing misbehaving is plainly innocent.
  */
 function buildBystanders(
   rng: RNG,
@@ -654,11 +708,11 @@ function buildBystanders(
   const chosen = shuffle(rng, free).slice(0, wanted);
 
   return chosen.map((anchor) => {
-    const asset = FOREIGN_ASSETS[Math.floor(rng() * FOREIGN_ASSETS.length) % FOREIGN_ASSETS.length];
+    const payload = mundanePayload(rng);
     return {
       slotId: anchor.id,
-      assetKey: asset.key,
-      label: `${placeOf(anchor)}这个${asset.name} —— 待在原位，也没在看你`,
+      assetKey: payload.key,
+      label: `${placeOf(anchor)}这个${payload.name} —— 待在原位，也没在看你`,
     };
   });
 }

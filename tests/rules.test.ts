@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ASSETS_BY_KEY } from '../src/game/catalog.ts';
 import {
   anomalyCountForFloor,
   durationForFloor,
@@ -19,6 +20,19 @@ import { ANCHORS_BY_ID, FOREIGN_ASSETS, SLOTS, SLOTS_BY_ID } from '../src/game/c
 import type { AnomalyKind } from '../src/game/types';
 
 const ANOMALY_KINDS = ['intrude', 'stare', 'shift', 'warp', 'twin'] as const;
+
+/**
+ * Household props are catalogue entries with weirdness 0 — real GLB files built
+ * by tools/build-mundane.py, not generated and not textured.
+ *
+ * The split is the whole answer to "必须要能够轻易分辨这个东西完全就不该出现": the
+ * room's furniture is household and an intruder never is, so the two sets cannot
+ * be confused. If they ever overlap, the question stops being decidable.
+ */
+function isHousehold(key: string): boolean {
+  const asset = ASSETS_BY_KEY.get(key);
+  return asset !== undefined && asset.weirdness === 0;
+}
 
 describe('rng', () => {
   it('is deterministic for a given seed', () => {
@@ -186,6 +200,18 @@ describe('every anomaly is judgeable without memorising the room', () => {
       for (const a of plan.anomalies) {
         expect(EVIDENT).toContain(a.kind);
         expect(a.assetKey).toBeTruthy();
+        if (a.kind === 'intrude') {
+          // An intrusion is a claim about what a thing *is*, so it has to be a
+          // thing the room could never contain: a generated object, never one of
+          // the household props the room is furnished with.
+          expect(isHousehold(a.assetKey!)).toBe(false);
+        } else {
+          // Every other kind is a claim about behaviour, and behaviour is only
+          // legible against something ordinary. If these were generated objects
+          // too, "a chair that moved" and "a face that should not be here" would
+          // be the same picture and neither would be answerable.
+          expect(isHousehold(a.assetKey!)).toBe(true);
+        }
       }
     }
   });

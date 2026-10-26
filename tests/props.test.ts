@@ -32,6 +32,9 @@ describe('prop builders', () => {
 
   it('builds every catalogue placeholder', () => {
     for (const asset of FOREIGN_ASSETS) {
+      // Household props have no placeholder: they are real geometry, and the
+      // procedural builder is not asked to stand in for them.
+      if (!asset.placeholder) continue;
       const object = createProp(asset.placeholder, SIZE);
       expect(
         meshCount(object),
@@ -43,7 +46,14 @@ describe('prop builders', () => {
   it('recognises exactly the catalogue placeholders as foreign', () => {
     const foreign = new Set(FOREIGN_ASSETS.map((a) => a.placeholder));
     for (const asset of FOREIGN_ASSETS) {
-      expect(isForeign(asset.placeholder), `${asset.key} is not reported as foreign`).toBe(true);
+      if (asset.weirdness === 0) {
+        // Household props are real GLB, not placeholders, so they have none — and
+        // must not be claimed as foreign, which is exactly what would leak the
+        // horror pool into the room's furniture.
+        expect(asset.placeholder, `${asset.key} declares a placeholder`).toBeUndefined();
+        continue;
+      }
+      expect(isForeign(asset.placeholder!), `${asset.key} is not reported as foreign`).toBe(true);
     }
     // furniture must not be reported as foreign, or the horror pool leaks
     expect(isForeign('sofa')).toBe(false);
