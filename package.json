@@ -22,7 +22,8 @@
     "record": "node tools/record.mjs",
     "report": "python tools/build-deck.py",
     "report:check": "python tools/check-deck.py",
-    "verify": "npm run typecheck && npm run voxel:check && npm run test && npm run build && npm run splat:check && npm run splat:shoot && npm run shoot"
+    "deploy:check": "node tools/check-deploy.mjs",
+    "verify": "npm run typecheck && npm run voxel:check && npm run test && npm run build && npm run splat:check && npm run splat:shoot && npm run shoot && npm run deploy:check"
   },
   "dependencies": {
     "@manycore/aholo-viewer": "^1.11.0",

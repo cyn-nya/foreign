@@ -28,11 +28,25 @@ const MIME = {
  *
  * Resolves to `{ url, port, close }`. Any unknown path falls back to
  * `index.html`, which is what a single-page build expects.
+ *
+ * `basePath` mounts everything under a prefix, which is how a GitHub Pages
+ * project site is served (`https://user.github.io/repo/`). Testing that locally
+ * is the difference between finding a sub-path bug here and finding it after
+ * the demo link has been submitted.
  */
-export function startStatic(dir) {
+export function startStatic(dir, { basePath = '' } = {}) {
   const root = path.resolve(dir)
+  const prefix = basePath.replace(/\/+$/, '')
   const server = http.createServer((req, res) => {
-    const url = decodeURIComponent((req.url ?? '/').split('?')[0])
+    let url = decodeURIComponent((req.url ?? '/').split('?')[0])
+    if (prefix) {
+      if (url === prefix || url === `${prefix}/`) url = '/'
+      else if (url.startsWith(`${prefix}/`)) url = url.slice(prefix.length)
+      else {
+        res.writeHead(404, { 'content-type': 'text/plain' }).end('outside base path')
+        return
+      }
+    }
     let file = path.join(root, url === '/' ? 'index.html' : url)
     if (!file.startsWith(root)) {
       res.writeHead(403).end('forbidden')
@@ -48,7 +62,7 @@ export function startStatic(dir) {
       const port = server.address().port
       resolve({
         port,
-        url: `http://127.0.0.1:${port}`,
+        url: `http://127.0.0.1:${port}${prefix}`,
         close: () => new Promise((done) => server.close(done)),
       })
     })

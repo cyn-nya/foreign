@@ -1,0 +1,174 @@
+/**
+ * Prove the build survives being deployed.
+ *
+ *   node tools/check-deploy.mjs [--keep]
+ *
+ * Two things this catches that the normal harness cannot, because the normal
+ * harness serves `dist/` from the repository root at `/`:
+ *
+ *   1. Absolute paths. `assets/index-abc.js` resolving to `/assets/...` works at
+ *      a domain root and 404s under `/repo-name/`. The dist is served from a
+ *      *copy outside the repository* under a sub-path to reproduce that.
+ *   2. Missing files. Every 4xx response is recorded and fails the run, so a
+ *      broken base shows up as a named URL rather than as a blank page.
+ *
+ * The copy also proves the build does not secretly depend on anything left in
+ * the repository, which is exactly the mistake that makes a deploy fail after a
+ * green local run.
+ */
+
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
+import { startStatic } from './static-server.mjs';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const root = resolve(here, '..');
+const dist = join(root, 'dist');
+
+/** A GitHub Pages project site is served here, not at the domain root. */
+const BASE_PATH = '/aholo-hackathon';
+
+/**
+ * Recursive copy built on `copyFileSync`.
+ *
+ * `fs.cpSync` on this checkout does not merely fail — it terminates the Node
+ * process outright, with no error and exit code 127, which took a while to
+ * attribute because it looks like a crash in the code that follows it. Copying
+ * file by file works and is not worth further investigation.
+ */
+function copyTree(src, dst) {
+  mkdirSync(dst, { recursive: true });
+  for (const entry of readdirSync(src, { withFileTypes: true })) {
+    const from = join(src, entry.name);
+    const to = join(dst, entry.name);
+    if (entry.isDirectory()) copyTree(from, to);
+    else copyFileSync(from, to);
+  }
+}
+
+const checks = [];
+const check = (name, ok, detail = '') => {
+  checks.push({ name, ok, detail });
+  console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`);
+};
+
+if (!existsSync(join(dist, 'index.html'))) {
+  console.error('dist/index.html is missing — run `npm run build` first.');
+  process.exit(1);
+}
+
+// A throwaway copy, deliberately outside the repository.
+//
+// Staged in the repository's *parent* directory rather than in the system temp
+// directory: writing to %TEMP% from here does not fail with an error, it kills
+// the process outright, which is a confusing way to learn that the staging path
+// is outside the sandbox. The parent directory is still outside the repository,
+// which is the property that matters — it proves the build does not depend on
+// anything left lying around in the checkout.
+const staging = join(resolve(root, '..'), `.foreign-deploy-${process.pid}`);
+// The sub-path is a URL concern, not a directory-nesting one: a Pages project
+// site maps `/repo/` onto the repository root, so the files sit at the top of
+// the served directory and only the URL carries the prefix.
+const site = join(staging, 'site');
+copyTree(dist, site);
+console.log(`staged a copy of dist/ outside the repository at ${site}`);
+
+const server = await startStatic(site, { basePath: BASE_PATH });
+console.log(`serving it as a project site: ${server.url}/`);
+
+const browser = await chromium.launch({
+  args: [
+    '--enable-unsafe-swiftshader',
+    '--use-angle=swiftshader',
+    '--use-gl=angle',
+    '--disable-gpu-sandbox',
+    '--autoplay-policy=no-user-gesture-required',
+  ],
+});
+
+const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
+const pageErrors = [];
+const consoleErrors = [];
+const failed = [];
+page.on('pageerror', (e) => pageErrors.push(String(e)));
+page.on('console', (m) => {
+  if (m.type() === 'error') consoleErrors.push(m.text());
+});
+page.on('response', (r) => {
+  if (r.status() >= 400) failed.push(`${r.status()} ${r.url()}`);
+});
+
+let state = null;
+try {
+  await page.goto(`${server.url}/?autostart=1&floor=2&seed=4242`, {
+    waitUntil: 'load',
+    timeout: 60_000,
+  });
+  await page.waitForFunction(() => window.__splat && window.__splat.ready, null, { timeout: 240_000 });
+  state = await page.evaluate(() => {
+    const s = window.__splat;
+    return {
+      state: s.state,
+      floor: s.floor,
+      placed: s.placed,
+      assets: s.assets,
+      collision: s.collision,
+      splat: s.splat,
+    };
+  });
+} catch (error) {
+  check('the deployed build boots', false, String(error).split('\n')[0]);
+}
+
+if (state) {
+  check(
+    'the deployed build reconstructs the room and starts a floor',
+    state.state === 'playing' && state.splat && state.collision && state.placed >= 1,
+    `state=${state.state} splat=${state.splat} collision=${state.collision} placed=${state.placed}`,
+  );
+  check(
+    'every asset resolves under the sub-path',
+    state.assets.loaded > 0 && state.assets.missing.length === 0,
+    `${state.assets.loaded} loaded, ${state.assets.missing.length} missing`,
+  );
+
+  // Actually play it: a build that renders but cannot be played is not deployed.
+  // `debug.walk` reports where it started and finished; `debug.player` is a
+  // per-frame snapshot and is not updated synchronously by the simulated walk.
+  // Reading the snapshot reported a 0.00 m walk from a walker that had in fact
+  // moved. Start from the way in so the distance is measured over open floor.
+  await page.evaluate(() => window.__splat.respawn());
+  const play = await page.evaluate(() => {
+    const s = window.__splat;
+    const walked = s.walk(1.0, 'KeyW');
+    const moved = Math.hypot(walked.to[0] - walked.from[0], walked.to[2] - walked.from[2]);
+    const aimed = s.aimAt(0);
+    const result = s.mark();
+    return { moved, aimed, result: result?.result, found: s.found.length };
+  });
+  check(
+    'the player can walk in the deployed build',
+    play.moved > 0.3 && play.moved < 3.5,
+    `moved ${play.moved.toFixed(2)} m in 1.0 s`,
+  );
+  check(
+    'and can still find and mark something',
+    play.result === 'hit' && play.found === 1,
+    `aimed=${play.aimed} result=${play.result} found=${play.found}`,
+  );
+}
+
+check('no request 404s, so no path escaped the sub-directory', failed.length === 0,
+  failed.length ? failed.slice(0, 4).join(' | ') : 'every request resolved');
+check('no uncaught page errors', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | ') || 'clean');
+check('no console errors', consoleErrors.length === 0, consoleErrors.slice(0, 2).join(' | ') || 'clean');
+
+await browser.close();
+await server.close();
+rmSync(staging, { recursive: true, force: true });
+
+const passed = checks.filter((c) => c.ok).length;
+console.log(`\n${passed}/${checks.length} checks passed`);
+process.exit(passed === checks.length ? 0 : 1);
