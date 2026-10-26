@@ -3,16 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>FOREIGN · 异物 — 真实重建空间</title>
+    <title>FOREIGN · 异物 — 程序化房间（经典渲染后端）</title>
     <meta
       name="description"
-      content="在 AI 重建的真实空间里，找出不属于这里的异物。场景为 Aholo 开源 3DGS 重建，异物由 Aholo Lux3D 生成。"
+      content="同一套玩法与规则，房间改由 three.js 程序化搭建。用于对比 3DGS 重建后端。"
     />
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
-  <body class="splat">
-    <!-- The viewer owns its own canvas, so this is just its mount point. -->
-    <div id="view"></div>
+  <body>
+    <canvas id="viewport"></canvas>
 
     <div id="crosshair" aria-hidden="true">
       <div class="ring"></div>
@@ -44,8 +43,9 @@
       </div>
     </div>
 
+    <!-- Every screen is rendered by the Game; keeps state in one place. -->
     <div id="overlay" class="overlay"></div>
 
-    <script type="module" src="/src/splat/main.ts"></script>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

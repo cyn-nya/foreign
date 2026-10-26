@@ -3,11 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>FOREIGN · 异物 — AI 生成的异常猎杀</title>
-    <meta name="description" content="在 AI 重建的真实空间里，找出不属于这里的异物。3D 内容由 Aholo Lux3D 生成。" />    <link rel="stylesheet" href="/src/styles.css" />
+    <title>FOREIGN · 异物 — 在真实重建的房间里找出不属于这里的东西</title>
+    <meta
+      name="description"
+      content="第一人称异常猎杀。房间是 Aholo 开源 3DGS 重建的真实空间，多出来的东西由 Aholo Lux3D 生成。找到它们，你只有三次标记机会。"
+    />
+    <link rel="stylesheet" href="/src/styles.css" />
   </head>
-  <body>
-    <canvas id="viewport"></canvas>
+  <body class="splat">
+    <!-- The viewer owns its own canvas, so this is just its mount point. -->
+    <div id="view"></div>
 
     <div id="crosshair" aria-hidden="true">
       <div class="ring"></div>
@@ -39,9 +44,8 @@
       </div>
     </div>
 
-    <!-- Every screen is rendered by the Game; keeps state in one place. -->
     <div id="overlay" class="overlay"></div>
 
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/splat/main.ts"></script>
   </body>
 </html>

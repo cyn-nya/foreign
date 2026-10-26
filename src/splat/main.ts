@@ -234,9 +234,33 @@ async function main(): Promise<void> {
   const assetLine = report.missing.length
     ? `未检测到 ${report.missing.length} 个资产的 Lux3D 原模型 · 正在使用烘焙占位模型`
     : `已载入 ${report.loaded.length} 个异物模型`;
-  showMenu(assetLine, () => {
-    void startFloor(1, undefined, true);
-  });
+
+  /**
+   * The current floor's plan.
+   *
+   * Declared up here rather than next to `startFloor` because the autostart path
+   * calls `startFloor` *synchronously* from `main`, and a `let` declared further
+   * down is still in its temporal dead zone at that moment — which threw
+   * `Cannot access 'plan' before initialization` and broke every demo link. The
+   * menu path hid it, because a button handler runs after `main` has finished.
+   */
+  let plan: FloorPlan | null = null;
+
+  // `?autostart=1` skips the menu, so a demo link opens straight into the room.
+  // `?floor=` and `?seed=` make a specific floor reproducible for a screenshot.
+  const params = new URLSearchParams(window.location.search);
+  const requestedFloor = Number(params.get('floor') ?? Number.NaN);
+  const requestedSeed = Number(params.get('seed') ?? Number.NaN);
+  if (params.get('autostart') === '1') {
+    await startFloor(
+      Number.isFinite(requestedFloor) && requestedFloor > 0 ? requestedFloor : 1,
+      Number.isFinite(requestedSeed) ? requestedSeed : undefined,
+    );
+  } else {
+    showMenu(assetLine, () => {
+      void startFloor(1, undefined, true);
+    });
+  }
 
   // The viewer owns its canvas, so cabling the layout is on us.
   function layout(): void {
@@ -246,8 +270,6 @@ async function main(): Promise<void> {
   }
   layout();
   window.addEventListener('resize', layout);
-
-  let plan: FloorPlan | null = null;
 
   async function startFloor(floor = 1, seed?: number, lock = false): Promise<void> {
     debug.floor = floor;
@@ -268,6 +290,11 @@ async function main(): Promise<void> {
     overlay.classList.add('hidden');
     overlay.innerHTML = '';
     hud.classList.remove('hidden');
+    // Each floor starts back at the way in, as the procedural game does — the
+    // fiction is descending, and it also stops a lucky end-of-floor position
+    // from trivialising the next one.
+    player.respawn();
+    debug.renderOnce();
     syncHud();
     if (lock) player.requestLock();
     scene.render();

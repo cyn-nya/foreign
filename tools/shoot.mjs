@@ -127,7 +127,7 @@ async function main() {
 
   const report = { url: base, views: [], checks: [] };
   try {
-    await page.goto(`${base}/?autostart=1&capture=1&seed=20261026`, { waitUntil: 'load' });
+    await page.goto(`${base}/classic.html?autostart=1&capture=1&seed=20261026`, { waitUntil: 'load' });
 
     await page.waitForFunction(() => {
       const g = window.__game;

@@ -1,18 +1,24 @@
 #!/usr/bin/env node
 /**
- * Acceptance harness for the 3DGS backend (`splat.html`).
+ * Acceptance harness for the default entry — FOREIGN in the reconstructed room.
  *
  *   node tools/splat-shoot.mjs [--keep]
  *
- * The three.js game has `tools/shoot.mjs`; this is its counterpart for the
- * reconstructed-room build. It walks the player with a fixed simulated step
- * rather than real time, so a movement assertion does not depend on how fast
- * the headless renderer happens to be running.
+ * This drives `/`, not a named page: the point of the 3DGS backend is that it
+ * replaced the procedural room, so the default entry has to be the real one. The
+ * three.js build is still complete and still verified, by `tools/shoot.mjs`
+ * against `classic.html`.
  *
- * The interesting check is the pair at the end: the walker must be stopped by
- * the room, and must *not* be stopped once the occupancy field is switched off.
+ * It walks the player with a fixed simulated step rather than real time, so a
+ * movement assertion does not depend on how fast the headless renderer happens
+ * to be running.
+ *
+ * The interesting movement check is the pair: the walker must be stopped by the
+ * room, and must *not* be stopped once the occupancy field is switched off.
  * Either one alone proves nothing — "it stopped" could just be a walker that
- * cannot move, and "it moved" could be a walker that ignores walls.
+ * cannot move, and "it moved" could be a walker that ignores walls. Both checks
+ * therefore carry a lower bound, which is what caught this harness passing while
+ * `debug.walk` was accidentally left as a stub.
  */
 
 import fs from 'node:fs';
@@ -103,10 +109,24 @@ console.log(`serving ${path.relative(root, dist)} on ${base}`);
 const started = Date.now();
 
 try {
-  await page.goto(`${base}/splat.html`, { waitUntil: 'load', timeout: 60_000 });
+  // The default entry has to be the real reconstructed room: that is what "the
+  // procedural room was replaced" means, and it is the link a judge will open.
+  // Driving `/` rather than a named page is the test — if the swap regressed,
+  // `__splat` never appears and this times out.
+  await page.goto(`${base}/`, { waitUntil: 'load', timeout: 60_000 });
   await page.waitForFunction(() => window.__splat && window.__splat.ready, null, { timeout: 240_000 });
   const state = await page.evaluate(() => window.__splat);
   const loadSeconds = (Date.now() - started) / 1000;
+
+  const entry = await page.evaluate(() => ({
+    splat: typeof window.__splat === 'object',
+    classic: typeof window.__game === 'object',
+  }));
+  check(
+    'the default entry serves the reconstructed room, not the procedural one',
+    entry.splat && !entry.classic,
+    `served / → splat=${entry.splat} classic=${entry.classic}`,
+  );
 
   check(
     'boots and loads the reconstructed room',
@@ -272,6 +292,20 @@ try {
     'running out of marks ends the run',
     burned.state === 'gameOver' && burned.marksLeft <= 0,
     `state=${burned.state} marksLeft=${burned.marksLeft}`,
+  );
+
+  // A demo link has to open straight into a live floor, so the autostart path is
+  // part of the deliverable rather than a convenience.
+  await page.goto(`${base}/?autostart=1&floor=3&seed=4242`, { waitUntil: 'load', timeout: 60_000 });
+  await page.waitForFunction(() => window.__splat && window.__splat.ready, null, { timeout: 240_000 });
+  const auto = await page.evaluate(() => {
+    const s = window.__splat;
+    return { state: s.state, floor: s.floor, placed: s.placed, anomalies: s.anomalyCount, marks: s.marksLeft };
+  });
+  check(
+    '?autostart=1&floor=3 opens straight into a live third floor',
+    auto.state === 'playing' && auto.floor === 3 && auto.anomalies >= 1,
+    `state=${auto.state} floor=${auto.floor} placed=${auto.placed} anomaly=${auto.anomalies} marks=${auto.marks}`,
   );
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | ') || 'clean');
