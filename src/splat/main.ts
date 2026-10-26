@@ -232,18 +232,47 @@ async function main(): Promise<void> {
   const audio = new GameAudio();
   player.spawnAt(ROOM_SPAWN);
 
+  // Retry the room before giving up on it.
+  //
+  // This is a 63 MB download over whatever connection the player has, and it
+  // used to be a single attempt: one dropped transfer ended the session on a
+  // failure screen, which is the one outcome a player cannot recover from by
+  // playing differently. Seen in practice — two loads in one harness run, on a
+  // throttled connection, failed exactly here. Bounded at three, because each
+  // attempt restarts the transfer and there is no point pretending otherwise.
   debug.stage = 'splat';
-  await scene.loadSplat();
+  let splatError: unknown = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await scene.loadSplat();
+      splatError = null;
+      break;
+    } catch (error) {
+      splatError = error;
+      if (attempt === 3) break;
+      console.warn(`[splat] room load failed (attempt ${attempt})`, error);
+      showProgress(0, `房间加载失败，正在重试 ${attempt}/2…`);
+      await new Promise((resolve) => window.setTimeout(resolve, 800 * attempt));
+    }
+  }
+  if (splatError) throw splatError;
   debug.splat = true;
 
   debug.stage = 'collision';
-  try {
-    await scene.loadCollision();
-    player.setCollision(scene.collision);
-    debug.collision = scene.collision !== null;
-  } catch (error) {
-    // The room still renders without collision; say so rather than dying.
-    console.warn('[splat] collision unavailable', error);
+  // Retried for the same reason as the room, and conceded only as a last
+  // resort: without the occupancy field the room renders and the game plays,
+  // but the player walks through the walls. That is worse than a retry.
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await scene.loadCollision();
+      player.setCollision(scene.collision);
+      debug.collision = scene.collision !== null;
+      break;
+    } catch (error) {
+      console.warn(`[splat] collision unavailable (attempt ${attempt})`, error);
+      if (attempt === 3) break;
+      await new Promise((resolve) => window.setTimeout(resolve, 800 * attempt));
+    }
   }
   player.respawn();
 

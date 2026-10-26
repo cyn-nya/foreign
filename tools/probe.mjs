@@ -24,6 +24,13 @@ const root = path.resolve(here, '..');
 const dist = path.join(root, 'dist');
 const outDir = path.join(root, 'artifacts', 'probe');
 
+// Software rendering has no frame rate to speak of, and Playwright's screenshot
+// waits for the compositor to hand it a frame. The default 30 s is not a
+// measurement of how slow the renderer is — it is a bet that nothing else is
+// competing for the CPU, and running two harnesses back to back loses that bet.
+// Nothing here is timing-sensitive, so the timeout is generous on purpose.
+const SHOT_TIMEOUT = 180_000;
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -257,7 +264,7 @@ async function main() {
       }
       await page.waitForTimeout(700);
       const file = path.join(outDir, `${scene}-${view.name}.png`);
-      const shot = await page.screenshot({ path: file, type: 'png' });
+      const shot = await page.screenshot({ path: file, type: 'png', timeout: SHOT_TIMEOUT });
       const stats = await measureScreenshot(scratch, shot);
       sceneReport.views.push({ name: view.name, ...stats });
       console.log(
@@ -296,7 +303,7 @@ async function main() {
             { x: p.x, y: 1.0, z: p.z, yaw: (i / YAWS) * Math.PI * 2 },
           );
           await page.waitForTimeout(240);
-          const shot = await page.screenshot({ type: 'png' });
+          const shot = await page.screenshot({ type: 'png', timeout: SHOT_TIMEOUT });
           const s = await measureScreenshot(scratch, shot);
           if (s.edge > 2.5 && s.exactColors > 3000) rich++;
           bestEdge = Math.max(bestEdge, s.edge);
@@ -355,7 +362,7 @@ async function main() {
       });
       if ((corner?.count ?? -1) !== 0) failures++;
 
-      const shot = await page.screenshot({ type: 'png' });
+      const shot = await page.screenshot({ type: 'png', timeout: SHOT_TIMEOUT });
       fs.writeFileSync(path.join(outDir, `${scene}-glb.png`), shot);
       const stats = await measureScreenshot(scratch, shot);
       console.log(

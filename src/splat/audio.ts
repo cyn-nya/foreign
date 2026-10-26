@@ -91,7 +91,13 @@ export class GameAudio {
       }
 
       const analyser = context.createAnalyser();
-      analyser.fftSize = 2048;
+      // 8192 samples at 48 kHz is ~9.4 cycles of the 55 Hz fundamental. The
+      // default 2048 covers only ~2.3 cycles, and the RMS of so short a window
+      // swings by several percent depending on where it happens to land in the
+      // waveform — the same order as the level change we are trying to measure,
+      // which made the "is this actually louder" check read anywhere from 7% to
+      // 29% for the same 16% gain change. Cost is negligible and paid once.
+      analyser.fftSize = 8192;
       this.analyser = analyser;
       this.scratch = new Float32Array(new ArrayBuffer(analyser.fftSize * 4));
 
@@ -108,14 +114,26 @@ export class GameAudio {
     }
   }
 
-  /** 0 = nothing near, 1 = standing on top of an anomaly. */
+  /**
+   * 0 = nothing near, 1 = standing on top of an anomaly.
+   *
+   * Safe to call every frame, and it deliberately ignores calls that do not
+   * change the target. `setTargetAtTime` re-anchors its exponential curve from
+   * the value at the moment it is called, so re-issuing the same target every
+   * frame makes the ramp advance per *frame* instead of per second. Under
+   * software rendering at a couple of frames a second that turns a one-second
+   * glide into a ten-second crawl, and the drone lags the player badly. Issuing
+   * it only on a real change lets the curve run at its own rate on the audio
+   * thread, independent of how fast the renderer happens to be.
+   */
   setTension(value: number): void {
-    this.tension = Math.max(0, Math.min(1, value));
+    const next = Math.max(0, Math.min(1, value));
+    if (Math.abs(next - this.tension) < 0.001) return;
+    this.tension = next;
     if (!this.context || !this.droneGain || !this.filter) return;
     const t = this.context.currentTime;
-    // Ramped, not assigned: a step change in gain clicks.
-    this.droneGain.gain.setTargetAtTime(this.tension * MAX_GAIN, t, 0.15);
-    this.filter.frequency.setTargetAtTime(180 + this.tension * 900, t, 0.2);
+    this.droneGain.gain.setTargetAtTime(next * MAX_GAIN, t, 0.15);
+    this.filter.frequency.setTargetAtTime(180 + next * 900, t, 0.2);
   }
 
   /**
