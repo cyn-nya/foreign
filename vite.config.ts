@@ -14,8 +14,10 @@ export default defineConfig({
       // resolved relative to the project root; avoids importing node:url and
       // therefore needing @types/node just for a path
       input: {
-        // the game
+        // the game, on the three.js backend with a procedurally built room
         index: 'index.html',
+        // the same game on the 3DGS backend, in a real reconstructed room
+        splat: 'splat.html',
         // the 3DGS scene inspector; also what tools/probe.mjs drives headlessly
         spike: 'spike.html',
       },

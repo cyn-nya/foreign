@@ -131,8 +131,18 @@ export interface Vec3Like {
  * `eyeY` is the eye position, because that is what the camera and the scan's
  * published poses use; the capsule is derived downward from it.
  *
- * Returns the position to use. On a clear frame the input is returned
- * unchanged, so callers can treat "same numbers back" as "no collision".
+ * `out` always receives a **displacement** to add to the position — never an
+ * absolute position. It is zeroed when there is no contact, so callers can
+ * apply it unconditionally:
+ *
+ *     if (resolveCapsule(col, x, y, z, out)) { x += out.x; y += out.y; z += out.z; }
+ *
+ * The first version of this returned an absolute position on a clear frame and
+ * a delta on a contact, in the same object. That is a trap, and the walker
+ * walked into it: it assigned the "delta" instead of adding it, teleporting the
+ * player to the push vector's own coordinates.
+ *
+ * Returns whether there was any contact.
  */
 export function resolveCapsule(
   collision: VoxelCollision,
@@ -142,13 +152,7 @@ export function resolveCapsule(
   out: Vec3Like,
 ): boolean {
   const centreY = eyeY - EYE_ABOVE_CAPSULE_CENTRE;
-  const pushed = collision.queryCapsule(x, centreY, z, CAPSULE_HEIGHT / 2, CAPSULE_RADIUS, out);
-  if (!pushed) {
-    out.x = x;
-    out.y = 0;
-    out.z = z;
-  }
-  return pushed;
+  return collision.queryCapsule(x, centreY, z, CAPSULE_HEIGHT / 2, CAPSULE_RADIUS, out);
 }
 
 /** World position of a voxel centre, for debugging and assertions. */

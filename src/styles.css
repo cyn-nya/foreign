@@ -28,6 +28,10 @@ html, body {
 
 #viewport { display: block; width: 100vw; height: 100vh; }
 
+/* The 3DGS viewer mounts into its own container and manages its own canvas. */
+#view { display: block; width: 100vw; height: 100vh; overflow: hidden; }
+#view canvas { display: block; }
+
 .hidden { display: none !important; }
 
 /* ---------- crosshair ---------- */
@@ -203,3 +207,23 @@ button.ghost:hover { color: var(--fg); border-color: var(--fg); }
   color: var(--accent); margin: 8px 0 2px;
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- loading progress ----------
+   The 3DGS scene is ~63 MB, so a spinner is not enough: decoding is 1-2s but
+   the download dominates, and the player needs to see that it is moving. */
+.progress {
+  width: min(420px, 70vw); height: 3px; margin: 26px auto 0;
+  background: rgba(120, 200, 190, 0.14);
+  border-radius: 2px; overflow: hidden;
+}
+.progress-bar {
+  height: 100%; background: var(--accent);
+  transition: width 0.2s linear;
+}
+.progress-note {
+  margin: 10px 0 0; font-size: 12px;
+  letter-spacing: 0.08em; color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+.progress-note.dim { color: rgba(139, 152, 168, 0.6); }
+.progress-note.bad { color: var(--warn); }
