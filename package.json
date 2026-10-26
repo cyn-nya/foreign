@@ -16,6 +16,7 @@
     "verify": "npm run typecheck && npm run test && npm run build && npm run shoot"
   },
   "dependencies": {
+    "@manycore/aholo-viewer": "^1.11.0",
     "three": "^0.186.1"
   },
   "devDependencies": {
