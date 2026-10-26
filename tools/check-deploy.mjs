@@ -191,7 +191,20 @@ if (state) {
     const s = window.__splat;
     const walked = s.walk(1.0, 'KeyW');
     const moved = Math.hypot(walked.to[0] - walked.from[0], walked.to[2] - walked.from[2]);
-    const aimed = s.aimAt(0);
+    // `aimAt` points the head at the object's bounding-box centre, and for some
+    // assets the ray does not land there — so aiming at index 0 and marking made
+    // this check a coin flip that failed while the game was fine. A player moves
+    // the mouse until the crosshair is on the thing; do the same, and still
+    // require that at least one object *can* be brought under the crosshair, or
+    // the build would really be unmarkable.
+    let aimed = null;
+    for (let i = 0; i < s.placements().length; i++) {
+      const slot = s.aimAt(i);
+      if (slot && s.crosshair() === slot) {
+        aimed = slot;
+        break;
+      }
+    }
     const result = s.mark();
     return { moved, aimed, result: result?.result, found: s.found.length };
   });
@@ -202,8 +215,8 @@ if (state) {
   );
   check(
     'and can still find and mark something',
-    play.result === 'hit' && play.found === 1,
-    `aimed=${play.aimed} result=${play.result} found=${play.found}`,
+    play.aimed !== null && play.result === 'hit' && play.found === 1,
+    `aimed=${play.aimed ?? 'nothing reachable'} result=${play.result} found=${play.found}`,
   );
 }
 

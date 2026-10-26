@@ -298,10 +298,12 @@ async function main(): Promise<void> {
   const report = await room.loadAssets(ASSET_KEYS);
   debug.assets = { loaded: report.loaded.length, missing: report.missing };
 
-  // (stage 'ready' is set once the debug surface below is wired — see the
-  // note there. Announcing readiness before the harness can actually drive the
-  // game is how every acceptance check became a race.)
-  debug.ready = true;
+  // Neither `ready` nor `stage === 'ready'` is announced here — both mean "a
+  // harness can drive the game now", and it cannot yet. `debug.start`,
+  // `debug.watchers` and `debug.anchors` are still the stubs declared with the
+  // debug object, so a check that waits on `ready` and then calls `s.start(...)`
+  // gets a function that quietly does nothing and reads back the empty room from
+  // before the first floor was built. Both flags are set at the end of the boot.
   const assetLine = report.missing.length
     ? `未检测到 ${report.missing.length} 个资产的 Lux3D 原模型 · 正在使用烘焙占位模型`
     : `已载入 ${report.loaded.length} 个异物模型`;
@@ -714,6 +716,7 @@ async function main(): Promise<void> {
   // out stub functions that silently did nothing — an acceptance run that
   // raced the rest of the boot and reported an empty room.
   debug.stage = 'ready';
+  debug.ready = true;
 
   requestAnimationFrame(frame);
 }
