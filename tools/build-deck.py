@@ -176,26 +176,30 @@ def build():
 
     # 4 — the rule
     s = slide(prs)
-    y = head(s, "标记任何不可能出现在一个家里的东西", "玩法 · 一条规则", 4, "玩法")
-    text(s, MARGIN, y, Inches(6.6), Inches(1.0),
+    y = head(s, "只看它做什么，不看它是什么", "玩法 · 一条规则", 4, "玩法")
+    text(s, MARGIN, y, Inches(6.6), Inches(1.3),
          ["不需要背房间，不需要和上一层对比 —— 一眼就要能判。",
-          "这条约束砍掉了一整类设计：任何「和之前不一样」的东西都不能用。"],
-         size=14, color=DIM, space=8)
-    text(s, MARGIN, Inches(3.1), Inches(6.6), Inches(0.4),
-         [("因此删掉了「东西消失了」", {"size": 15, "bold": True, "color": ACCENT})], space=4)
-    text(s, MARGIN, Inches(3.5), Inches(6.6), Inches(0.8),
-         ["它只有在记得原样的前提下才成立。玩家第一次进房间，没有参照物。"],
+          "甚至不需要判断这东西该不该在这儿：房间里本来就摆着同样奇怪的模型。",
+          "凡是「和上一层不一样」才算的异常，都被砍掉了。"],
+         size=13, color=DIM, space=8)
+    text(s, MARGIN, Inches(3.25), Inches(6.6), Inches(0.4),
+         [("所以：异常一定在「动」", {"size": 15, "bold": True, "color": ACCENT})], space=4)
+    text(s, MARGIN, Inches(3.65), Inches(6.6), Inches(0.8),
+         ["在看你、浮起来、变了形、多了几个、倒过来、成群 —— 摆着不动的都是无辜的。"],
          size=12, color=DIM, space=0)
-    kinds = ["异物闯入", "注视", "悬浮", "变形", "复制", "倒挂", "成群"]
-    text(s, MARGIN, Inches(4.5), Inches(6.6), Inches(0.4),
-         [("现有 7 种异常", {"size": 15, "bold": True})], space=6)
+    kinds = ["注视", "悬浮", "变形", "复制", "倒挂", "成群"]
+    text(s, MARGIN, Inches(4.55), Inches(6.6), Inches(0.4),
+         [("现有 6 种异常", {"size": 15, "bold": True})], space=6)
     for i, k in enumerate(kinds):
         col, row = i % 4, i // 4
         bx = MARGIN + Inches(col * 1.62)
-        by = Inches(4.95) + Inches(row * 0.62)
+        by = Inches(5.0) + Inches(row * 0.62)
         panel(s, bx, by, Inches(1.46), Inches(0.5))
         text(s, bx, by + Inches(0.1), Inches(1.46), Inches(0.32), [k],
              size=12, align=PP_ALIGN.CENTER, space=0)
+    text(s, MARGIN, Inches(6.25), Inches(6.6), Inches(0.5),
+         ["删掉了「异物闯入」：房间里站着同类无辜物件之后，「它不该在这儿」就不再可判。"],
+         size=10, color=DIM, space=0)
     picture(s, "artifacts/shots/10-horror-stare.png", Inches(7.6), y - Inches(0.1), Inches(5.0), Inches(4.4))
 
     # 5 — Manycore tools
@@ -265,10 +269,10 @@ def build():
     s = slide(prs)
     y = head(s, "验收不是「我看过了」", "工程严谨性", 8, "质量")
     text(s, MARGIN, y, Inches(7.3), Inches(0.6),
-         ["npm run verify  =  类型检查 → 单测 → 构建 → 验收，共 161 项断言"],
+         ["npm run verify  =  类型检查 → 单测 → 构建 → 验收，共 170 项断言，全部通过"],
          size=14, color=INK, space=8)
-    stats = [("85", "单元测试"), ("10", "体素"), ("10", "资产"), ("5", "splat"),
-             ("29", "真实房间"), ("15", "程序化"), ("7", "部署")]
+    stats = [("91", "单元测试"), ("10", "体素"), ("10", "资产"), ("5", "splat"),
+             ("32", "真实房间"), ("15", "程序化"), ("7", "部署")]
     for i, (v, k) in enumerate(stats):
         bx = MARGIN + Inches(i * 1.42)
         panel(s, bx, Inches(2.5), Inches(1.28), Inches(1.05))
