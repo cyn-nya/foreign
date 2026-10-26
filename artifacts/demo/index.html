@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>FOREIGN / 异物 — demo</title>
+<style>
+  :root { --ink:#f2efe9; --dim:#a49d92; --bg:#07070a; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; overflow:hidden; background:var(--bg); }
+  body { font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC",system-ui,sans-serif; color:var(--ink); }
+
+  .scene {
+    position:absolute; inset:0; opacity:0;
+    transition:opacity 420ms ease;
+  }
+  .scene.on { opacity:1; }
+
+  /* Ken Burns keeps a still from reading as a dead slide. */
+  .scene .still {
+    position:absolute; inset:0;
+    background-size:cover; background-position:center;
+    transform:scale(1.06);
+    transition:transform 9s linear;
+  }
+  .scene.on .still { transform:scale(1.0); }
+
+  .card .caption {
+    position:absolute; left:0; right:0; bottom:0;
+    padding:46px 64px 44px;
+    background:linear-gradient(to top, rgba(4,4,7,.96) 12%, rgba(4,4,7,.82) 55%, rgba(4,4,7,0) 100%);
+  }
+  .card h2 { font-size:38px; line-height:1.28; margin:12px 0 14px; font-weight:700; letter-spacing:.4px; }
+  .card p { font-size:20px; line-height:1.72; color:#ddd7cd; max-width:1020px; }
+
+  .tag {
+    display:inline-block; font-size:15px; letter-spacing:3px;
+    color:#ff8f6b; border:1px solid rgba(255,143,107,.45);
+    border-radius:3px; padding:5px 12px;
+  }
+
+  .title-wrap, .text-wrap {
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    justify-content:center; padding:0 96px;
+  }
+  .title-wrap { align-items:flex-start; }
+  h1 { font-size:132px; letter-spacing:16px; font-weight:800; line-height:1; }
+  .sub { font-size:52px; letter-spacing:24px; color:#ff8f6b; margin:22px 0 40px; }
+  .line { font-size:23px; color:var(--dim); letter-spacing:1.2px; }
+  .text h2, .text-wrap h2 { font-size:40px; line-height:1.34; margin:16px 0 30px; max-width:1080px; }
+  .text-wrap ul { list-style:none; }
+  .text-wrap li {
+    font-size:21px; line-height:1.66; color:#ddd7cd; padding-left:30px;
+    position:relative; margin-bottom:16px; max-width:1060px;
+  }
+  .text-wrap li:before {
+    content:''; position:absolute; left:0; top:13px;
+    width:9px; height:9px; background:#ff8f6b; border-radius:1px;
+  }
+
+  #bar { position:absolute; left:0; bottom:0; height:3px; background:#ff8f6b; width:0; z-index:9; }
+</style>
+</head>
+<body>
+<section class="scene s-title" data-index="0">
+      <div class="title-wrap">
+        <h1>FOREIGN</h1>
+        <div class="sub">异物</div>
+        <p class="line">一间真实的房间。里面有些东西，本不该在这里。</p>
+      </div>
+    </section>
+<section class="scene s-card" data-index="1">
+    <div class="still" style="background-image:url('02-room.png')"></div>
+    <div class="caption">
+      <div class="tag">重建空间</div>
+      <h2>房间是扫描来的，不是我搭的</h2>
+      <p>整个空间由 3DGS 高斯泼溅重建 —— Aholo 官方开源室内场景，6,300 万个高斯点，63 MB。走进去、撞到墙、被家具挡住，全部由体素碰撞驱动。</p>
+    </div>
+  </section>
+<section class="scene s-text" data-index="2">
+      <div class="text-wrap">
+        <div class="tag">最初的问题</div>
+        <h2>「这东西该不该在这儿？」—— 原本没有答案</h2>
+        <ul><li>旁观物件和异常，原来是从同一份荒诞生成目录里抽的。</li><li>橡皮鸭、交通锥、地精、宇航员 —— 无辜的和有罪的，看起来是同一类东西。</li><li>于是判断没有真值，『多出来一个东西』这个类型甚至因为无法判断而被删掉了。</li></ul>
+      </div>
+    </section>
+<section class="scene s-card" data-index="3">
+    <div class="still" style="background-image:url('03-furniture.png')"></div>
+    <div class="caption">
+      <div class="tag">修法</div>
+      <h2>先给房间一个「正常」</h2>
+      <p>13 个家务家具 —— 盆栽、垃圾桶、椅子、落地灯、水壶…… 全部离线生成为扁平着色的 GLB，十三个加起来 83 KB，比原来一张 2048×2048 贴图还小。它们什么都不做。</p>
+    </div>
+  </section>
+<section class="scene s-card" data-index="4">
+    <div class="still" style="background-image:url('04-intruder.png')"></div>
+    <div class="caption">
+      <div class="tag">判断一 · 它不该存在</div>
+      <h2>生成物 = 入侵者</h2>
+      <p>只有 intrude 这一类用 Lux3D 生成的怪东西。房间里的家具永远无辜，生成的物体永远不是家具 —— 两个集合不许相交，「该不该在这儿」于是有了唯一答案。</p>
+    </div>
+  </section>
+<section class="scene s-card" data-index="5">
+    <div class="still" style="background-image:url('05-inverted.png')"></div>
+    <div class="caption">
+      <div class="tag">判断二 · 它不该这样</div>
+      <h2>家具做了家具不该做的事</h2>
+      <p>倒挂、浮空、巨大、变色、成堆 —— 行为类异常用的同样是家务家具。因为行为只有在「正常」的对照下才读得出来：一把倒挂的椅子，在一屋子椅子中间才叫诡异。</p>
+    </div>
+  </section>
+<section class="scene s-card" data-index="6">
+    <div class="still" style="background-image:url('06-swarm.png')"></div>
+    <div class="caption">
+      <div class="tag">判断二 · 继续</div>
+      <h2>多到数不清</h2>
+      <p>同一个东西出现十几个，散落成一群。这时候已经没人会去数了 —— 那正是重点。</p>
+    </div>
+  </section>
+<section class="scene s-card" data-index="7">
+    <div class="still" style="background-image:url('07-torch.png')"></div>
+    <div class="caption">
+      <div class="tag">恐怖</div>
+      <h2>一层比一层黑，手电筒越走越短</h2>
+      <p>黑暗从 0.18 逐层加到 0.86，手电筒半径从 0.62 m 缩到 0.26 m，闪烁一次比一次凶。第 8 层是最底层 —— 通关在那里。</p>
+    </div>
+  </section>
+<section class="scene s-card" data-index="8">
+    <div class="still" style="background-image:url('08-scare.png')"></div>
+    <div class="caption">
+      <div class="tag">恐吓</div>
+      <h2>它会在你背后出现</h2>
+      <p>每个隔 9–60 秒（越深越密）在你视野边缘炸开一张脸，配一层噪声爆裂和下滑的锯齿低频。第一次误判也会触发 —— 惩罚不是扣分，是吓你。</p>
+    </div>
+  </section>
+<section class="scene s-card" data-index="9">
+    <div class="still" style="background-image:url('09-marked.png')"></div>
+    <div class="caption">
+      <div class="tag">玩法</div>
+      <h2>标记。但只有三次机会</h2>
+      <p>看清了再开枪 —— 每层只有三次误判额度，用完这一层就结束。第一层只放一个异常，教你看什么叫做「不该在这儿」。</p>
+    </div>
+  </section>
+<section class="scene s-text" data-index="10">
+      <div class="text-wrap">
+        <div class="tag">技术</div>
+        <h2>全部由 Aholo 驱动，每一步都被验收</h2>
+        <ul><li>Lux3D 文生 3D：14 个异物资产，压缩后 70 MB → 10 MB。</li><li>3DGS 高斯泼溅：场景加载、体素碰撞、第一人称行走。</li><li>196 项断言全绿：103 单测 · 46 实机验收 · 10 体素 · 10 资产 · 15 程序化 · 7 部署。</li><li>无头 Chromium 真机跑验收，不是「我看过了」。</li></ul>
+      </div>
+    </section>
+<section class="scene s-title" data-index="11">
+      <div class="title-wrap">
+        <h1>异物</h1>
+        <div class="sub">FOREIGN</div>
+        <p class="line">cyn-nya.github.io/foreign</p>
+      </div>
+    </section>
+<div id="bar"></div>
+<script>
+  const HOLD = [5,8,9,8,8,8,7,9,5,7,9,5];
+  const scenes = [...document.querySelectorAll('.scene')];
+  const bar = document.getElementById('bar');
+  const total = HOLD.reduce((a, b) => a + b, 0);
+
+  // A plain clock, so the recording is deterministic: every scene is shown for
+  // exactly the seconds it declares, and the page reports when it is done so the
+  // recorder never truncates the ending.
+  let index = -1, sceneStart = 0, done = false;
+  const t0 = performance.now();
+
+  function frame(now) {
+    const elapsed = (now - t0) / 1000;
+    bar.style.width = Math.min(100, (elapsed / total) * 100) + '%';
+
+    let acc = 0, want = -1;
+    for (let i = 0; i < HOLD.length; i++) {
+      acc += HOLD[i];
+      if (elapsed < acc) { want = i; break; }
+    }
+    if (want === -1) { done = true; window.__demoDone = true; }
+    if (want !== index) {
+      if (index >= 0) scenes[index].classList.remove('on');
+      index = want;
+      if (want >= 0) scenes[want].classList.add('on');
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  window.__demo = { total, get index() { return index; }, get done() { return done; } };
+</script>
+</body>
+</html>

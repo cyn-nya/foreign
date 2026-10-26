@@ -1,0 +1,75 @@
+{
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "shots": [
+    "01-entry.png",
+    "02-room.png",
+    "03-furniture.png",
+    "04-intruder.png",
+    "05-inverted.png",
+    "06-swarm.png",
+    "07-torch.png",
+    "08-scare.png",
+    "09-marked.png"
+  ],
+  "evidence": [
+    {
+      "still": "03-furniture.png",
+      "of": "bystander",
+      "slotId": "fx_room_09",
+      "index": 1,
+      "confirmed": true
+    },
+    {
+      "still": "04-intruder.png",
+      "of": "intrude",
+      "slotId": "fx_room_04",
+      "kind": "intrude",
+      "key": "gnome",
+      "index": 0,
+      "confirmed": true
+    },
+    {
+      "still": "05-inverted.png",
+      "of": "invert",
+      "slotId": "fx_room_04",
+      "kind": "invert",
+      "key": "mundane_side_table",
+      "index": 0,
+      "confirmed": true
+    },
+    {
+      "still": "06-swarm.png",
+      "of": "swarm",
+      "slotId": "fx_room_04",
+      "kind": "swarm",
+      "key": "mundane_shoe_rack",
+      "index": 0,
+      "confirmed": true
+    },
+    {
+      "still": "08-scare.png",
+      "of": "scare",
+      "confirmed": true
+    },
+    {
+      "still": "09-marked.png",
+      "of": "mark",
+      "result": "hit",
+      "slotId": "fx_room_04",
+      "kind": "invert",
+      "key": "mundane_side_table",
+      "index": 0,
+      "confirmed": true
+    }
+  ],
+  "failures": [],
+  "report": {
+    "frames": 254,
+    "state": "playing",
+    "darkness": 0.5800000000000001
+  },
+  "pageErrors": []
+}
