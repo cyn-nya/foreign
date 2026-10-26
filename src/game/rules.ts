@@ -13,7 +13,7 @@
  */
 
 import { FOREIGN_ASSETS, INTRUDE_ANCHORS, ROOM, SLOTS, SPAWN, type ForeignAsset } from './catalog';
-import type { Anomaly, AnomalyKind, FloorPlan, MarkResult, RNG, SlotDef } from './types';
+import type { Anomaly, AnomalyKind, FloorPlan, MarkResult, RNG, SlotDef, Vec3 } from './types';
 
 /**
  * Wrong marks allowed before the run ends. The timer alone was not tense
@@ -123,18 +123,40 @@ function loudSlots(): SlotDef[] {
   return mutableSlots().filter((s) => !s.subtle);
 }
 
-function buildIntrude(rng: RNG, budget: number, usedAnchors: Set<string>): Anomaly | null {
-  const anchors = INTRUDE_ANCHORS.filter((a) => !usedAnchors.has(a.id));
-  if (anchors.length === 0) return null;
-  const anchor = pick(rng, anchors);
+/**
+ * A place a foreign object can be put.
+ *
+ * The procedural room names its spaces, so its anchors carry a `zone`. A
+ * reconstruction has no room labels — nobody ever told the scanner which part
+ * was the kitchen — so its anchors carry a `place` phrase instead, and the
+ * anchors themselves are measured out of the scan by `tools/build-anchors.mjs`.
+ */
+export interface AnchorDef {
+  id: string;
+  /** Base of the object. `y` is the floor at that spot, which is not level. */
+  pos: Vec3;
+  zone?: SlotDef['zone'];
+  place?: string;
+}
+
+function placeOf(anchor: AnchorDef): string {
+  if (anchor.place) return anchor.place;
+  if (anchor.zone) return zoneName(anchor.zone);
+  return '房间里';
+}
+
+function buildIntrude(
+  rng: RNG,
+  budget: number,
+  usedAnchors: Set<string>,
+  anchors: readonly AnchorDef[],
+): Anomaly | null {
+  const free = anchors.filter((a) => !usedAnchors.has(a.id));
+  if (free.length === 0) return null;
+  const anchor = pick(rng, free);
   usedAnchors.add(anchor.id);
 
-  const pool: ForeignAsset[] = budget <= 0
-    ? FOREIGN_ASSETS.filter((a) => a.weirdness === 1)
-    : budget === 1
-      ? FOREIGN_ASSETS.filter((a) => a.weirdness <= 2)
-      : FOREIGN_ASSETS;
-  const asset = pick(rng, pool);
+  const asset = pick(rng, foreignPool(budget));
 
   return {
     id: nextId('intrude', anchor.id),
@@ -143,25 +165,37 @@ function buildIntrude(rng: RNG, budget: number, usedAnchors: Set<string>): Anoma
     assetKey: asset.key,
     // deterministic, seeded: the same floor must always look the same
     rotY: rng() * Math.PI * 2,
-    label: `${zoneName(anchor.zone)}出现了一个${asset.name}`,
+    label: `${placeOf(anchor)}出现了一个${asset.name}`,
   };
 }
 
+/** Which assets a floor is allowed to draw from, by how strange it may get. */
+function foreignPool(budget: number): ForeignAsset[] {
+  if (budget <= 0) return FOREIGN_ASSETS.filter((a) => a.weirdness === 1);
+  if (budget === 1) return FOREIGN_ASSETS.filter((a) => a.weirdness <= 2);
+  return FOREIGN_ASSETS;
+}
+
 /**
- * Something hanging in the air at head height, turned to face the door.
+ * Something hanging in the air at head height, turned to face the way in.
  * This is the kind that replaced 'vanish': it is impossible to miss and
  * impossible to argue with, and it needs no memory of the room.
  */
-function buildStare(rng: RNG, usedAnchors: Set<string>): Anomaly | null {
-  const anchors = INTRUDE_ANCHORS.filter((a) => !usedAnchors.has(a.id));
-  if (anchors.length === 0) return null;
-  const anchor = pick(rng, anchors);
+function buildStare(
+  rng: RNG,
+  usedAnchors: Set<string>,
+  anchors: readonly AnchorDef[],
+  spawn: Vec3,
+): Anomaly | null {
+  const free = anchors.filter((a) => !usedAnchors.has(a.id));
+  if (free.length === 0) return null;
+  const anchor = pick(rng, free);
   usedAnchors.add(anchor.id);
 
   const asset = pick(rng, horrorAssets());
   const height = 1.15 + rng() * 0.7;
-  const dx = SPAWN.pos.x - anchor.pos.x;
-  const dz = SPAWN.pos.z - anchor.pos.z;
+  const dx = spawn.x - anchor.pos.x;
+  const dz = spawn.z - anchor.pos.z;
 
   return {
     id: nextId('stare', anchor.id),
@@ -169,9 +203,9 @@ function buildStare(rng: RNG, usedAnchors: Set<string>): Anomaly | null {
     slotId: anchor.id,
     assetKey: asset.key,
     offset: { x: 0, y: height, z: 0 },
-    // atan2(dx, dz) points the prop's +z axis at the player's spawn
+    // atan2(dx, dz) points the prop's +z axis back at the way in
     rotY: Math.atan2(dx, dz),
-    label: `${zoneName(anchor.zone)}半空浮着一个${asset.name}，正对着门口`,
+    label: `${placeOf(anchor)}半空浮着一个${asset.name}，正对着门口`,
   };
 }
 
@@ -236,6 +270,85 @@ function buildSlotAnomaly(
   return base;
 }
 
+/**
+ * The kinds that are about *where* something is rather than that it exists,
+ * built at an anchor instead of on a furniture slot.
+ *
+ * In a reconstruction this is the only way they can work: the furniture is
+ * baked into the scan, so there is nothing to lift, resize or duplicate. What
+ * can be lifted, resized or duplicated is the object placed into the room — so
+ * all five kinds end up operating on the same thing, which is also easier to
+ * read as a player: every anomaly is about an object that does not belong.
+ */
+function buildForeignAnomaly(
+  rng: RNG,
+  anchor: AnchorDef,
+  budget: number,
+  kind: AnomalyKind,
+): Anomaly {
+  const asset = pick(rng, foreignPool(budget));
+  const base = {
+    id: nextId(kind, anchor.id),
+    kind,
+    slotId: anchor.id,
+    assetKey: asset.key,
+    rotY: rng() * Math.PI * 2,
+  } as Anomaly;
+
+  switch (kind) {
+    case 'shift': {
+      // Either adrift, or pinned up near the ceiling. Both are unmistakable
+      // without any memory of where the object used to be.
+      const pinned = rng() < 0.35;
+      base.offset = {
+        x: (rng() - 0.5) * 0.8,
+        y: pinned ? 1.95 + rng() * 0.25 : 0.55 + rng() * 1.1,
+        z: (rng() - 0.5) * 0.8,
+      };
+      base.label = pinned
+        ? `${placeOf(anchor)}的天花板上粘着一个${asset.name}`
+        : `${placeOf(anchor)}有个${asset.name}浮在半空`;
+      break;
+    }
+    case 'warp': {
+      if (rng() < 0.5) {
+        const huge = rng() < 0.5;
+        base.scale = huge ? 2.1 + rng() * 1.2 : 0.32 + rng() * 0.16;
+        base.label = huge
+          ? `${placeOf(anchor)}有个${asset.name}大得离谱`
+          : `${placeOf(anchor)}有个${asset.name}小得离谱`;
+      } else {
+        base.tint = pick(rng, WRONG_TINTS);
+        base.label = `${placeOf(anchor)}有个${asset.name}的颜色完全不对劲`;
+      }
+      break;
+    }
+    case 'twin': {
+      base.count = 3 + Math.floor(rng() * 3);
+      base.label = `${placeOf(anchor)}的同一个${asset.name}出现了 ${base.count} 个`;
+      break;
+    }
+    default:
+      base.label = `${placeOf(anchor)}有东西不对劲`;
+  }
+  return base;
+}
+
+/** Consume a free anchor and build a non-object anomaly there. */
+function buildForeignAtAnchor(
+  rng: RNG,
+  budget: number,
+  usedAnchors: Set<string>,
+  anchors: readonly AnchorDef[],
+  kind: AnomalyKind,
+): Anomaly | null {
+  const free = anchors.filter((a) => !usedAnchors.has(a.id));
+  if (free.length === 0) return null;
+  const anchor = pick(rng, free);
+  usedAnchors.add(anchor.id);
+  return buildForeignAnomaly(rng, anchor, budget, kind);
+}
+
 /* ------------------------------------------------------------------ *
  * Floor generation
  * ------------------------------------------------------------------ */
@@ -243,12 +356,26 @@ function buildSlotAnomaly(
 export interface GenerateOptions {
   /** Force a specific mix of kinds — used by tests. */
   kinds?: AnomalyKind[];
+  /** Where foreign objects may be placed. Defaults to the procedural room's. */
+  anchors?: readonly AnchorDef[];
+  /** The way in, which 'stare' turns to face. Defaults to the procedural room's. */
+  spawn?: Vec3;
+  /**
+   * The room is a fixed reconstruction: its furniture is baked into the scan and
+   * cannot be moved, duplicated or hidden. So every anomaly is one of the objects
+   * placed into it, and all five kinds are built at an anchor.
+   */
+  foreignOnly?: boolean;
 }
 
 export function generateFloor(floor: number, seed: number, opts: GenerateOptions = {}): FloorPlan {
   const rng = mulberry32(seed);
   const budget = subtletyBudget(floor);
   const count = Math.max(1, Math.min(6, opts.kinds?.length ?? anomalyCountForFloor(floor)));
+
+  const anchors = opts.anchors ?? INTRUDE_ANCHORS;
+  const spawn = opts.spawn ?? SPAWN.pos;
+  const foreignOnly = opts.foreignOnly === true;
 
   const anomalies: Anomaly[] = [];
   const usedAnchors = new Set<string>();
@@ -258,8 +385,14 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
 
   // Floor 1 is scripted: one unmissable intruder right on the walking path.
   if (floor === 1 && !opts.kinds) {
-    const anchor = INTRUDE_ANCHORS.reduce((best, a) =>
-      a.zone === 'living' && a.id === 'fx_living_centre' ? a : best, INTRUDE_ANCHORS[0]);
+    // In the procedural room that means a named spot; in a reconstruction there
+    // are no names, so it means whichever anchor is nearest the way in — which
+    // is the one the player is already facing.
+    const anchor = foreignOnly
+      ? anchors.reduce((best, a) =>
+          distance2d(a.pos, spawn) < distance2d(best.pos, spawn) ? a : best, anchors[0])
+      : anchors.reduce((best, a) =>
+          a.zone === 'living' && a.id === 'fx_living_centre' ? a : best, anchors[0]);
     const asset = FOREIGN_ASSETS.find((a) => a.key === 'duck') ?? FOREIGN_ASSETS[0];
     anomalies.push({
       id: nextId('intrude', anchor.id),
@@ -267,7 +400,7 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
       slotId: anchor.id,
       assetKey: asset.key,
       rotY: 0,
-      label: `客厅里有一只不该在这里的${asset.name}`,
+      label: `${placeOf(anchor)}有一只不该在这里的${asset.name}`,
     });
     usedAnchors.add(anchor.id);
     return { floor, seed, anomalies, hiddenSlots, twinSlots, duration: durationForFloor(floor) };
@@ -275,6 +408,32 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
 
   const requested = opts.kinds ? opts.kinds.slice() : null;
   const kinds = allowedKinds(budget);
+
+  // In a reconstruction there is no furniture to move, duplicate or hide, so
+  // every kind is built on an anchor and the slot pools simply do not apply.
+  if (foreignOnly) {
+    for (let i = 0; i < count; i++) {
+      const forced = requested ? requested[i % requested.length] : null;
+      const kind = forced ?? pick(rng, kinds);
+      const built = kind === 'stare'
+        ? buildStare(rng, usedAnchors, anchors, spawn)
+        : kind === 'intrude'
+          ? buildIntrude(rng, budget, usedAnchors, anchors)
+          : buildForeignAtAnchor(rng, budget, usedAnchors, anchors, kind);
+      // Running out of anchors ends the floor rather than repeating a place:
+      // two anomalies at one spot read as one anomaly.
+      if (!built) break;
+      anomalies.push(built);
+    }
+    return {
+      floor,
+      seed,
+      anomalies,
+      hiddenSlots,
+      twinSlots,
+      duration: durationForFloor(floor),
+    };
+  }
 
   // Candidate pools, ordered loud-first so early floors read clearly.
   const slotPool = shuffle(rng, budget <= 0 ? loudSlots() : mutableSlots());
@@ -285,8 +444,8 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
 
     if (kind === 'intrude' || kind === 'stare') {
       const spawned = kind === 'stare'
-        ? buildStare(rng, usedAnchors)
-        : buildIntrude(rng, budget, usedAnchors);
+        ? buildStare(rng, usedAnchors, anchors, spawn)
+        : buildIntrude(rng, budget, usedAnchors, anchors);
       if (spawned) {
         anomalies.push(spawned);
         continue;
@@ -312,6 +471,10 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
     twinSlots,
     duration: durationForFloor(floor),
   };
+}
+
+function distance2d(a: Vec3, b: Vec3): number {
+  return Math.hypot(a.x - b.x, a.z - b.z);
 }
 
 /* ------------------------------------------------------------------ *

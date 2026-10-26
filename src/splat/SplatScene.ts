@@ -22,25 +22,16 @@ import {
 } from '@manycore/aholo-viewer';
 import { loadVoxelCollision } from '../viewer/voxel.ts';
 import type { VoxelCollision } from '../viewer/VoxelCollision.ts';
+import {
+  ROOM_SCENE_URL,
+  ROOM_SPAWN,
+  ROOM_VOXEL_BIN_URL,
+  ROOM_VOXEL_META_URL,
+} from './roomData.ts';
 
-const GS = 'https://holo-cos.aholo3d.cn/aholo-opensource/gs_file';
-
-/** Aholo's open-source indoor reconstruction, and its matching collision field. */
-export const ROOM_SCENE_URL = `${GS}/room/scene.7c26e842.spz`;
-export const ROOM_VOXEL_META_URL = `${GS}/room/voxel/10c88df3/collision.voxel-meta.json`;
-export const ROOM_VOXEL_BIN_URL = `${GS}/room/voxel/10c88df3/collision.voxel.bin`;
-
-/**
- * WALK_DEMO_INDOOR_POSE from the official walk demo: the pose they ship for a
- * first-person walk of this scene. `y` is the eye height, not the feet.
- */
-export const ROOM_SPAWN = {
-  x: -4.148223469209742,
-  y: 1.0000000000000002,
-  z: 1.2315243027420304,
-  yaw: -1.7860000000000005,
-  pitch: 0.082,
-} as const;
+// The room's data lives in a renderer-free module so it stays unit-testable;
+// re-exported here so callers of the scene do not have to know that.
+export { ROOM_SCENE_URL, ROOM_SPAWN, ROOM_VOXEL_BIN_URL, ROOM_VOXEL_META_URL };
 
 /** fov/near/far from WALK_CAMERA in the official walk demo. */
 const CAMERA = { fov: 60, near: 0.1, far: 1_000_000 } as const;
