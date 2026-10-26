@@ -14,6 +14,7 @@
     "shoot": "node tools/shoot.mjs",
     "assets:plan": "node tools/generate-assets.mjs --dry-run",
     "assets:generate": "node tools/generate-assets.mjs",
+    "assets:import": "node tools/import-assets.mjs",
     "assets:placeholders": "node tools/build-placeholders.mjs",
     "voxel:check": "node tools/check-voxel.mjs",
     "anchors:build": "node tools/build-anchors.mjs",

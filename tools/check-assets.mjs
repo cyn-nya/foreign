@@ -123,15 +123,32 @@ try {
   // --- the real catalogue, right now ------------------------------------------
   const catalogue = JSON.parse(fs.readFileSync(path.join(root, 'data', 'foreign-assets.json'), 'utf8'));
   const outDir = path.join(root, 'public', 'assets', 'foreign');
+  const realManifest = path.join(outDir, 'manifest.json');
+  const realManifestSource = fs.existsSync(realManifest)
+    ? JSON.parse(fs.readFileSync(realManifest, 'utf8')).source
+    : null;
   const real = classifyAssets({
     assets: catalogue.assets,
     target: (key) => path.join(outDir, `${key}.glb`),
-    manifestPath: path.join(outDir, 'manifest.json'),
+    manifestPath: realManifest,
   });
+
+  // The invariant is not "all or nothing" — a partly generated catalogue is the
+  // normal state while work is in progress, and asserting otherwise failed on a
+  // perfectly valid repository. What must never happen is a recorded claim with
+  // no file behind it, or a recorded Lux3D provenance in a manifest that is not
+  // ours to read.
+  const claimed = lux3dKeys(realManifest);
+  const orphaned = [...claimed].filter((key) => !fs.existsSync(path.join(outDir, `${key}.glb`)));
   check(
-    'the repository is not claiming Lux3D assets it does not have',
-    real.already.length === 0 || real.standIns.length === 0,
-    `already=${real.already.length} todo=${real.todo.length} standIns=${real.standIns.length}`,
+    'no asset is recorded as Lux3D without a file behind it',
+    orphaned.length === 0,
+    orphaned.length ? `missing: ${orphaned.join(', ')}` : `${claimed.size} recorded, all present`,
+  );
+  check(
+    'Lux3D provenance is only ever read from a Lux3D manifest',
+    realManifestSource !== LUX3D_SOURCE || real.already.length > 0 || claimed.size === 0,
+    `manifest source: ${realManifestSource ?? '(none)'}`,
   );
   console.log(
     `\n  current state: ${real.already.length} from Lux3D, ${real.standIns.length} placeholders, ` +

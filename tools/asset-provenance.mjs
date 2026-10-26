@@ -16,6 +16,22 @@ export const LUX3D_SOURCE = 'aholo-lux3d-text-to-3d';
 export const PLACEHOLDER_SOURCE = 'procedural placeholders';
 
 /**
+ * Reject a file that is not a usable GLB.
+ *
+ * Returns a reason, or `null` when the bytes are fine. Applied to everything
+ * that lands in `public/assets/foreign/` from outside, because the failure this
+ * prevents is quiet: a truncated download or an HTML error page saved with a
+ * `.glb` extension both produce a file the game will fail to parse at runtime,
+ * long after whoever downloaded it has moved on.
+ */
+export function validateGlbBytes(bytes) {
+  if (bytes.length < 1024) return `suspiciously small (${bytes.length} bytes)`;
+  // GLB magic is "glTF"
+  if (bytes.subarray(0, 4).toString('ascii') !== 'glTF') return 'not a GLB (bad magic)';
+  return null;
+}
+
+/**
  * Keys recorded in the manifest as produced by Lux3D.
  *
  * Anything unreadable, missing, or written by another tool yields an empty set —

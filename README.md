@@ -141,13 +141,30 @@ npm run verify
 
 ## Aholo 集成
 
-- **Aholo Lux3D（必需）**：生成异物资产。prompt 写在 `data/foreign-assets.json`，
-  导出的 `.glb` 放进 `public/assets/foreign/<key>.glb` 即自动生效。
+- **Aholo Lux3D（必需）**：生成异物资产。prompt 写在 `data/foreign-assets.json`。
+  **两条路，任选其一** —— 网页版不需要 API key：
+
+  ```bash
+  # 有 key：一条命令跑完 21 个（生成 → 轮询 → 下载 → 记录来源）
+  npm run assets:generate
+
+  # 没有 key：在 https://lux3d.aholo.ai/lux3d/home 用网页版逐个生成并下载，
+  # 然后把下载目录交给这个工具，它会校验、命名、归位并记录来源
+  npm run assets:import -- ~/Downloads
+  ```
+
+  `assets:import` 会交互式列出每个 key 对应的 prompt，你按着读就能对上；
+  也可以用 `--order`（按目录顺序）或 `--set duck=file.glb`。
+
 - **Aholo Viewer / 3DGS（已用）**：真实房间后端，见 `docs/05-3DGS接入配方.md`。
 - **Aholo API（可选）**：`src/aholo/client.ts`，用于批量生成。
 
 生成结果没有统一的比例和轴心，所以会按每个资产的目标高度归一化、
 并把底面重新对齐到 y = 0 —— 否则「一盒牛奶」会以两米高进来。
+
+`npm run assets:check` 会断言「哪些资产真的来自 Lux3D」。
+**这不是多余的**：原先的判断只看 `.glb` 是否存在，而占位模型写在同样的路径上，
+于是填上 key 之后工具会报「无事可做」并跳过全部 21 个 —— 静默失效。
 
 ## 仓库内容
 
