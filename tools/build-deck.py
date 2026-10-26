@@ -241,7 +241,7 @@ def build():
     panel(s, MARGIN, y + Inches(3.15), Inches(7.0), Inches(1.0))
     text(s, MARGIN + Inches(0.24), y + Inches(3.3), Inches(6.5), Inches(0.75),
          [("共享层：规则 / 目录 / 类型", {"size": 15, "bold": True, "color": GOOD, "space": 3}),
-          ("不含任何渲染依赖，所以同一套关卡生成逻辑被两个后端使用，也被 85 个单测覆盖。",
+          ("不含任何渲染依赖，所以同一套关卡生成逻辑被两个后端使用，也被 103 个单测覆盖。",
            {"size": 12, "color": DIM})], space=0)
     picture(s, "artifacts/shots/02-living-room.png", Inches(8.3), y, Inches(4.3), Inches(4.15))
 
@@ -269,10 +269,10 @@ def build():
     s = slide(prs)
     y = head(s, "验收不是「我看过了」", "工程严谨性", 8, "质量")
     text(s, MARGIN, y, Inches(7.3), Inches(0.6),
-         ["npm run verify  =  类型检查 → 单测 → 构建 → 验收，共 170 项断言，全部通过"],
+         ["npm run verify  =  类型检查 → 单测 → 构建 → 验收，共 196 项断言，全部通过"],
          size=14, color=INK, space=8)
-    stats = [("91", "单元测试"), ("10", "体素"), ("10", "资产"), ("5", "splat"),
-             ("32", "真实房间"), ("15", "程序化"), ("7", "部署")]
+    stats = [("103", "单元测试"), ("10", "体素"), ("10", "资产"), ("5", "splat"),
+             ("46", "真实房间"), ("15", "程序化"), ("7", "部署")]
     for i, (v, k) in enumerate(stats):
         bx = MARGIN + Inches(i * 1.42)
         panel(s, bx, Inches(2.5), Inches(1.28), Inches(1.05))
