@@ -35,7 +35,45 @@ export { ROOM_SCENE_URL, ROOM_SPAWN, ROOM_VOXEL_BIN_URL, ROOM_VOXEL_META_URL };
 
 /** fov/near/far from WALK_CAMERA in the official walk demo. */
 const CAMERA = { fov: 60, near: 0.1, far: 1_000_000 } as const;
+/**
+ * Spherical-harmonic bands kept per splat.
+ *
+ * Degree 3 carries 48 extra floats per splat and buys view-dependent highlights
+ * on a scan that is mostly matte wallpaper. It is the first thing to give up
+ * when the frame rate is the problem, and it is settable from `?sh=` so the
+ * trade can be measured instead of guessed.
+ */
 const MAX_SH_DEGREE = 3;
+
+export type CullingKey =
+  | 'frustumCullingEnabled'
+  | 'occlusionCullingEnabled'
+  | 'detailCullingEnabled'
+  | 'layersCullingEnabled'
+  | 'triCullingEnabled';
+
+/**
+ * Every culling switch off — and that is a measurement, not an inheritance.
+ *
+ * The obvious theory was that the room ran at 2-3 fps because nothing was being
+ * skipped, so all 63 MB of splats were sorted and drawn every frame including
+ * the ones behind the camera. Turning frustum culling on to fix that made it
+ * **16x slower** (2.79 fps -> 0.17 fps): the per-splat culling pass costs far
+ * more than drawing what it discards. Occlusion and detail culling are no
+ * better, and the viewer turns detail culling on by itself when occlusion is on.
+ * Measured on the real scan at 960x540, fps: all-off 2.79, frustum 0.17,
+ * frustum+detail 0.17, frustum+occlusion 0.17, all-on 0.33.
+ *
+ * Do not switch these back on without measuring; the intuition points the wrong
+ * way here.
+ */
+const DEFAULT_CULLING: Record<CullingKey, boolean> = {
+  frustumCullingEnabled: false,
+  occlusionCullingEnabled: false,
+  detailCullingEnabled: false,
+  layersCullingEnabled: false,
+  triCullingEnabled: false,
+};
 const MAX_TEXTURE_SIZE = 8192;
 
 export interface SplatSceneOptions {
@@ -50,6 +88,26 @@ export class SplatScene {
   collision: VoxelCollision | null = null;
   /** The splat object, kept so the harness can remove it as a control. */
   splat: unknown = null;
+
+  /**
+   * The viewer's culling switches, reached through an untyped internal.
+   *
+   * Which of these the reconstruction survives is measured, not assumed — see
+   * DEFAULT_CULLING. They are exposed here rather than fixed at construction so
+   * the acceptance harness can measure every combination in one session.
+   */
+  cullingConfig: Record<string, boolean> | null = null;
+
+  setCulling(patch: Partial<Record<CullingKey, boolean>>): void {
+    if (!this.cullingConfig) return;
+    for (const [key, value] of Object.entries(patch)) {
+      this.cullingConfig[key] = value as boolean;
+    }
+  }
+
+  get culling(): Record<string, boolean> {
+    return this.cullingConfig ? { ...this.cullingConfig } : {};
+  }
 
   private constructor(
     viewer: Viewer,
@@ -107,15 +165,10 @@ export class SplatScene {
       };
     };
     const culling = internals.defaultViewport?.drivenCullingConfig;
-    if (culling) {
-      culling.frustumCullingEnabled = false;
-      culling.occlusionCullingEnabled = false;
-      culling.detailCullingEnabled = false;
-      culling.layersCullingEnabled = false;
-      culling.triCullingEnabled = false;
-    }
-
-    return new SplatScene(viewer, camera, options);
+    const scene = new SplatScene(viewer, camera, options);
+    scene.cullingConfig = culling ?? null;
+    scene.setCulling(DEFAULT_CULLING);
+    return scene;
   }
 
   /**
@@ -126,7 +179,11 @@ export class SplatScene {
    * The download is retried because this is 63 MB from a CDN and a single
    * transient reset should not fail a run.
    */
-  async loadSplat(url: string = ROOM_SCENE_URL, signal?: AbortSignal): Promise<void> {
+  async loadSplat(
+    url: string = ROOM_SCENE_URL,
+    signal?: AbortSignal,
+    shDegree: number = MAX_SH_DEGREE,
+  ): Promise<void> {
     const progress = (fraction: number, label: string) => {
       this.options.onProgress?.(Math.max(0, Math.min(1, fraction)), label);
     };
@@ -165,7 +222,7 @@ export class SplatScene {
       SplatLoader.SplatFileType.SPZ,
       bytes,
       SplatLoader.SplatPackType.Compressed,
-      { maxShDegree: MAX_SH_DEGREE, maxTextureSize: MAX_TEXTURE_SIZE },
+      { maxShDegree: shDegree, maxTextureSize: MAX_TEXTURE_SIZE },
     );
     progress(0.97, '构建场景');
     this.splat = await SplatUtils.createSplat(data);

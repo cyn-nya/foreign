@@ -95,6 +95,9 @@ interface SplatDebug {
   watchers: () => { slotId: string; x: number; z: number; yaw: number; expectedYaw: number; yawError: number; y: number; baseY: number; elapsed: number }[];
   /** The anchors, with a ready-to-use eye position, so a harness can stand somewhere. */
   crosshair: () => string | null;
+  setCulling: (patch: Record<string, boolean>) => void;
+  culling: () => Record<string, boolean>;
+
   anchors: () => { id: string; floor: { x: number; y: number; z: number }; eye: { x: number; y: number; z: number } }[];
   /** Where each placed object is, in the room and on screen. */
   placements: () => { slotId: string; kind: string; assetKey?: string; x: number; y: number; z: number; rotX: number; scale: number; onScreen: boolean }[];
@@ -160,6 +163,9 @@ const debug: SplatDebug = {
   bystanderCount: 0,
   watchers: () => [],
   crosshair: () => null,
+  setCulling: () => undefined,
+  culling: () => ({}),
+
   anchors: () => [],
   placements: () => [],
   tick: () => undefined,
@@ -256,11 +262,23 @@ async function main(): Promise<void> {
   // playing differently. Seen in practice — two loads in one harness run, on a
   // throttled connection, failed exactly here. Bounded at three, because each
   // attempt restarts the transfer and there is no point pretending otherwise.
+  // Read before the splat loads, because `?sh=` decides how the scan is parsed.
+  const params = new URLSearchParams(window.location.search);
+  const requestedFloor = Number(params.get('floor') ?? Number.NaN);
+  const requestedSeed = Number(params.get('seed') ?? Number.NaN);
+  // `?sh=` trades view-dependent highlights for frame rate. Absent means the
+  // default; 0-3 are the legal band counts.
+  const requestedSh = Number(params.get('sh') ?? Number.NaN);
+
   debug.stage = 'splat';
   let splatError: unknown = null;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      await scene.loadSplat();
+      await scene.loadSplat(
+        undefined,
+        undefined,
+        Number.isFinite(requestedSh) ? requestedSh : undefined,
+      );
       splatError = null;
       break;
     } catch (error) {
@@ -319,11 +337,6 @@ async function main(): Promise<void> {
    */
   let plan: FloorPlan | null = null;
 
-  // `?autostart=1` skips the menu, so a demo link opens straight into the room.
-  // `?floor=` and `?seed=` make a specific floor reproducible for a screenshot.
-  const params = new URLSearchParams(window.location.search);
-  const requestedFloor = Number(params.get('floor') ?? Number.NaN);
-  const requestedSeed = Number(params.get('seed') ?? Number.NaN);
   if (params.get('autostart') === '1') {
     await startFloor(
       Number.isFinite(requestedFloor) && requestedFloor > 0 ? requestedFloor : 1,
@@ -641,6 +654,11 @@ async function main(): Promise<void> {
 
   /** What the crosshair is on right now, without spending a mark. */
   debug.crosshair = () => room.pick(scene.camera, scene.viewer.getSize().height);
+
+  /** Measure the room without a floor in the way, for the performance work. */
+  debug.setCulling = (patch) => scene.setCulling(patch);
+  debug.culling = () => scene.culling;
+
 
   debug.anchors = () =>
     ROOM_ANCHORS.map((anchor) => ({
