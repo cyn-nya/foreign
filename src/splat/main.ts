@@ -86,6 +86,8 @@ interface SplatDebug {
   anchors: () => { id: string; floor: { x: number; y: number; z: number }; eye: { x: number; y: number; z: number } }[];
   /** Where each placed object is, in the room and on screen. */
   placements: () => { slotId: string; kind: string; assetKey?: string; x: number; y: number; z: number; rotX: number; scale: number; onScreen: boolean }[];
+  /** Turn the camera by a mouse-sized delta. */
+  look: (movementX: number, movementY: number) => void;
   /** Advance the clock by hand so a floor can be finished without waiting. */
   tick: (seconds: number) => void;
   /** Start audio. A gesture starts it in a real browser; a harness has to ask. */
@@ -135,6 +137,7 @@ const debug: SplatDebug = {
   setAutoRender: () => undefined,
   renderOnce: () => undefined,
   walk: () => ({ from: [0, 0, 0], to: [0, 0, 0] }),
+  look: () => undefined,
   audioStart: () => false,
   audio: () => ({ state: 'none', gain: 0, rms: 0, tension: 0 }),
   proximity: () => ({ tension: 0, nearest: null }),
@@ -423,6 +426,7 @@ async function main(): Promise<void> {
   debug.audio = () => audio.read();
   debug.proximity = () => proximity();
 
+  debug.look = (dx, dy) => player.look(dx, dy);
   debug.setKey = (code, down) => player.setKey(code, down);
   debug.respawn = () => player.respawn();
   debug.setCollision = (enabled) => player.setCollision(enabled ? scene.collision : null);

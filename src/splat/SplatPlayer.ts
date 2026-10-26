@@ -215,11 +215,23 @@ export class SplatPlayer {
     if (!this.locked) this.keys.clear();
   };
 
+  /**
+   * Apply a look delta, in the same units a mouse reports.
+   *
+   * The mousemove handler is a thin wrapper over this, so a recording driven by
+   * `look()` goes through exactly the code the player's mouse goes through —
+   * rather than through a second, parallel way of aiming the camera that could
+   * drift from the real one.
+   */
+  look(movementX: number, movementY: number): void {
+    this.yaw -= movementX * LOOK_SENSITIVITY;
+    this.pitch -= movementY * LOOK_SENSITIVITY;
+    this.pitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, this.pitch));
+  }
+
   private onMouseMove = (e: MouseEvent): void => {
     if (!this.locked) return;
-    this.yaw -= e.movementX * LOOK_SENSITIVITY;
-    this.pitch -= e.movementY * LOOK_SENSITIVITY;
-    this.pitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, this.pitch));
+    this.look(e.movementX, e.movementY);
   };
 
   dispose(): void {

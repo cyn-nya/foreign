@@ -19,6 +19,7 @@
     "anchors:build": "node tools/build-anchors.mjs",
     "splat:check": "node tools/probe.mjs --scene room --no-sweep --glb ./assets/foreign/eye.glb",
     "splat:shoot": "node tools/splat-shoot.mjs",
+    "record": "node tools/record.mjs",
     "verify": "npm run typecheck && npm run voxel:check && npm run test && npm run build && npm run splat:check && npm run splat:shoot && npm run shoot"
   },
   "dependencies": {

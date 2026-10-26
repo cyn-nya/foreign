@@ -22,44 +22,15 @@
  */
 
 import fs from 'node:fs';
-import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { startStatic } from './static-server.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(root, 'dist');
 const outDir = path.join(root, 'artifacts', 'splat');
 fs.mkdirSync(outDir, { recursive: true });
-
-const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.map': 'application/json',
-  '.png': 'image/png',
-  '.svg': 'image/svg+xml',
-  '.glb': 'model/gltf-binary',
-};
-
-function serve(dir) {
-  const server = http.createServer((req, res) => {
-    const url = decodeURIComponent((req.url ?? '/').split('?')[0]);
-    let file = path.join(dir, url === '/' ? 'index.html' : url);
-    if (!file.startsWith(dir)) {
-      res.writeHead(403).end('forbidden');
-      return;
-    }
-    if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(dir, 'index.html');
-    const body = fs.readFileSync(file);
-    res.writeHead(200, { 'content-type': MIME[path.extname(file)] ?? 'application/octet-stream' });
-    res.end(body);
-  });
-  return new Promise((resolve) => {
-    server.listen(0, '127.0.0.1', () => resolve({ server, port: server.address().port }));
-  });
-}
 
 const checks = [];
 const check = (name, ok, detail = '') => {
@@ -85,8 +56,9 @@ async function shoot(page, name) {
   return buffer.length;
 }
 
-const { server, port } = await serve(dist);
-const base = `http://127.0.0.1:${port}`;
+const server = await startStatic(dist);
+const base = server.url;
+const port = server.port;
 
 const browser = await chromium.launch({
   args: [
@@ -420,18 +392,47 @@ try {
     const near = sorted[0];
     const far = sorted[sorted.length - 1];
 
+    // Wait for the drone to actually settle rather than guessing a duration.
+    //
+    // This has to poll the *gain*, not the tension. `setTargetAtTime` is
+    // re-anchored every frame, so the ramp converges in frames rather than in
+    // wall-clock time — and under software rendering at a handful of frames per
+    // second, half a second of sleeping moves the gain almost not at all. The
+    // earlier fixed sleep made this check fail about one run in three.
+    // Wait for the gain to reach the level the player's *current* position calls
+    // for — not merely for it to stop changing. Two consecutive equal readings
+    // is satisfied instantly by the value left over from the previous position,
+    // because the frame loop has not run yet; that reported a settled drone
+    // while it was still playing the last room's tension.
     const settle = async () => {
-      // let the gain ramp and the analyser fill
-      await new Promise((r) => setTimeout(r, 420));
+      const want = s.proximity().tension;
+      for (let i = 0; i < 160; i++) {
+        if (Math.abs(s.audio().gain - want) < 0.02) return;
+        await new Promise((r) => setTimeout(r, 60));
+      }
+    };
+
+    // One RMS reading is not enough to compare two levels: the analyser window
+    // is 2048 samples, which is only ~2.3 cycles of the 55 Hz fundamental, so a
+    // single reading carries phase noise of the same order as the difference
+    // between near and far. Average over a second or so instead.
+    const measure = async () => {
+      let sum = 0;
+      const reads = 14;
+      for (let i = 0; i < reads; i++) {
+        sum += s.audio().rms;
+        await new Promise((r) => setTimeout(r, 60));
+      }
+      return sum / reads;
     };
 
     s.teleport(near.eye.x, near.eye.y, near.eye.z, 0, 0);
     await settle();
-    const atNear = { audio: s.audio(), proximity: s.proximity() };
+    const atNear = { audio: s.audio(), proximity: s.proximity(), rms: await measure() };
 
     s.teleport(far.eye.x, far.eye.y, far.eye.z, 0, 0);
     await settle();
-    const atFar = { audio: s.audio(), proximity: s.proximity() };
+    const atFar = { audio: s.audio(), proximity: s.proximity(), rms: await measure() };
 
     return {
       started,
@@ -458,8 +459,12 @@ try {
   );
   check(
     'and the difference is audible, not merely a number',
-    (sound.atNear?.audio?.rms ?? 0) > (sound.atFar?.audio?.rms ?? 1),
-    `rms ${sound.atFar?.audio?.rms?.toFixed?.(5)} far → ${sound.atNear?.audio?.rms?.toFixed?.(5)} near`,
+    // Averaged readings, and a margin: at this separation a bare `>` would be
+    // satisfied by noise. If the real contrast ever shrank this should fail.
+    (sound.atNear?.rms ?? 0) > (sound.atFar?.rms ?? 1) * 1.15,
+    `mean rms over 14 reads: ${sound.atFar?.rms?.toFixed?.(5)} far → ` +
+      `${sound.atNear?.rms?.toFixed?.(5)} near ` +
+      `(${(((sound.atNear?.rms ?? 0) / (sound.atFar?.rms || 1) - 1) * 100).toFixed(0)}% louder)`,
   );
 
   // --- the two kinds only the reconstructed room can express -----------------
@@ -536,7 +541,7 @@ try {
 } finally {
   if (!process.argv.includes('--keep')) {
     await browser.close();
-    server.close();
+    await server.close();
   }
 }
 
