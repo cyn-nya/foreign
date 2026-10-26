@@ -111,6 +111,33 @@ export class SplatScene {
     return this.cullingConfig ? { ...this.cullingConfig } : {};
   }
 
+  /**
+   * The renderer's resolution multiplier — the one lever that trades sharpness
+   * for time without touching the scene.
+   *
+   * The player's machine is not the machine this was built on, so the resolution
+   * cannot be a constant. `IViewerConfig.pixelRatio` scales the buffer the
+   * reconstruction is rasterised into, so the cost falls roughly with its square;
+   * src/splat/quality.ts decides what it should be from the measured frame rate.
+   *
+   * Re-applying the whole config rather than poking the renderer directly,
+   * because `pixelRatio` is a public documented option and reaching into internals
+   * is how the culling flags became load-bearing by accident.
+   */
+  setPixelRatio(ratio: number): void {
+    if (!Number.isFinite(ratio) || ratio <= 0) return;
+    if (ratio === this.appliedPixelRatio) return;
+    this.appliedPixelRatio = ratio;
+    setViewerConfig(this.viewer, { pixelRatio: ratio });
+  }
+
+  get pixelRatio(): number {
+    return this.appliedPixelRatio;
+  }
+
+  /** 1 until the quality controller has measured something and decided otherwise. */
+  private appliedPixelRatio = 1;
+
   private constructor(
     viewer: Viewer,
     camera: PerspectiveCamera,

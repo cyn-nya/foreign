@@ -1,0 +1,96 @@
+import { describe, expect, it } from 'vitest';
+import {
+  DEFAULT_QUALITY_LEVEL,
+  evaluateQuality,
+  initialQuality,
+  pixelRatioForLevel,
+  QUALITY_LEVELS,
+  qualityLabel,
+  STREAK_TO_CHANGE,
+  TARGET_HIGH_FPS,
+  TARGET_LOW_FPS,
+  type QualityState,
+} from '../src/splat/quality.ts';
+
+/** Feed a run of readings in and return the settled state. */
+function run(readings: (number | null)[], from: QualityState = initialQuality()): QualityState {
+  return readings.reduce((state, fps) => evaluateQuality(state, fps), from);
+}
+
+describe('adaptive render resolution', () => {
+  it('starts at full resolution, so a fast machine never pays for this', () => {
+    expect(pixelRatioForLevel(DEFAULT_QUALITY_LEVEL)).toBe(1);
+    expect(initialQuality()).toEqual({ level: DEFAULT_QUALITY_LEVEL, streak: 0, changes: 0 });
+  });
+
+  it('keeps the levels ordered and bounded, since pixelRatio is used as given', () => {
+    for (let i = 1; i < QUALITY_LEVELS.length; i++) {
+      expect(QUALITY_LEVELS[i]).toBeGreaterThan(QUALITY_LEVELS[i - 1]);
+    }
+    expect(QUALITY_LEVELS[0]).toBeGreaterThan(0.2);
+    expect(QUALITY_LEVELS[QUALITY_LEVELS.length - 1]).toBe(1);
+  });
+
+  it('drops resolution when the frame rate stays below the floor', () => {
+    const slow = TARGET_LOW_FPS - 5;
+    const settled = run(Array(STREAK_TO_CHANGE).fill(slow));
+    expect(settled.level).toBe(DEFAULT_QUALITY_LEVEL - 1);
+    expect(settled.changes).toBe(1);
+  });
+
+  it('does not react to one bad reading', () => {
+    // A floor loading or a tab being refocused is not a reason to lose
+    // resolution permanently, so a single slow reading must be absorbed.
+    const one = run([TARGET_LOW_FPS - 5, 60, 60]);
+    expect(one.level).toBe(DEFAULT_QUALITY_LEVEL);
+    expect(one.changes).toBe(0);
+  });
+
+  it('climbs back up when the frame rate is comfortable', () => {
+    // Every drop costs STREAK_TO_CHANGE readings, and there are this many levels
+    // to fall through, so anything less than the product does not reach the floor.
+    const slow = run(Array(STREAK_TO_CHANGE * QUALITY_LEVELS.length).fill(10));
+    expect(slow.level).toBe(0);
+    const recovered = run(Array(STREAK_TO_CHANGE).fill(TARGET_HIGH_FPS + 20), slow);
+    expect(recovered.level).toBe(1);
+  });
+
+  it('never leaves the scale, however hard it is pushed', () => {
+    const bottom = run(Array(50).fill(1));
+    expect(bottom.level).toBe(0);
+    const top = run(Array(50).fill(500), bottom);
+    expect(top.level).toBe(QUALITY_LEVELS.length - 1);
+    expect(pixelRatioForLevel(top.level)).toBe(1);
+  });
+
+  it('is not moved by a reading that carries no information', () => {
+    // `null` is "nothing measured yet" and 0 is "no frames completed". Treating
+    // either as "too slow" would drop a player to the blurriest setting during a
+    // load, which is when both of them actually happen.
+    expect(run([null, 0, -1, Number.NaN]).level).toBe(DEFAULT_QUALITY_LEVEL);
+    // and they must also break a streak rather than extend it
+    const streaked = run([TARGET_LOW_FPS - 5, null, TARGET_LOW_FPS - 5]);
+    expect(streaked.level).toBe(DEFAULT_QUALITY_LEVEL);
+  });
+
+  it('settles instead of oscillating', () => {
+    // A frame rate that sits between the thresholds is the common case on a
+    // machine that is merely adequate, and it must produce a stable level.
+    const middling = TARGET_LOW_FPS + 5;
+    const settled = run([middling, middling]);
+    const after = run(Array(20).fill(middling), settled);
+    expect(after.level).toBe(settled.level);
+    expect(after.changes).toBe(settled.changes);
+  });
+
+  it('reports the multiplier, not a vague word', () => {
+    // The number is what a player can quote when they report a problem.
+    expect(qualityLabel(QUALITY_LEVELS.length - 1)).toBe('1.00x');
+    expect(qualityLabel(0)).toMatch(/^0\.\d{2}x$/);
+  });
+
+  it('clamps an out-of-range level rather than returning undefined', () => {
+    expect(pixelRatioForLevel(-3)).toBe(QUALITY_LEVELS[0]);
+    expect(pixelRatioForLevel(99)).toBe(1);
+  });
+});

@@ -97,6 +97,13 @@ try {
   // `__splat` never appears and this times out.
   await page.goto(`${base}/`, { waitUntil: 'load', timeout: 60_000 });
   await page.waitForFunction(() => window.__splat && window.__splat.ready, null, { timeout: 240_000 });
+  // Pin the render resolution at full. Adaptive quality is correct behaviour and
+  // wrong for a harness: left on, a slow machine quietly lowers the resolution
+  // and then reports a higher frame rate, so the frame-rate check measures the
+  // controller rather than the game the player is judging. Verified the hard way —
+  // `setQuality('auto')` here *unpins* it, and this machine immediately dropped
+  // to 0.7x underneath the rest of the run.
+  await page.evaluate(() => window.__splat.setQuality(5));
   const state = await page.evaluate(() => window.__splat);
   const loadSeconds = (Date.now() - started) / 1000;
 
@@ -941,6 +948,62 @@ try {
     separation.bystanders > 0 && separation.miss?.result === 'miss',
     `${separation.bystanders} bystanders, aimed at ${separation.miss?.aimedAt ?? 'none'} → ` +
       `${separation.miss?.result ?? 'never marked'}`,
+  );
+
+  // --- adaptive resolution ---------------------------------------------------
+  //
+  // Holding the frame rate and spending what is left on quality was the brief
+  // ("以流畅度为基准"), and the whole mechanism is one number handed to the
+  // viewer. Storing that number is not the same as the renderer using it, so this
+  // reads the canvas's backing store rather than the value the game reports:
+  // `pixelRatio` scales the buffer the reconstruction is rasterised into, and if
+  // the setting were being ignored the width would not move at all.
+  const resolution = await page.evaluate(async () => {
+    const s = window.__splat;
+    const canvas = document.querySelector('canvas');
+    const buffer = () => ({ width: canvas.width, height: canvas.height });
+
+    s.setQuality('auto');
+    const auto = s.quality();
+    const before = buffer();
+
+    const lowest = s.setQuality(0);
+    await s.renderOnce();
+    const shrunk = buffer();
+
+    const highest = s.setQuality(5);
+    await s.renderOnce();
+    const restored = buffer();
+
+    s.setQuality('auto');
+    return { auto, lowest, highest, before, shrunk, restored };
+  });
+
+  const shrankActually = resolution.shrunk.width < resolution.before.width;
+  const restoredActually = resolution.restored.width > resolution.shrunk.width;
+
+  check(
+    'the adaptive resolution reaches the renderer, not just the state',
+    shrankActually && restoredActually,
+    `buffer ${resolution.before.width}x${resolution.before.height} → ` +
+      `${resolution.shrunk.width}x${resolution.shrunk.height} at ${resolution.lowest.ratio}x → ` +
+      `${resolution.restored.width}x${resolution.restored.height} at ${resolution.highest.ratio}x`,
+  );
+  check(
+    'the top level is full resolution, so a fast machine is never charged',
+    resolution.highest.ratio === 1,
+    `top level ${resolution.highest.ratio}x`,
+  );
+  // The whole point of the controller is that it reacts. Asserting the direction
+  // rather than a particular number keeps the check honest on any machine: this
+  // one renders at well under a frame a second, so a controller that works *must*
+  // have decided to spend resolution, and one that reported 1x here would be a
+  // controller that never ran.
+  check(
+    'the controller actually lowers resolution on a machine that cannot keep up',
+    resolution.auto.auto === true && resolution.auto.ratio < resolution.highest.ratio,
+    `after running on this machine, auto settled at ${resolution.auto.ratio}x ` +
+      `(level ${resolution.auto.level}, ${resolution.auto.changes} change(s))`,
   );
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | ') || 'clean');

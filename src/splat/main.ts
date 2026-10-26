@@ -36,6 +36,13 @@ import {
   torchFlickerForFloor,
   torchRadiusForFloor,
 } from './horror.ts';
+import {
+  evaluateQuality,
+  initialQuality,
+  pixelRatioForLevel,
+  QUALITY_LEVELS,
+  qualityLabel,
+} from './quality.ts';
 
 /**
  * Floors are built one at a time; see startFloor. Declared at module scope
@@ -126,6 +133,13 @@ interface SplatDebug {
    * `spanMs` is the window it divided by.
    */
   perfWindow: () => { samples: number; spanMs: number; intervals: number; historyMs: number };
+  /**
+   * The adaptive render resolution: its level, the multiplier actually applied,
+   * and whether the controller is still steering it.
+   */
+  quality: () => { level: number; ratio: number; auto: boolean; changes: number };
+  /** Pin the resolution at a level, or pass "auto" to hand it back. */
+  setQuality: (level: number | 'auto') => { level: number; ratio: number; auto: boolean; changes: number };
   bystanderCount: number;
   /**
    * The watchers, with where each is looking and where it should be looking.
@@ -230,6 +244,8 @@ const debug: SplatDebug = {
   aimAtBystander: () => null,
   assetWeirdness: () => null,
   perfWindow: () => ({ samples: 0, spanMs: 0, intervals: 0, historyMs: 0 }),
+  quality: () => ({ level: 0, ratio: 1, auto: false, changes: 0 }),
+  setQuality: () => ({ level: 0, ratio: 1, auto: false, changes: 0 }),
   bystanderCount: 0,
   watchers: () => [],
   crosshair: () => null,
@@ -428,9 +444,49 @@ function paintPerf(): void {
   const value = fps === null ? '—' : fps.toFixed(1);
   el.perf.textContent =
     `${value} fps   最慢 ${worstMs.toFixed(0)} ms   帧 ${debug.frames}　近 5 秒 ${count} 帧` +
-    `\n${debug.placed} 模型 · 扫描 ${debug.splatPresent() ? '在' : '移除'}`;
+    `\n${debug.placed} 模型 · 扫描 ${debug.splatPresent() ? '在' : '移除'}` +
+    ` · 画质 ${qualityLabel(quality.level)}${qualityAuto ? '' : '（锁定）'}`;
   const tone = fps === null ? '' : fps < 15 ? 'bad' : fps < 30 ? 'warn' : '';
   el.perf.className = `perf${tone ? ` ${tone}` : ''}`;
+}
+
+/**
+ * The render-resolution controller.
+ *
+ * The brief was "以流畅度为基准" — hold the frame rate, then spend whatever is
+ * left on quality. A fixed resolution cannot do that, because the machine that
+ * plays this is not the machine it was built on: full resolution is a slideshow
+ * on a laptop and wasted headroom on a desktop.
+ *
+ * The decision logic lives in quality.ts and is tested on its own. What happens
+ * here is only the sampling and the applying.
+ */
+let quality = initialQuality();
+let qualityAuto = true;
+let qualityAccumulator = 0;
+/** Applied through the scene, which owns the renderer. */
+let applyPixelRatio: (ratio: number) => void = () => undefined;
+
+/**
+ * How often the frame rate is re-read.
+ *
+ * Longer than the counter's own five-second window would be pointless, and much
+ * shorter would compare two windows that overlap so heavily that one slow frame
+ * counts as several bad readings.
+ */
+const QUALITY_INTERVAL_S = 3;
+
+function updateQuality(rawDt: number): void {
+  if (!qualityAuto) return;
+  qualityAccumulator += rawDt;
+  if (qualityAccumulator < QUALITY_INTERVAL_S) return;
+  qualityAccumulator = 0;
+
+  const before = quality.level;
+  quality = evaluateQuality(quality, currentFps());
+  if (quality.level !== before) {
+    applyPixelRatio(pixelRatioForLevel(quality.level));
+  }
 }
 
 /**
@@ -1085,6 +1141,37 @@ async function main(): Promise<void> {
   debug.togglePerf = () => togglePerf();
   debug.perfVisible = () => perfVisible;
   debug.splatVisible = () => scene.splatVisible;
+
+  // --- adaptive resolution ---------------------------------------------------
+  // The scene owns the renderer, so the controller reaches it through here
+  // rather than importing the viewer into module scope.
+  applyPixelRatio = (ratio) => scene.setPixelRatio(ratio);
+  applyPixelRatio(pixelRatioForLevel(quality.level));
+  debug.quality = () => ({
+    level: quality.level,
+    ratio: scene.pixelRatio,
+    auto: qualityAuto,
+    changes: quality.changes,
+  });
+  /**
+   * Pin the resolution, or hand it back to the controller.
+   *
+   * The acceptance harness pins it: the stills and the frame-rate check are
+   * supposed to describe the game, and a resolution that moves underneath them
+   * would make two runs incomparable for a reason that has nothing to do with
+   * what is being tested.
+   */
+  debug.setQuality = (level) => {
+    if (level === 'auto') {
+      qualityAuto = true;
+      qualityAccumulator = 0;
+      return debug.quality();
+    }
+    qualityAuto = false;
+    quality = { level: Math.max(0, Math.min(QUALITY_LEVELS.length - 1, level)), streak: 0, changes: quality.changes };
+    applyPixelRatio(pixelRatioForLevel(quality.level));
+    return debug.quality();
+  };
   debug.removeSplat = () => scene.removeSplat();
   debug.restoreSplat = () => scene.restoreSplat();
   debug.splatPresent = () => scene.splatPresent;
@@ -1170,6 +1257,9 @@ async function main(): Promise<void> {
       locked: player.isLocked,
     };
     debug.frames++;
+    // Before the perf HUD, so a resolution change is visible in the same frame
+    // it was decided rather than a beat later.
+    updateQuality(rawDt);
     perfAccumulator += rawDt;
 
     // The torch flickers at about 14 Hz rather than every frame. Setting custom
