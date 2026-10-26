@@ -36,6 +36,7 @@ import {
   torchFlickerForFloor,
   torchRadiusForFloor,
 } from './horror.ts';
+import { summariseFrames } from './framerate.ts';
 import {
   evaluateQuality,
   initialQuality,
@@ -418,31 +419,16 @@ function recordFrame(now: number): void {
 /**
  * Frames completed in the last few seconds, and the slowest of them.
  *
- * Sustained rate over the window, not the gap between the first and last frame
- * in it. Those differ exactly when the loop is unhealthy: with two frames 49 ms
- * apart at the end of a five-second window and nothing before them, dividing by
- * the span reports 20.4 fps for a loop that managed two frames in five seconds.
- * Dividing by the window reports 0.4 fps, which is what happened.
+ * The algorithm lives in framerate.ts, where it can be tested. It used to be
+ * written out here *and* again inside `perfWindow`, and the same stall-averaging
+ * mistake was in both — the harness caught it in one copy while a player would
+ * have seen it in the other.
  */
 function recentFrames(): { fps: number; worstMs: number; count: number } {
-  if (frameTimes.length < 2) return { fps: 0, worstMs: 0, count: frameTimes.length };
-  const newest = frameTimes[frameTimes.length - 1];
-  const from = newest - PERF_WINDOW_MS;
-  const recent = frameTimes.filter((t) => t >= from);
-  if (recent.length < 2) return { fps: 0, worstMs: 0, count: recent.length };
-  // The window is the full span, or the whole history while it is still shorter
-  // than one window — otherwise the first second after load reads as a spike.
-  const oldest = Math.max(frameTimes[0], from);
-  const elapsed = (newest - oldest) / 1000;
-  let worst = 0;
-  for (let i = 1; i < recent.length; i++) worst = Math.max(worst, recent[i] - recent[i - 1]);
-  const intervals = recent.length - 1;
-  return {
-    fps: elapsed > 0 ? intervals / elapsed : 0,
-    worstMs: worst,
-    count: recent.length,
-  };
+  const s = summariseFrames(frameTimes, PERF_WINDOW_MS);
+  return { fps: s.fps, worstMs: s.worstMs, count: s.samples };
 }
+
 
 /**
  * Frame rate over the last few seconds.
@@ -1069,19 +1055,15 @@ async function main(): Promise<void> {
   debug.assetWeirdness = (key) =>
     FOREIGN_ASSETS.find((asset) => asset.key === key)?.weirdness ?? null;
 
+  // The same summary the HUD uses, reported rather than recomputed. When these
+  // were two implementations they disagreed with each other about a stalled loop.
   debug.perfWindow = () => {
-    if (frameTimes.length < 2) {
-      return { samples: frameTimes.length, spanMs: 0, intervals: 0, historyMs: 0 };
-    }
-    const newest = frameTimes[frameTimes.length - 1];
-    const from = newest - PERF_WINDOW_MS;
-    const recent = frameTimes.filter((t) => t >= from);
-    const oldest = Math.max(frameTimes[0], from);
+    const summary = summariseFrames(frameTimes, PERF_WINDOW_MS);
     return {
-      samples: recent.length,
-      spanMs: newest - oldest,
-      intervals: Math.max(0, recent.length - 1),
-      historyMs: newest - frameTimes[0],
+      samples: summary.samples,
+      spanMs: summary.spanMs,
+      intervals: summary.intervals,
+      historyMs: summary.historyMs,
     };
   };
 

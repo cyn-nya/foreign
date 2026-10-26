@@ -1,5 +1,5 @@
 {
-  "url": "http://127.0.0.1:12715",
+  "url": "http://127.0.0.1:3915",
   "views": [
     {
       "name": "01-hall-into-apartment",
@@ -15,10 +15,12 @@
       "name": "02-living-room",
       "raysHit": "45/45",
       "seen": [
+        "tv",
         "sofa",
+        "coffee_table",
         "rug",
         "bookshelf",
-        "tv"
+        "tv_stand"
       ]
     },
     {
@@ -83,7 +85,7 @@
     {
       "name": "02-living-room: renders a furnished view",
       "ok": true,
-      "detail": "rays 45/45, 4 distinct props: sofa, rug, bookshelf, tv"
+      "detail": "rays 45/45, 6 distinct props: tv, sofa, coffee_table, rug, bookshelf, tv_stand"
     },
     {
       "name": "03-living-left-wall: renders a furnished view",
@@ -118,7 +120,7 @@
     {
       "name": "a wrong mark costs time and does not score",
       "ok": true,
-      "detail": "score 0 -> 0, time 234.5 -> 226.5"
+      "detail": "score 0 -> 0, time 234.6 -> 226.6"
     },
     {
       "name": "marking the anomaly scores and clears the floor",
