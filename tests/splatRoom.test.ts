@@ -17,7 +17,11 @@ import { ROOM_ANCHORS, ROOM_ENTRY, ROOM_FLOOR_LEVEL, ROOM_FLOOR_OPTIONS, anchorB
 
 const opts = ROOM_FLOOR_OPTIONS;
 const nameOf = (key: string) => ASSETS_BY_KEY.get(key)?.name ?? '';
-const ALL_KINDS: AnomalyKind[] = ['intrude', 'stare', 'shift', 'warp', 'twin'];
+const ALL_KINDS: AnomalyKind[] = ['intrude', 'stare', 'shift', 'warp', 'twin', 'invert', 'swarm'];
+/** The kinds that are supposed to leave the ground. */
+const AIRBORNE: AnomalyKind[] = ['stare', 'shift', 'swarm'];
+/** Kinds whose whole point is that they are off the floor, but only a little. */
+const LIFTED: AnomalyKind[] = ['invert'];
 
 describe('the reconstructed room’s anchors', () => {
   it('were measured out of the scan, not authored', () => {
@@ -127,8 +131,12 @@ describe('generateFloor in foreignOnly mode', () => {
         const lift = anomaly.offset?.y ?? 0;
         // 'shift' and 'stare' are supposed to be off the ground; everything else
         // must sit on it, or it reads as a bug rather than as an anomaly.
-        if (anomaly.kind === 'stare' || anomaly.kind === 'shift') {
+        if (AIRBORNE.includes(anomaly.kind)) {
           expect(lift).toBeGreaterThan(0.4);
+        } else if (LIFTED.includes(anomaly.kind)) {
+          // enough to be plainly not standing on its own base
+          expect(lift).toBeGreaterThan(0.1);
+          expect(lift).toBeLessThan(0.6);
         } else {
           expect(Math.abs(lift)).toBeLessThan(0.01);
         }
@@ -172,6 +180,34 @@ describe('generateFloor in foreignOnly mode', () => {
     const anomaly = plan.anomalies[0];
     expect(judgeMark(plan, anomaly.slotId, []).result).toBe('hit');
     expect(judgeMark(plan, 'fx_living_centre', []).result).toBe('miss');
+  });
+
+  it('flips an inverted anomaly and leaves every other kind upright', () => {
+    const inverted = generateFloor(4, 21, { ...opts, kinds: ['invert'] });
+    expect(inverted.anomalies[0].flip).toBe(true);
+
+    // The control: flip must not leak into the other kinds, or "upside down"
+    // would stop meaning anything.
+    for (const kind of ALL_KINDS.filter((k) => k !== 'invert')) {
+      const plan = generateFloor(4, 21, { ...opts, kinds: [kind] });
+      expect(plan.anomalies[0].flip).toBeUndefined();
+    }
+  });
+
+  it('scatters a swarm past the point of counting, unlike a twin', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const swarm = generateFloor(6, seed, { ...opts, kinds: ['swarm'] });
+      const anomaly = swarm.anomalies[0];
+      // A dozen is the floor: below that it is a twin with extra steps.
+      expect(anomaly.count).toBeGreaterThanOrEqual(12);
+      expect(anomaly.spread).toBeGreaterThan(1.0);
+      // shrunk, or a dozen full-size objects read as one solid mass
+      expect(anomaly.scale).toBeLessThan(0.7);
+
+      const twin = generateFloor(6, seed, { ...opts, kinds: ['twin'] });
+      expect(twin.anomalies[0].count).toBeLessThan(6);
+      expect(twin.anomalies[0].spread).toBeUndefined();
+    }
   });
 
   it('labels every anomaly in a way a player could act on', () => {

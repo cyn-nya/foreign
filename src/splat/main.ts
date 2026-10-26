@@ -85,7 +85,7 @@ interface SplatDebug {
   /** The anchors, with a ready-to-use eye position, so a harness can stand somewhere. */
   anchors: () => { id: string; floor: { x: number; y: number; z: number }; eye: { x: number; y: number; z: number } }[];
   /** Where each placed object is, in the room and on screen. */
-  placements: () => { slotId: string; kind: string; assetKey?: string; x: number; y: number; z: number; onScreen: boolean }[];
+  placements: () => { slotId: string; kind: string; assetKey?: string; x: number; y: number; z: number; rotX: number; scale: number; onScreen: boolean }[];
   /** Advance the clock by hand so a floor can be finished without waiting. */
   tick: (seconds: number) => void;
   /** Start audio. A gesture starts it in a real browser; a harness has to ask. */
@@ -528,6 +528,8 @@ async function main(): Promise<void> {
         x: item.node.position.x,
         y: item.node.position.y,
         z: item.node.position.z,
+        rotX: item.node.rotation.x,
+        scale: item.node.scale.x,
         onScreen: Math.abs(delta) < 0.55,
       };
     });

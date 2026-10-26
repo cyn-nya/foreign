@@ -107,7 +107,22 @@ export type AnomalyKind =
   /** Something is grotesquely the wrong size, or the wrong colour. */
   | 'warp'
   /** Several identical copies of one household object. */
-  | 'twin';
+  | 'twin'
+  /**
+   * The object is upside down.
+   *
+   * Its own kind rather than a variant of 'shift', because it is neither moved
+   * nor resized — it is the wrong way up where it stands, which reads as wrong
+   * in a way that has nothing to do with where it is.
+   */
+  | 'invert'
+  /**
+   * A dozen or more of one object, scattered.
+   *
+   * Deliberately past 'twin': three copies is a joke, and past a dozen it stops
+   * being countable and becomes an infestation.
+   */
+  | 'swarm';
 
 export interface Anomaly {
   id: string;
@@ -125,6 +140,10 @@ export interface Anomaly {
   tint?: number;
   /** For 'twin': how many copies to place. Always 3 or more, so it reads as absurd. */
   count?: number;
+  /** Rendered upside down. Only meaningful for 'invert'. */
+  flip?: boolean;
+  /** For 'swarm': the radius in metres its copies are scattered over. */
+  spread?: number;
 }
 
 export interface FloorPlan {

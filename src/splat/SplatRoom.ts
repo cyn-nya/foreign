@@ -35,6 +35,23 @@ function tintOf(value: number): [number, number, number] {
   return [((value >> 16) & 0xff) / 255, ((value >> 8) & 0xff) / 255, (value & 0xff) / 255];
 }
 
+/**
+ * A stable 0..1 from a placement and a channel.
+ *
+ * Used instead of `Math.random` so a swarm lands in the same arrangement every
+ * time the floor is generated. FNV-1a over the characters, which is enough
+ * spread for scattering objects and needs no state.
+ */
+function hash01(seed: string, index: number, channel: number): number {
+  let h = 0x811c9dc5;
+  const text = `${seed}:${index}:${channel}`;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return ((h >>> 0) % 100000) / 100000;
+}
+
 export interface PlacedAnomaly {
   anomaly: Anomaly;
   /** The subtree for this placement, already positioned in the room. */
@@ -122,8 +139,14 @@ export class SplatRoom {
       if (!buffer) continue;
 
       // Twins fan out around the anchor rather than stacking on it, so the
-      // repetition is the thing you notice.
-      const copies = anomaly.kind === 'twin' ? (anomaly.count ?? 3) : 1;
+      // repetition is the thing you notice. A swarm is the same idea taken past
+      // the point where counting is possible.
+      const copies =
+        anomaly.kind === 'twin'
+          ? (anomaly.count ?? 3)
+          : anomaly.kind === 'swarm'
+            ? (anomaly.count ?? 12)
+            : 1;
       for (let i = 0; i < copies; i++) {
         const node = await this.instantiate(buffer, anomaly, anchor, i, copies);
         this.scene.add(node as never);
@@ -153,9 +176,21 @@ export class SplatRoom {
 
     const offset = anomaly.offset ?? { x: 0, y: 0, z: 0 };
     let x = anchor.pos.x + offset.x;
+    let y = anchor.pos.y + offset.y;
     let z = anchor.pos.z + offset.z;
 
-    if (copies > 1) {
+    if (anomaly.kind === 'swarm' && copies > 1) {
+      // Deterministic scatter, seeded from the placement rather than Math.random,
+      // so the same floor always looks the same. Uniform in a ball: without the
+      // cube root the copies bunch at the centre and stop reading as spread out.
+      const spread = anomaly.spread ?? 1.4;
+      const theta = hash01(anchor.id, copyIndex, 1) * Math.PI * 2;
+      const phi = Math.acos(2 * hash01(anchor.id, copyIndex, 2) - 1);
+      const radius = spread * Math.cbrt(hash01(anchor.id, copyIndex, 3));
+      x += radius * Math.sin(phi) * Math.cos(theta);
+      z += radius * Math.sin(phi) * Math.sin(theta);
+      y += radius * Math.cos(phi) * 0.55;
+    } else if (copies > 1) {
       // A ring of radius 0.45 m: close enough to read as one arrangement,
       // far enough apart not to z-fight.
       const angle = (copyIndex / copies) * Math.PI * 2;
@@ -165,10 +200,17 @@ export class SplatRoom {
 
     // A reconstructed floor is not level, so the object follows the anchor
     // rather than a global ground plane.
-    node.position.set(x, anchor.pos.y + offset.y, z);
+    node.position.set(x, y, z);
     const scale = anomaly.scale ?? 1;
     node.scale.set(scale, scale, scale);
-    node.rotation.set(0, (anomaly.rotY ?? 0) + (copies > 1 ? copyIndex * 0.4 : 0), 0, 'YXZ');
+    // 'invert' is the only kind that changes the object's attitude rather than
+    // its position: it is the wrong way up where it is.
+    node.rotation.set(
+      anomaly.flip ? Math.PI : 0,
+      (anomaly.rotY ?? 0) + (copies > 1 && anomaly.kind === 'twin' ? copyIndex * 0.4 : 0),
+      0,
+      'YXZ',
+    );
     node.name = `foreign:${anchor.id}:${copyIndex}`;
 
     if (anomaly.tint !== undefined) applyTint(node, anomaly.tint);

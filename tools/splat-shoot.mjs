@@ -462,6 +462,73 @@ try {
     `rms ${sound.atFar?.audio?.rms?.toFixed?.(5)} far → ${sound.atNear?.audio?.rms?.toFixed?.(5)} near`,
   );
 
+  // --- the two kinds only the reconstructed room can express -----------------
+  const shapes = await page.evaluate(async () => {
+    const s = window.__splat;
+    const span = (list) => {
+      let widest = 0;
+      for (const a of list)
+        for (const b of list) widest = Math.max(widest, Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z));
+      return widest;
+    };
+
+    await s.start(9, 5, false, ['invert']);
+    const inverted = s.placements();
+
+    await s.start(9, 5, false, ['swarm']);
+    const swarm = s.placements();
+
+    // The control: a single grounded object must stay a single upright one.
+    await s.start(9, 5, false, ['intrude']);
+    const single = s.placements();
+
+    return {
+      inverted: { count: inverted.length, rotX: inverted[0]?.rotX, y: inverted[0]?.y },
+      swarm: { count: swarm.length, span: span(swarm), scale: swarm[0]?.scale, slots: new Set(swarm.map((p) => p.slotId)).size },
+      single: { count: single.length, rotX: single[0]?.rotX, scale: single[0]?.scale },
+    };
+  });
+
+  check(
+    'an inverted anomaly is rendered upside down',
+    shapes.inverted.count === 1 && Math.abs(Math.abs(shapes.inverted.rotX) - Math.PI) < 0.01,
+    `placements=${shapes.inverted.count} rotX=${shapes.inverted.rotX?.toFixed?.(4)} (π=${Math.PI.toFixed(4)})`,
+  );
+  check(
+    'and nothing else is flipped',
+    Math.abs(shapes.single.rotX ?? 9) < 0.01 && shapes.single.count === 1,
+    `intrude: placements=${shapes.single.count} rotX=${shapes.single.rotX?.toFixed?.(4)}`,
+  );
+  check(
+    'a swarm places more than a dozen copies, spread out and shrunk',
+    shapes.swarm.count >= 12 && shapes.swarm.span > 1.0 && shapes.swarm.scale < 0.7,
+    `copies=${shapes.swarm.count} span=${shapes.swarm.span?.toFixed?.(2)} m ` +
+      `scale=${shapes.swarm.scale?.toFixed?.(2)} slots=${shapes.swarm.slots}`,
+  );
+  check(
+    'and a swarm is still one thing to mark, not many',
+    shapes.swarm.slots === 1,
+    `distinct slot ids across the swarm = ${shapes.swarm.slots}`,
+  );
+
+  // Sharing a slot id only proves the mark target is shared. It does not prove a
+  // copy in the middle of the swarm is actually reachable by the reticle.
+  const swarmMark = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(9, 5, false, ['swarm']);
+    const copies = s.placements();
+    const aimed = s.aimAt(Math.floor(copies.length / 2));
+    const before = s.found.length;
+    const result = s.mark();
+    return { aimed, result: result?.result, gained: s.found.length - before, total: copies.length };
+  });
+  check(
+    'marking a copy in the middle of a swarm scores the whole swarm',
+    swarmMark.result === 'hit' && swarmMark.gained === 1,
+    `aimed at copy ${Math.floor(swarmMark.total / 2)}/${swarmMark.total} of ${swarmMark.aimed} → ` +
+      `${swarmMark.result}, found +${swarmMark.gained}`,
+  );
+
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | ') || 'clean');
   check('no console errors', consoleErrors.length === 0, consoleErrors.slice(0, 2).join(' | ') || 'clean');
 } catch (error) {

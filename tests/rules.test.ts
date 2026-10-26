@@ -141,7 +141,17 @@ describe('floor generation', () => {
  * cosmetic one.
  */
 describe('every anomaly is judgeable without memorising the room', () => {
-  const EVIDENT: AnomalyKind[] = ['intrude', 'stare', 'shift', 'warp', 'twin'];
+  /**
+   * Every kind this game is allowed to produce. The rule they all satisfy is the
+   * one that killed the original 'vanish': an anomaly has to be judgeable from
+   * the frame alone, with no memory of what the room looked like before.
+   *
+   * 'invert' qualifies because an object hanging upside down is wrong while you
+   * are looking at it, and 'swarm' because a dozen of one thing is past counting
+   * rather than a comparison. Anything added here has to earn its place — this
+   * list is the whole design constraint in one line.
+   */
+  const EVIDENT: AnomalyKind[] = ['intrude', 'stare', 'shift', 'warp', 'twin', 'invert', 'swarm'];
 
   it('never produces a kind that needs a memorised baseline', () => {
     resetAnomalySerial();
@@ -150,6 +160,44 @@ describe('every anomaly is judgeable without memorising the room', () => {
       for (const a of plan.anomalies) expect(EVIDENT).toContain(a.kind);
       // nothing is ever removed from the room any more
       expect(plan.hiddenSlots).toEqual([]);
+    }
+  });
+
+  it('holds the reconstructed room to the same rule, for the kinds only it can express', () => {
+    // The two foreign-only kinds never appear in the procedural room's plans, so
+    // checking only those would leave the design rule unenforced for them.
+    // Locally defined anchors: this file is about the rules, not the scan.
+    const anchors = [
+      { id: 'a1', pos: { x: 0, y: -0.4, z: 0 }, place: '房间中央' },
+      { id: 'a2', pos: { x: 2.5, y: -0.4, z: 1 }, place: '靠东侧' },
+      { id: 'a3', pos: { x: -2, y: -0.35, z: 2.5 }, place: '靠南侧' },
+      { id: 'a4', pos: { x: 1, y: -0.4, z: -2.5 }, place: '靠北侧' },
+    ];
+    resetAnomalySerial();
+    for (let floor = 1; floor <= 20; floor++) {
+      const plan = generateFloor(floor, makeSeed(floor, 31), {
+        anchors,
+        spawn: { x: -4, y: 1, z: 1.2 },
+        foreignOnly: true,
+      });
+      expect(plan.anomalies.length).toBeGreaterThan(0);
+      for (const a of plan.anomalies) {
+        expect(EVIDENT).toContain(a.kind);
+        expect(a.assetKey).toBeTruthy();
+      }
+    }
+  });
+
+  it('keeps the kinds it cannot build out of the procedural room entirely', () => {
+    // If these leaked in, the procedural builder would fall through to its
+    // default branch and quietly emit an ordinary prop under a name that
+    // promises something it does not do.
+    resetAnomalySerial();
+    for (let floor = 1; floor <= 40; floor++) {
+      for (const a of generateFloor(floor, makeSeed(floor, 77)).anomalies) {
+        expect(a.kind).not.toBe('invert');
+        expect(a.kind).not.toBe('swarm');
+      }
     }
   });
 

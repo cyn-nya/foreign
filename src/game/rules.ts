@@ -89,10 +89,29 @@ function subtletyBudget(floor: number): number {
  * Floors 1-2 get only wrongness that no one could argue with: an object that
  * cannot exist in a flat, and something watching you from head height.
  */
-function allowedKinds(budget: number): AnomalyKind[] {
-  if (budget <= 0) return ['intrude', 'intrude', 'stare'];
-  if (budget === 1) return ['intrude', 'stare', 'stare', 'warp', 'shift'];
-  return ['intrude', 'stare', 'warp', 'shift', 'twin', 'twin'];
+/**
+ * Kinds that only make sense for an object placed into the room.
+ *
+ * They are defined in terms of the placed object — its attitude, and how many
+ * copies of it are scattered — and there is no furniture equivalent wired up.
+ * Listing them here rather than leaving them in the shared pool matters: the
+ * procedural room would otherwise roll them, fall through to the default branch
+ * of its builder, and quietly produce an ordinary-looking prop labelled as
+ * something it is not.
+ */
+const FOREIGN_ONLY_KINDS: ReadonlySet<AnomalyKind> = new Set<AnomalyKind>(['invert', 'swarm']);
+
+function allowedKinds(budget: number, foreignOnly = false): AnomalyKind[] {
+  const all: AnomalyKind[] =
+    budget <= 0
+      ? ['intrude', 'intrude', 'stare']
+      : budget === 1
+        ? ['intrude', 'stare', 'stare', 'warp', 'shift', 'invert']
+        : ['intrude', 'stare', 'warp', 'shift', 'twin', 'twin', 'invert', 'swarm'];
+  if (foreignOnly) return all;
+  const shared = all.filter((kind) => !FOREIGN_ONLY_KINDS.has(kind));
+  // A floor with no kinds left would produce nothing at all.
+  return shared.length > 0 ? shared : ['intrude'];
 }
 
 /** Colours that read as wrong on a household object. */
@@ -328,6 +347,25 @@ function buildForeignAnomaly(
       base.label = `${placeOf(anchor)}的同一个${asset.name}出现了 ${base.count} 个`;
       break;
     }
+    case 'invert': {
+      // Just off the ground, so it is plainly not standing on its head — it is
+      // hanging, wrong way up, where nothing is holding it.
+      base.flip = true;
+      base.offset = { x: 0, y: 0.15 + rng() * 0.35, z: 0 };
+      base.rotY = rng() * Math.PI * 2;
+      base.label = `${placeOf(anchor)}有个${asset.name}倒挂着`;
+      break;
+    }
+    case 'swarm': {
+      // Past the point of counting. Shrunk so the group reads as a swarm of one
+      // thing rather than a solid mass of intersecting geometry.
+      base.count = 12 + Math.floor(rng() * 7);
+      base.spread = 1.1 + rng() * 0.7;
+      base.scale = 0.4 + rng() * 0.2;
+      base.offset = { x: 0, y: 0.5 + rng() * 0.9, z: 0 };
+      base.label = `${placeOf(anchor)}有一群${asset.name}，数不清有多少个`;
+      break;
+    }
     default:
       base.label = `${placeOf(anchor)}有东西不对劲`;
   }
@@ -407,7 +445,7 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
   }
 
   const requested = opts.kinds ? opts.kinds.slice() : null;
-  const kinds = allowedKinds(budget);
+  const kinds = allowedKinds(budget, foreignOnly);
 
   // In a reconstruction there is no furniture to move, duplicate or hide, so
   // every kind is built on an anchor and the slot pools simply do not apply.
