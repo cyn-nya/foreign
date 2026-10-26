@@ -23,6 +23,7 @@
     "report": "python tools/build-deck.py",
     "report:check": "python tools/check-deck.py",
     "deploy:check": "node tools/check-deploy.mjs",
+    "deploy:check:live": "node tools/check-deploy.mjs --url https://cyn-nya.github.io/foreign/",
     "deploy": "node tools/deploy-ghpages.mjs",
     "verify": "npm run typecheck && npm run voxel:check && npm run test && npm run build && npm run splat:check && npm run splat:shoot && npm run shoot && npm run deploy:check"
   },

@@ -54,29 +54,43 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`);
 };
 
-if (!existsSync(join(dist, 'index.html'))) {
-  console.error('dist/index.html is missing — run `npm run build` first.');
-  process.exit(1);
-}
-
-// A throwaway copy, deliberately outside the repository.
+// `--url <url>` tests an already-published site instead of a local copy.
 //
-// Staged in the repository's *parent* directory rather than in the system temp
-// directory: writing to %TEMP% from here does not fail with an error, it kills
-// the process outright, which is a confusing way to learn that the staging path
-// is outside the sandbox. The parent directory is still outside the repository,
-// which is the property that matters — it proves the build does not depend on
-// anything left lying around in the checkout.
-const staging = join(resolve(root, '..'), `.foreign-deploy-${process.pid}`);
-// The sub-path is a URL concern, not a directory-nesting one: a Pages project
-// site maps `/repo/` onto the repository root, so the files sit at the top of
-// the served directory and only the URL carries the prefix.
-const site = join(staging, 'site');
-copyTree(dist, site);
-console.log(`staged a copy of dist/ outside the repository at ${site}`);
+// `deploy:check` proves a local build *would* work from a sub-path; this proves
+// the link that actually gets submitted does. They are different claims, and
+// only the second one is the deliverable.
+const liveArg = process.argv.indexOf('--url');
+const liveUrl = liveArg >= 0 ? process.argv[liveArg + 1] : null;
 
-const server = await startStatic(site, { basePath: BASE_PATH });
-console.log(`serving it as a project site: ${server.url}/`);
+let server;
+if (liveUrl) {
+  console.log(`testing the published site directly: ${liveUrl}`);
+  server = { url: liveUrl.replace(/\/+$/, ''), close: async () => {} };
+} else {
+  if (!existsSync(join(dist, 'index.html'))) {
+    console.error('dist/index.html is missing — run `npm run build` first.');
+    process.exit(1);
+  }
+
+  // A throwaway copy, deliberately outside the repository.
+  //
+  // Staged in the repository's *parent* directory rather than in the system temp
+  // directory: writing to %TEMP% from here does not fail with an error, it kills
+  // the process outright, which is a confusing way to learn that the staging path
+  // is outside the sandbox. The parent directory is still outside the repository,
+  // which is the property that matters — it proves the build does not depend on
+  // anything left lying around in the checkout.
+  const staging = join(resolve(root, '..'), `.foreign-deploy-${process.pid}`);
+  // The sub-path is a URL concern, not a directory-nesting one: a Pages project
+  // site maps `/repo/` onto the repository root, so the files sit at the top of
+  // the served directory and only the URL carries the prefix.
+  const site = join(staging, 'site');
+  copyTree(dist, site);
+  console.log(`staged a copy of dist/ outside the repository at ${site}`);
+
+  server = await startStatic(site, { basePath: BASE_PATH });
+  console.log(`serving it as a project site: ${server.url}/`);
+}
 
 const browser = await chromium.launch({
   args: [
@@ -167,7 +181,10 @@ check('no console errors', consoleErrors.length === 0, consoleErrors.slice(0, 2)
 
 await browser.close();
 await server.close();
-rmSync(staging, { recursive: true, force: true });
+if (!liveUrl) rmSync(join(resolve(root, '..'), `.foreign-deploy-${process.pid}`), {
+  recursive: true,
+  force: true,
+});
 
 const passed = checks.filter((c) => c.ok).length;
 console.log(`\n${passed}/${checks.length} checks passed`);
