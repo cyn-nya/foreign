@@ -1,5 +1,5 @@
 {
-  "url": "http://127.0.0.1:3915",
+  "url": "http://127.0.0.1:3308",
   "views": [
     {
       "name": "01-hall-into-apartment",
@@ -120,12 +120,12 @@
     {
       "name": "a wrong mark costs time and does not score",
       "ok": true,
-      "detail": "score 0 -> 0, time 234.6 -> 226.6"
+      "detail": "score 0 -> 0, time 234.7 -> 226.7"
     },
     {
       "name": "marking the anomaly scores and clears the floor",
       "ok": true,
-      "detail": "state=floorClear score=1093 found=1"
+      "detail": "state=floorClear score=1094 found=1"
     },
     {
       "name": "a wrong mark spends exactly one of the limited marks",

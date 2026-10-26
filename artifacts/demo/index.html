@@ -73,7 +73,7 @@
     <div class="caption">
       <div class="tag">重建空间</div>
       <h2>房间是扫描来的，不是我搭的</h2>
-      <p>整个空间由 3DGS 高斯泼溅重建 —— Aholo 官方开源室内场景，6,300 万个高斯点，63 MB。走进去、撞到墙、被家具挡住，全部由体素碰撞驱动。</p>
+      <p>整个空间由 3DGS 高斯泼溅重建 —— Aholo 官方开源室内场景，63 MB 的 .spz。走进去、撞到墙、被家具挡住，全部由体素碰撞驱动。</p>
     </div>
   </section>
 <section class="scene s-text" data-index="2">
@@ -120,7 +120,7 @@
     <div class="caption">
       <div class="tag">恐怖</div>
       <h2>一层比一层黑，手电筒越走越短</h2>
-      <p>黑暗从 0.18 逐层加到 0.86，手电筒半径从 0.62 m 缩到 0.26 m，闪烁一次比一次凶。第 8 层是最底层 —— 通关在那里。</p>
+      <p>黑暗从 0.18 逐层加到 0.86，手电筒半径从屏幕短边的 0.62 缩到 0.26，闪烁一次比一次凶。第 8 层是最底层 —— 通关在那里。</p>
     </div>
   </section>
 <section class="scene s-card" data-index="8">
@@ -135,15 +135,15 @@
     <div class="still" style="background-image:url('09-marked.png')"></div>
     <div class="caption">
       <div class="tag">玩法</div>
-      <h2>标记。但只有三次机会</h2>
-      <p>看清了再开枪 —— 每层只有三次误判额度，用完这一层就结束。第一层只放一个异常，教你看什么叫做「不该在这儿」。</p>
+      <h2>打中不罚，打错才罚</h2>
+      <p>每层三次误判额度，用完这一层就结束；标记对了不扣任何东西，所以没有「该不该开枪」，只有「看没看清」。第一层只放一个异常，教你看什么叫做「不该在这儿」。</p>
     </div>
   </section>
 <section class="scene s-text" data-index="10">
       <div class="text-wrap">
         <div class="tag">技术</div>
         <h2>全部由 Aholo 驱动，每一步都被验收</h2>
-        <ul><li>Lux3D 文生 3D：14 个异物资产，压缩后 70 MB → 10 MB。</li><li>3DGS 高斯泼溅：场景加载、体素碰撞、第一人称行走。</li><li>196 项断言全绿：103 单测 · 46 实机验收 · 10 体素 · 10 资产 · 15 程序化 · 7 部署。</li><li>无头 Chromium 真机跑验收，不是「我看过了」。</li></ul>
+        <ul><li>Lux3D 文生 3D：14 个异物由文字生成，再加 13 件写实家具与 7 个程序化占位，共 34 个资产、10.1 MB。</li><li>3DGS 高斯泼溅：场景加载、体素碰撞、第一人称行走。</li><li>234 项断言全绿：10 文案一致性 · 10 体素碰撞 · 10 资产完整性 · 5 高斯泼溅探测 · 52 真实房间验收 · 15 程序化房间验收 · 7 部署检查 · 125 单测。</li><li>无头 Chromium 真机跑验收，不是「我看过了」。</li></ul>
       </div>
     </section>
 <section class="scene s-title" data-index="11">

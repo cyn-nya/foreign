@@ -1,3 +1,4 @@
+import json
 """Build the FOREIGN project report deck.
 
 Run with the bundled Python:
@@ -17,6 +18,18 @@ from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 from pptx.util import Emu, Inches, Pt
+
+# The assertion counts come from the file the suite generates, so a new check
+# cannot leave the deck quoting a number that no longer exists.
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+with open(os.path.join(_ROOT, "data", "assertions.json"), encoding="utf-8") as _f:
+    ASSERTIONS = json.load(_f)
+_BY_STEP = {s["step"]: s["count"] for s in ASSERTIONS["steps"]}
+
+
+def by_step(step):
+    return _BY_STEP[step]
+
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "artifacts", "report", "FOREIGN-report.pptx")
@@ -150,7 +163,7 @@ def build():
          ["走进一间被 3DGS 重建的真实公寓。它看起来就是一个普通的家 ——",
           "问题恰恰在这里：每一层都有东西不属于这里。",
           "",
-          "在计时结束前找出全部。每层只有 3 次标记机会，标错扣时间与机会。",
+          "在计时结束前找出全部。标记正确不扣任何东西；每层 3 次失手额度，标错扣 8 秒。",
           "全部找到就下潜一层：同一个房间，重新洗牌。"],
          size=15, space=9)
     picture(s, "artifacts/splat/01-ready.png", Inches(8.4), y - Inches(0.1), Inches(4.2), Inches(3.6))
@@ -241,7 +254,7 @@ def build():
     panel(s, MARGIN, y + Inches(3.15), Inches(7.0), Inches(1.0))
     text(s, MARGIN + Inches(0.24), y + Inches(3.3), Inches(6.5), Inches(0.75),
          [("共享层：规则 / 目录 / 类型", {"size": 15, "bold": True, "color": GOOD, "space": 3}),
-          ("不含任何渲染依赖，所以同一套关卡生成逻辑被两个后端使用，也被 125 个单测覆盖。",
+          (f"不含任何渲染依赖，所以同一套关卡生成逻辑被两个后端使用，也被 {by_step('test')} 个单测覆盖。",
            {"size": 12, "color": DIM})], space=0)
     picture(s, "artifacts/shots/02-living-room.png", Inches(8.3), y, Inches(4.3), Inches(4.15))
 
@@ -269,9 +282,9 @@ def build():
     s = slide(prs)
     y = head(s, "验收不是「我看过了」", "工程严谨性", 8, "质量")
     text(s, MARGIN, y, Inches(7.3), Inches(0.6),
-         ["npm run verify  =  类型检查 → 单测 → 构建 → 验收，共 224 项断言，全部通过"],
+         [f"npm run verify  =  类型检查 → 单测 → 构建 → 验收，共 {ASSERTIONS['total']} 项断言，全部通过"],
          size=14, color=INK, space=8)
-    stats = [("125", "单元测试"), ("10", "体素"), ("10", "资产"), ("5", "splat"),
+    stats = [(str(by_step("test")), "单元测试"), (str(by_step("voxel:check")), "体素"), (str(by_step("assets:check")), "资产"), (str(by_step("splat:check")), "splat"),
              ("52", "真实房间"), ("15", "程序化"), ("7", "部署")]
     for i, (v, k) in enumerate(stats):
         bx = MARGIN + Inches(i * 1.42)

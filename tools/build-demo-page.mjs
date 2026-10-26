@@ -14,7 +14,7 @@
  * layout, and the total duration is printed so the report can quote it.
  */
 
-import { existsSync, mkdirSync, copyFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, copyFileSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -40,6 +40,21 @@ const onlyPage = args.includes('--only-page');
  * 'title' is type only, 'split' pairs one still with a block of text. `hold` is
  * seconds on screen.
  */
+/**
+ * The assertion total, read from the one file that is derived from a real run
+ * rather than restated here. It was hand-written in this file and in the slide
+ * deck and went stale every time a step was added.
+ */
+const ASSERTIONS = JSON.parse(readFileSync(join(here, '..', 'data/assertions.json'), 'utf8'));
+const assertionLine =
+  `${ASSERTIONS.total} 项断言全绿：` +
+  ASSERTIONS.steps
+    .filter((s) => s.step !== 'test')
+    .map((s) => `${s.count} ${s.label}`)
+    .concat(`${ASSERTIONS.steps.find((s) => s.step === 'test').count} 单测`)
+    .join(' · ') +
+  '。';
+
 const SCENES = [
   {
     kind: 'title',
@@ -54,7 +69,7 @@ const SCENES = [
     img: '02-room.png',
     tag: '重建空间',
     title: '房间是扫描来的，不是我搭的',
-    body: '整个空间由 3DGS 高斯泼溅重建 —— Aholo 官方开源室内场景，6,300 万个高斯点，63 MB。走进去、撞到墙、被家具挡住，全部由体素碰撞驱动。',
+    body: '整个空间由 3DGS 高斯泼溅重建 —— Aholo 官方开源室内场景，63 MB 的 .spz。走进去、撞到墙、被家具挡住，全部由体素碰撞驱动。',
   },
   {
     kind: 'text',
@@ -105,7 +120,7 @@ const SCENES = [
     img: '07-torch.png',
     tag: '恐怖',
     title: '一层比一层黑，手电筒越走越短',
-    body: '黑暗从 0.18 逐层加到 0.86，手电筒半径从 0.62 m 缩到 0.26 m，闪烁一次比一次凶。第 8 层是最底层 —— 通关在那里。',
+    body: '黑暗从 0.18 逐层加到 0.86，手电筒半径从屏幕短边的 0.62 缩到 0.26，闪烁一次比一次凶。第 8 层是最底层 —— 通关在那里。',
   },
   {
     kind: 'card',
@@ -120,8 +135,8 @@ const SCENES = [
     hold: 7,
     img: '09-marked.png',
     tag: '玩法',
-    title: '标记。但只有三次机会',
-    body: '看清了再开枪 —— 每层只有三次误判额度，用完这一层就结束。第一层只放一个异常，教你看什么叫做「不该在这儿」。',
+    title: '打中不罚，打错才罚',
+    body: '每层三次误判额度，用完这一层就结束；标记对了不扣任何东西，所以没有「该不该开枪」，只有「看没看清」。第一层只放一个异常，教你看什么叫做「不该在这儿」。',
   },
   {
     kind: 'text',
@@ -129,9 +144,9 @@ const SCENES = [
     tag: '技术',
     title: '全部由 Aholo 驱动，每一步都被验收',
     points: [
-      'Lux3D 文生 3D：14 个异物资产，压缩后 70 MB → 10 MB。',
+      'Lux3D 文生 3D：14 个异物由文字生成，再加 13 件写实家具与 7 个程序化占位，共 34 个资产、10.1 MB。',
       '3DGS 高斯泼溅：场景加载、体素碰撞、第一人称行走。',
-      '196 项断言全绿：103 单测 · 46 实机验收 · 10 体素 · 10 资产 · 15 程序化 · 7 部署。',
+      assertionLine,
       '无头 Chromium 真机跑验收，不是「我看过了」。',
     ],
   },
