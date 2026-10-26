@@ -12,7 +12,16 @@
  */
 
 import { FOREIGN_ASSETS } from '../game/catalog.ts';
-import { MAX_MISTAKES, explainMiss, formatClock, generateFloor, hitScore, judgeMark } from '../game/rules.ts';
+import {
+  FINAL_FLOOR,
+  MAX_MISTAKES,
+  explainMiss,
+  formatClock,
+  generateFloor,
+  hitScore,
+  isFinalFloor,
+  judgeMark,
+} from '../game/rules.ts';
 import type { AnomalyKind, FloorPlan } from '../game/types.ts';
 import { SplatPlayer } from './SplatPlayer.ts';
 import { SplatRoom } from './SplatRoom.ts';
@@ -41,7 +50,7 @@ interface MarkReport {
   label?: string;
 }
 
-type GameState = 'loading' | 'menu' | 'playing' | 'floorClear' | 'gameOver' | 'failed';
+type GameState = 'loading' | 'menu' | 'playing' | 'floorClear' | 'gameOver' | 'won' | 'failed';
 
 interface SplatDebug {
   ready: boolean;
@@ -54,6 +63,15 @@ interface SplatDebug {
   floor: number;
   score: number;
   found: string[];
+  /**
+   * Run totals, not floor totals.
+   *
+   * `found` is reset by every floor, so the end-of-run screen that read it
+   * reported only the last floor's count — "found 6" after eight floors of
+   * work. These accumulate across the run and reset when a new run starts.
+   */
+  foundTotal: number;
+  mistakes: number;
   marksLeft: number;
   timeLeft: number;
   anomalyCount: number;
@@ -95,6 +113,7 @@ interface SplatDebug {
   watchers: () => { slotId: string; x: number; z: number; yaw: number; expectedYaw: number; yawError: number; y: number; baseY: number; elapsed: number }[];
   /** The anchors, with a ready-to-use eye position, so a harness can stand somewhere. */
   crosshair: () => string | null;
+  autoplay: () => GameState;
   setCulling: (patch: Record<string, boolean>) => void;
   culling: () => Record<string, boolean>;
 
@@ -137,6 +156,8 @@ const debug: SplatDebug = {
   floor: 1,
   score: 0,
   found: [],
+  foundTotal: 0,
+  mistakes: 0,
   marksLeft: MAX_MISTAKES,
   timeLeft: 0,
   anomalyCount: 0,
@@ -163,6 +184,7 @@ const debug: SplatDebug = {
   bystanderCount: 0,
   watchers: () => [],
   crosshair: () => null,
+  autoplay: () => 'menu',
   setCulling: () => undefined,
   culling: () => ({}),
 
@@ -233,7 +255,7 @@ function toast(message: string, kind: 'good' | 'bad' | 'info' = 'info'): void {
 }
 
 function syncHud(): void {
-  el.floor.textContent = String(debug.floor);
+  el.floor.textContent = `${debug.floor}/${FINAL_FLOOR}`;
   el.found.textContent = String(debug.found.length);
   el.total.textContent = String(debug.anomalyCount);
   el.time.textContent = formatClock(debug.timeLeft);
@@ -385,6 +407,11 @@ async function main(): Promise<void> {
     debug.floor = floor;
     debug.found = [];
     debug.marksLeft = MAX_MISTAKES;
+    // Floor 1 is a new run; every later floor is a continuation of it.
+    if (floor === 1) {
+      debug.foundTotal = 0;
+      debug.mistakes = 0;
+    }
     // A fixed seed keeps a floor reproducible from the URL; otherwise the floor
     // number itself seeds it, so floor 3 is always floor 3.
     const options = kinds ? { ...ROOM_FLOOR_OPTIONS, kinds } : ROOM_FLOOR_OPTIONS;
@@ -439,8 +466,55 @@ async function main(): Promise<void> {
     debug.state = 'floorClear';
     toast(`第 ${debug.floor} 层清理完毕`, 'good');
     await new Promise((resolve) => window.setTimeout(resolve, 900));
+    if (isFinalFloor(debug.floor)) {
+      winRun();
+      return;
+    }
     await startFloor(debug.floor + 1);
     player.requestLock();
+  }
+
+  /**
+   * Clearing the last floor.
+   *
+   * Deliberately not `endRun` with different words: that screen is the failure
+   * state, and the whole point of a win condition is that the player can tell
+   * the two apart without reading carefully.
+   */
+  function winRun(): void {
+    debug.state = 'won';
+    player.releaseLock();
+    const missed = debug.mistakes;
+    panel(`
+      <h1 class="title">FOREIGN<span class="sub">异物</span></h1>
+      <p class="tagline">找到了出口。这里一共有 ${FINAL_FLOOR} 层，你都活着走出来了。</p>
+      <div class="big-score">${debug.score}</div>
+      <p class="score-line">${FINAL_FLOOR} 层全清 · 找到 <b>${debug.foundTotal}</b> 个异物 · 标记失手 <b>${missed}</b> 次</p>
+      <div class="actions"><button id="again-btn" class="primary">再来一次</button></div>
+    `);
+    document.getElementById('again-btn')?.addEventListener('click', () => {
+      debug.score = 0;
+      debug.mistakes = 0;
+      void startFloor(1, undefined, true);
+    });
+  }
+
+  /**
+   * What happens once a mark has been judged: the floor is done, or out of marks.
+   *
+   * Split out of `mark` so the acceptance harness can drive the *completion* path
+   * without also having to aim. Aiming is covered by its own checks; this is the
+   * ending, and testing it through a raycast made the ending look broken when
+   * only the harness's aim was.
+   */
+  function settle(): void {
+    if (!plan) return;
+    if (debug.found.length >= plan.anomalies.length) {
+      debug.score += Math.round(debug.timeLeft * 3) + 250 + debug.floor * 50;
+      void nextFloor();
+    } else if (debug.marksLeft <= 0) {
+      endRun();
+    }
   }
 
   /** The single path a mark takes, whether from a click or the harness. */
@@ -454,6 +528,7 @@ async function main(): Promise<void> {
 
     if (outcome.result === 'hit' && outcome.anomaly) {
       debug.found.push(outcome.anomaly.id);
+      debug.foundTotal += 1;
       debug.score += hitScore(debug.timeLeft, plan.duration);
       audio.sting('hit');
       toast(outcome.anomaly.label, 'good');
@@ -464,19 +539,15 @@ async function main(): Promise<void> {
       // A miss costs time *and* a mark: without the time cost, guessing at
       // random is free, and the game becomes a clicking exercise.
       debug.marksLeft -= 1;
+      debug.mistakes += 1;
       debug.timeLeft = Math.max(0, debug.timeLeft - 8);
       audio.sting('miss');
       toast(explainMiss(plan, slotId), 'bad');
     }
 
     syncHud();
+    settle();
 
-    if (debug.found.length >= plan.anomalies.length) {
-      debug.score += Math.round(debug.timeLeft * 3) + 250 + debug.floor * 50;
-      void nextFloor();
-    } else if (debug.marksLeft <= 0) {
-      endRun();
-    }
 
     return {
       result: outcome.result,
@@ -654,6 +725,25 @@ async function main(): Promise<void> {
 
   /** What the crosshair is on right now, without spending a mark. */
   debug.crosshair = () => room.pick(scene.camera, scene.viewer.getSize().height);
+  /**
+   * Find every remaining anomaly and run the real completion path.
+   *
+   * Marks nothing through the raycast on purpose — the acceptance run could not
+   * aim at every anomaly, and `mark` returning early for the unreachable ones
+   * made the ending untestable. This exercises `settle`, which is what decides
+   * whether the run continues, wins or ends.
+   */
+  debug.autoplay = () => {
+    if (!plan || debug.state !== 'playing') return debug.state;
+    for (const anomaly of plan.anomalies) {
+      if (debug.found.includes(anomaly.id)) continue;
+      debug.found.push(anomaly.id);
+      debug.foundTotal += 1;
+    }
+    syncHud();
+    settle();
+    return debug.state;
+  };
 
   /** Measure the room without a floor in the way, for the performance work. */
   debug.setCulling = (patch) => scene.setCulling(patch);

@@ -3,9 +3,11 @@ import {
   anomalyCountForFloor,
   durationForFloor,
   floorClearScore,
+  FINAL_FLOOR,
   formatClock,
   generateFloor,
   hitScore,
+  isFinalFloor,
   judgeMark,
   makeSeed,
   MAX_MISTAKES,
@@ -319,5 +321,33 @@ describe('scoring', () => {
     expect(formatClock(240)).toBe('04:00');
     expect(formatClock(59.2)).toBe('01:00');
     expect(formatClock(-5)).toBe('00:00');
+  });
+});
+
+describe('the run can be won', () => {
+  it('ends on the last floor that is harder than the one before it', () => {
+    // The design claim is that the run ends at the top of the difficulty curve
+    // rather than on an arbitrary number, so this asserts the curve, not the
+    // constant. Widening the cap without moving FINAL_FLOOR would make the
+    // ending fire while the game was still getting harder.
+    expect(anomalyCountForFloor(FINAL_FLOOR)).toBe(6);
+    expect(anomalyCountForFloor(FINAL_FLOOR + 1)).toBe(6);
+    expect(durationForFloor(FINAL_FLOOR)).toBe(114);
+    expect(durationForFloor(FINAL_FLOOR + 1)).toBe(105);
+  });
+
+  it('is not final before that, and final from there on', () => {
+    for (let floor = 1; floor < FINAL_FLOOR; floor++) {
+      expect(isFinalFloor(floor), `floor ${floor}`).toBe(false);
+    }
+    expect(isFinalFloor(FINAL_FLOOR)).toBe(true);
+    // Past the end is still the end: a URL asking for floor 99 must win rather
+    // than run forever.
+    expect(isFinalFloor(FINAL_FLOOR + 1)).toBe(true);
+  });
+
+  it('gives the last floor something to find', () => {
+    expect(anomalyCountForFloor(FINAL_FLOOR)).toBeGreaterThan(0);
+    expect(durationForFloor(FINAL_FLOOR)).toBeGreaterThan(0);
   });
 });

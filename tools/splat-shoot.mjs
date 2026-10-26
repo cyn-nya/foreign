@@ -50,7 +50,11 @@ async function shoot(page, name) {
   await page.evaluate(() => window.__splat.setAutoRender(false));
   await page.evaluate(() => window.__splat.renderOnce());
   await page.waitForTimeout(400);
-  const buffer = await page.screenshot({ type: 'png', timeout: 120_000 });
+  // The room renders at a few frames per second under software rasterisation, so
+  // a screenshot has to wait for a frame that Playwright considers stable. At the
+  // 120 s default this timed out and aborted the run before any check had run,
+  // which looks like a broken harness rather than a slow game.
+  const buffer = await page.screenshot({ type: 'png', timeout: 240_000 });
   fs.writeFileSync(path.join(outDir, name), buffer);
   await page.evaluate(() => window.__splat.setAutoRender(true));
   return buffer.length;
@@ -71,7 +75,10 @@ const browser = await chromium.launch({
     '--autoplay-policy=no-user-gesture-required',
   ],
 });
-const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+// 960x540 rather than 720p: under software rasterisation the smaller canvas is
+// the difference between a screenshot landing and timing out, and every check
+// here reads game state rather than pixels.
+const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
 
 const pageErrors = [];
 const consoleErrors = [];
@@ -326,6 +333,49 @@ try {
     'running out of marks ends the run',
     burned.state === 'gameOver' && burned.marksLeft <= 0,
     `state=${burned.state} marksLeft=${burned.marksLeft}`,
+  );
+
+  // Clearing the LAST floor has to end the run in the player's favour. A win
+  // condition that only exists as a constant in rules.ts is not a win condition:
+  // this clears floor 8 for real and reads the state back.
+  const victory = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(8, 4242);
+    const anomalies = s.anomalyCount;
+    // `settle` sets 'floorClear' and only reaches the ending after `nextFloor`
+    // waits 900 ms to congratulate the player, so the settled state is read here
+    // and the decided state is read after the wait. Asserting on the first one
+    // reported a win as a failure.
+    const settled = s.autoplay();
+    await new Promise((r) => setTimeout(r, 1_600));
+    return {
+      anomalies,
+      settled,
+      decided: s.state,
+      floor: s.floor,
+      foundTotal: s.foundTotal,
+      mistakes: s.mistakes,
+    };
+  });
+  check(
+    'clearing the final floor wins instead of starting another one',
+    victory.decided === 'won' && victory.anomalies > 0 && victory.foundTotal >= victory.anomalies,
+    `floor=8 anomalies=${victory.anomalies} settled=${victory.settled} decided=${victory.decided} foundTotal=${victory.foundTotal} mistakes=${victory.mistakes}`,
+  );
+
+  // A control, because a check that passes when the game ends early is worse
+  // than no check: floor 3 must NOT win.
+  const early = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(3, 3131);
+    const settled = s.autoplay();
+    await new Promise((r) => setTimeout(r, 1_600));
+    return { settled, decided: s.state, floor: s.floor };
+  });
+  check(
+    'an earlier floor advances instead of winning',
+    early.decided === 'playing' && early.floor === 4,
+    `floor=3 settled=${early.settled} decided=${early.decided} nowOnFloor=${early.floor}`,
   );
 
   // A demo link has to open straight into a live floor, so the autostart path is

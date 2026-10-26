@@ -32,6 +32,25 @@ import type {
  */
 export const MAX_MISTAKES = 3;
 
+/**
+ * The floor that ends the run.
+ *
+ * The game was endless: every cleared floor started the next one, so the only
+ * ending was running out of marks or time. A horror game with no way out is not
+ * a game with a goal, it is a treadmill, and the player never finds out whether
+ * they were good at it. Clearing this floor wins.
+ *
+ * Eight is where the difficulty stops rising — floor 8 is the last one that is
+ * harder than the one before it (114 s, six anomalies), so the run ends at the
+ * top of the curve rather than on an arbitrary number.
+ */
+export const FINAL_FLOOR = 8;
+
+/** True when clearing this floor ends the run in the player's favour. */
+export function isFinalFloor(floor: number): boolean {
+  return floor >= FINAL_FLOOR;
+}
+
 /* ------------------------------------------------------------------ *
  * Deterministic RNG (mulberry32) — same seed, same floor, always.
  * ------------------------------------------------------------------ */
