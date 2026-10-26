@@ -86,19 +86,55 @@ export function summariseFrames(
     if (recent[i] - recent[i - 1] > stallMs) runStart = i;
   }
 
+  /**
+   * The rate over the whole window, which is the ceiling on any claim about it.
+   *
+   * Trimming to the current run fixed the stall being averaged away, and then
+   * broke the other direction: nine frames across five seconds, the last three of
+   * them inside 116 ms, reported 17.14 fps for a loop doing 1.8. Trimming had
+   * thrown away the 4.9 seconds that made the burst a burst.
+   *
+   * So the run may not claim more than the window supports. The counter is a
+   * *sustained* rate: it can be pessimistic while a machine is speeding up, which
+   * is the safe direction for a number whose job is to say whether the game is
+   * running well, and it can never be optimistic.
+   */
+  const windowFps =
+    recent.length >= 2 && newest > Math.max(frameTimes[0], from)
+      ? (recent.length - 1) / ((newest - Math.max(frameTimes[0], from)) / 1000)
+      : 0;
+
   if (runStart > 0) {
     const run = recent.slice(runStart);
     // A single frame after the stall still dates the stall: the gap that ended
     // the previous run is the only evidence there is about the current one.
-    const spanMs =
+    const runSpan =
       run.length >= 2 ? run[run.length - 1] - run[0] : recent[runStart] - recent[runStart - 1];
-    const intervals = run.length >= 2 ? run.length - 1 : 1;
+    const runIntervals = run.length >= 2 ? run.length - 1 : 1;
+    const runFps = runSpan > 0 ? runIntervals / (runSpan / 1000) : 0;
+
+    if (runFps > windowFps) {
+      // The burst cannot outbid the window. Report the window -- and report *its*
+      // intervals and span, so whoever reads `fps` gets the same number by
+      // dividing them. Returning the run's numbers against the window's rate is
+      // how this said 47/2.87 = 16.4 fps while stating 0.35.
+      const winSpan = newest - Math.max(frameTimes[0], from);
+      return {
+        samples: recent.length,
+        intervals: winSpan > 0 ? recent.length - 1 : 0,
+        spanMs: winSpan,
+        historyMs,
+        fps: windowFps,
+        worstMs: worst,
+      };
+    }
+
     return {
       samples: recent.length,
-      intervals,
-      spanMs,
+      intervals: runIntervals,
+      spanMs: runSpan,
       historyMs,
-      fps: spanMs > 0 ? intervals / (spanMs / 1000) : 0,
+      fps: runFps,
       worstMs: worst,
     };
   }
@@ -127,7 +163,7 @@ export function summariseFrames(
     intervals,
     spanMs,
     historyMs,
-    fps: spanMs > 0 ? intervals / (spanMs / 1000) : 0,
+    fps: windowFps,
     worstMs: worst,
   };
 }

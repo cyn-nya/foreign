@@ -94,6 +94,24 @@ describe('the frame-rate counter', () => {
     expect(s.intervals / (s.spanMs / 1000)).toBeCloseTo(s.fps, 6);
   });
 
+  // The fourth way, which the fix for the third introduced. Trimming to the run
+  // threw away the seconds that made the burst a burst: nine frames across five
+  // seconds, the last three inside 116 ms, reported 17.14 fps for a loop doing
+  // 1.8. A run may not claim more than the window supports.
+  it('does not let a short burst inside a stalled window outbid the window', () => {
+    const times: number[] = [];
+    // Six frames spread across the first 4.9 seconds...
+    for (let i = 0; i < 6; i++) times.push(100_000 + i * 960);
+    // ...then three arriving back to back.
+    const base = 100_000 + 4_800;
+    for (let i = 0; i < 3; i++) times.push(base + i * 40);
+    const s = summariseFrames(times, WINDOW);
+    // The burst is 2 intervals over 80 ms, which is 25 fps on its own. The loop
+    // is not doing that and the counter must not say it is.
+    expect(s.fps).toBeLessThan(3);
+    expect(s.intervals / (s.spanMs / 1000)).toBeCloseTo(s.fps, 6);
+  });
+
   it('does not mistake an ordinary slow loop for a stall', () => {
     // Gaps of 1.6 s each are a genuinely slow but *even* loop. Trimming to the
     // last run would throw away frames that are all equally valid.

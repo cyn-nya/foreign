@@ -353,6 +353,83 @@ try {
     `off -> on=${gloom.off.on} hidden=${gloom.off.hidden}; on -> on=${gloom.on.on} hidden=${gloom.on.hidden}`,
   );
 
+  // Four frights, not one effect with six faces. The variety is the whole point:
+  // a player who has learnt the shape of the event stops flinching, and this is
+  // what the request for "more jump scares" actually needed -- more *kinds*, not
+  // a louder version of the same one.
+  const frights = await page.evaluate(async () => {
+    const s = window.__splat;
+    s.setScaresEnabled(true);
+    await s.start(1);
+    const shallow = s.scareKinds();
+    await s.start(8);
+    const deep = s.scareKinds();
+
+    const seen = {};
+    for (const kind of ['flash', 'lunge', 'blackout', 'double']) {
+      s.scare(1, kind);
+      // Read the class the browser actually received, not the argument.
+      const layer = document.getElementById('scare');
+      const view = document.getElementById('view');
+      seen[kind] = {
+        reported: s.scareKind(),
+        shown: layer.classList.contains('on'),
+        lunge: layer.classList.contains('lunge'),
+        blackout: layer.classList.contains('blackout'),
+        shakeClass: view.classList.contains('shake') || view.classList.contains('blackout-shake'),
+        torchOn: s.torchOn(),
+      };
+      // Let the previous fright tear down before starting the next.
+      await new Promise((r) => setTimeout(r, 700));
+      s.setTorch(true);
+    }
+    const after = { torchOn: s.torchOn(), showing: s.scareFaceShowing() };
+    return { shallow, deep, seen, after };
+  });
+
+  // My first version of this asserted that floor 1 deals exactly one kind, and it
+  // failed: floor 1's intensity is 0.58 and `LUNGE_FROM` is 0.55, so the slow face
+  // is already available. The code's actual promise is narrower than that — floor
+  // 1 must not *black out*, because a player who has not yet learnt the room reads
+  // losing the light as a bug rather than as a threat. A face arriving slowly is
+  // fine on a tutorial floor. So the check asserts the promise, not my guess.
+  check(
+    'a shallow floor never blacks out and a deep floor deals more kinds',
+    !frights.shallow.includes('blackout') &&
+      frights.deep.includes('blackout') &&
+      frights.deep.length > frights.shallow.length,
+    `floor 1 -> ${frights.shallow.join(',')}; floor 8 -> ${frights.deep.join(',')}`,
+  );
+  check(
+    'a slow fright really is slower — it is still on screen after a flash would be gone',
+    frights.seen.lunge.shown && frights.seen.lunge.lunge && !frights.seen.flash.lunge,
+    `flash shown=${frights.seen.flash.shown} lunge-class=${frights.seen.flash.lunge}; ` +
+      `lunge shown=${frights.seen.lunge.shown} lunge-class=${frights.seen.lunge.lunge}`,
+  );
+  check(
+    'the blackout shows no face and actually takes the torch away',
+    frights.seen.blackout.blackout === true &&
+      frights.seen.blackout.torchOn === false &&
+      frights.seen.flash.torchOn === true,
+    `blackout: class=${frights.seen.blackout.blackout} torchOn=${frights.seen.blackout.torchOn}; ` +
+      `flash: torchOn=${frights.seen.flash.torchOn}`,
+  );
+  check(
+    'the torch comes back when the blackout ends',
+    frights.after.torchOn === true,
+    `torch on=${frights.after.torchOn}, fright showing=${frights.after.showing}`,
+  );
+  check(
+    'every fright reports the kind it just delivered',
+    frights.seen.flash.reported === 'flash' &&
+      frights.seen.lunge.reported === 'lunge' &&
+      frights.seen.blackout.reported === 'blackout' &&
+      frights.seen.double.reported === 'double',
+    Object.entries(frights.seen)
+      .map(([k, v]) => `${k}->${v.reported}`)
+      .join(', '),
+  );
+
   // The room now contains objects that are present and innocent. Without them
   // there was no judgement in the game at all — the scan's own furniture is baked
   // into the splat, so every crisp object *was* an anomaly and finding one was a

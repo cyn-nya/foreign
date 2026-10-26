@@ -87,6 +87,72 @@ export type ScareFace = (typeof SCARE_FACES)[number];
  *
  * The same face twice in a row reads as a bug rather than as a fright.
  */
+/**
+ * How a fright is delivered.
+ *
+ * Six faces and one effect is still one scare. Horror lives on surprise, and the
+ * fifth identical flash is not frightening -- it is furniture. These vary the
+ * *shape* of the event rather than its content, which is what stops the player
+ * learning to wait it out:
+ *
+ *   flash    a face at the periphery, gone before it resolves (the original)
+ *   lunge    the same face arriving over half a second instead of a tenth of one
+ *   blackout no face at all: the screen cuts and the torch dies for a moment
+ *   double   two faces, the second after a beat, so the relief is the setup
+ *
+ * `blackout` deliberately shows nothing. The anticipation of a second thing is
+ * worse than any picture, and it costs nothing to draw.
+ */
+export const SCARE_KINDS = ['flash', 'lunge', 'blackout', 'double'] as const;
+export type ScareKind = (typeof SCARE_KINDS)[number];
+
+/** How long each kind holds the screen, in milliseconds. */
+export const SCARE_KIND_MS: Record<ScareKind, number> = {
+  flash: 150,
+  lunge: 420,
+  blackout: 620,
+  // Two flashes and the gap between them.
+  double: 150 + 210 + 150,
+};
+
+/** The intensity at which the deeper kinds start appearing. */
+export const LUNGE_FROM = 0.55;
+export const BLACKOUT_FROM = 0.72;
+
+/**
+ * Which kinds a fright at this intensity may use.
+ *
+ * Escalating the *repertoire* rather than only the volume is what makes a deep
+ * floor feel different rather than merely louder. A shallow floor cannot black
+ * out the room, because a player who has not yet learnt the room would read a
+ * blackout as a bug rather than as a threat.
+ */
+export function scareKindsFor(intensity: number): ScareKind[] {
+  const kinds: ScareKind[] = ['flash', 'lunge'];
+  if (intensity < LUNGE_FROM) return ['flash'];
+  if (intensity < BLACKOUT_FROM) return kinds;
+  return [...kinds, 'blackout', 'double'];
+}
+
+/**
+ * Pick a fright, avoiding an immediate repeat of the same kind.
+ *
+ * The same reasoning as `pickScareFace`: two identical events in a row read as a
+ * bug rather than as dread. With only one kind available the repeat is
+ * unavoidable and is returned rather than being an error.
+ */
+export function pickScareKind(
+  rng: () => number,
+  intensity: number,
+  previous: ScareKind | null,
+): ScareKind {
+  const pool = scareKindsFor(intensity);
+  if (pool.length <= 1) return pool[0] ?? 'flash';
+  const filtered = pool.filter((kind) => kind !== previous);
+  const choices = filtered.length > 0 ? filtered : pool;
+  return choices[Math.floor(rng() * choices.length) % choices.length];
+}
+
 export function pickScareFace(rng: () => number, previous: ScareFace | null): ScareFace {
   const pool = SCARE_FACES.filter((face) => face !== previous);
   return pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))];

@@ -1,5 +1,5 @@
 {
-  "total": 234,
+  "total": 248,
   "steps": [
     {
       "step": "copy:check",
@@ -14,7 +14,7 @@
     {
       "step": "test",
       "label": "单元测试",
-      "count": 125
+      "count": 134
     },
     {
       "step": "assets:check",
@@ -29,7 +29,7 @@
     {
       "step": "splat:shoot",
       "label": "真实房间验收",
-      "count": 52
+      "count": 57
     },
     {
       "step": "shoot",

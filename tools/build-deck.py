@@ -326,16 +326,19 @@ def build():
         ("它会看着你",
          "stare 异常每帧朝玩家转向，并带轻微的呼吸浮动。\n"
          "这是唯一一个不需要任何参照物就成立的异常 —— 你看着它的时候它就是错的。"),
+        ("四种惊吓，不是一种吓四次",
+         "脸闪 150 ms / 慢慢逼近 420 ms / 全黑并掐掉手电筒 620 ms / 连环两次。\n"
+         "一个效果换六张脸仍然只是一种惊吓；学乖了的玩家不会再缩脖子。"),
         ("声音先于视线",
          "两个失谐振荡器拍频，经低通滤波。靠近最近异常时音量收紧、滤波打开。\n"
          "标记命中是上行音，失手是下行 —— 不用看 HUD 就能分辨。"),
     ]):
-        by = y + Inches(i * 1.5)
-        panel(s, MARGIN, by, Inches(7.0), Inches(1.3))
-        text(s, MARGIN + Inches(0.24), by + Inches(0.15), Inches(6.5), Inches(1.0),
-             [(t, {"size": 16, "bold": True, "space": 4}), (d, {"size": 12, "color": DIM})], space=0)
-    panel(s, MARGIN, y + Inches(3.15), Inches(7.0), Inches(1.0))
-    text(s, MARGIN + Inches(0.24), y + Inches(3.3), Inches(6.5), Inches(0.75),
+        by = y + Inches(i * 1.16)
+        panel(s, MARGIN, by, Inches(7.0), Inches(1.06))
+        text(s, MARGIN + Inches(0.24), by + Inches(0.1), Inches(6.5), Inches(0.9),
+             [(t, {"size": 15, "bold": True, "space": 3}), (d, {"size": 11, "color": DIM})], space=0)
+    panel(s, MARGIN, y + Inches(3.62), Inches(7.0), Inches(0.95))
+    text(s, MARGIN + Inches(0.24), y + Inches(3.74), Inches(6.5), Inches(0.72),
          [("音效是测出来的，不是「我写了」", {"size": 14, "bold": True, "color": GOOD, "space": 3}),
           ("读的是 AnalyserNode 的实际信号：7 m 处 gain 0.789、0.5 m 处 0.909，"
            "平均 RMS 近处响 21–31%。", {"size": 11, "color": DIM})], space=0)

@@ -289,6 +289,28 @@ button.ghost:hover { color: var(--fg); border-color: var(--fg); }
   to { opacity: 1; transform: scale(1); }
 }
 
+/* The same face, arriving slowly. Reaching the viewer over half a second rather
+   than a tenth is a different event: there is time to understand it. */
+#scare.lunge.on {
+  animation: scare-lunge 420ms cubic-bezier(0.5, 0, 0.75, 0) both;
+}
+@keyframes scare-lunge {
+  from { opacity: 0.9; transform: scale(0.34); }
+  60%  { opacity: 1;   transform: scale(1.1); }
+  to   { opacity: 1;   transform: scale(1.42); }
+}
+
+/* Nothing to look at. The screen drops out and the torch dies with it, so the
+   player is left in the dark waiting for the second thing. */
+#scare.blackout.on {
+  animation: none;
+  background: #000;
+  opacity: 1;
+}
+#view.blackout-shake {
+  animation: shake 620ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
 /* The room jolts. Applied to the view rather than the body so the HUD stays
    readable while the picture is being thrown around. */
 #view.shake {
@@ -305,5 +327,10 @@ button.ghost:hover { color: var(--fg); border-color: var(--fg); }
 
 @media (prefers-reduced-motion: reduce) {
   #scare.on { animation: none; }
+  #scare.lunge.on { animation: none; }
   #view.shake { animation: none; }
+  #view.blackout-shake { animation: none; }
+  /* A blackout is a full-screen flash to black, so it is exactly what this
+     preference is asking not to receive. */
+  #scare.blackout.on { display: none; }
 }

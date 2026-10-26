@@ -4,10 +4,14 @@ import {
   MAX_DARKNESS_FLOOR,
   MIN_DARKNESS,
   SCARE_FACES,
+  SCARE_KINDS,
+  SCARE_KIND_MS,
   darknessForFloor,
   nextScareDelay,
   pickScareFace,
+  pickScareKind,
   scareDelayRange,
+  scareKindsFor,
   torchFlickerForFloor,
   torchRadiusForFloor,
 } from '../src/splat/horror';
@@ -90,5 +94,75 @@ describe('scare faces', () => {
   it('can still choose any face when there is no previous one', () => {
     const seen = new Set(SCARE_FACES.map((_, i) => pickScareFace(() => i / SCARE_FACES.length, null)));
     expect(seen.size).toBe(SCARE_FACES.length);
+  });
+});
+
+
+describe('how a fright is delivered', () => {
+  it('keeps the shallow floors to the one kind a new player can read', () => {
+    // A blackout on floor 1 reads as a bug, not a threat: the player has not
+    // learnt the room yet, so losing the light teaches them nothing.
+    expect(scareKindsFor(0.2)).toEqual(['flash']);
+    expect(scareKindsFor(0)).toEqual(['flash']);
+  });
+
+  it('unlocks the slower and darker kinds as the floors get worse', () => {
+    const mid = scareKindsFor(0.6);
+    expect(mid).toContain('lunge');
+    expect(mid).not.toContain('blackout');
+
+    const deep = scareKindsFor(0.9);
+    expect(deep).toContain('blackout');
+    expect(deep).toContain('double');
+  });
+
+  it('only ever offers kinds that exist', () => {
+    for (const intensity of [0, 0.5, 0.55, 0.72, 1, 5, -1]) {
+      for (const kind of scareKindsFor(intensity)) {
+        expect(SCARE_KINDS).toContain(kind);
+      }
+    }
+  });
+
+  it('gives every kind a duration it can be held for', () => {
+    for (const kind of SCARE_KINDS) {
+      expect(SCARE_KIND_MS[kind]).toBeGreaterThan(0);
+      // A fright that stays on screen is a picture, not a fright.
+      expect(SCARE_KIND_MS[kind]).toBeLessThan(1_000);
+    }
+  });
+
+  it('never deals the same kind twice in a row when it has a choice', () => {
+    // The same reasoning as the faces: two identical frights in a row read as a
+    // bug rather than as dread.
+    let previous: string | null = null;
+    for (let i = 0; i < 200; i++) {
+      const kind = pickScareKind(Math.random, 1, previous as never);
+      expect(kind).not.toBe(previous);
+      previous = kind;
+    }
+  });
+
+  it('still returns a kind when a repeat is unavoidable', () => {
+    // Floor 1 has exactly one kind. That is a repeat by construction, not a bug.
+    expect(pickScareKind(Math.random, 0.1, 'flash')).toBe('flash');
+  });
+
+  it('eventually uses every kind a deep floor unlocks', () => {
+    const seen = new Set<string>();
+    let previous: string | null = null;
+    for (let i = 0; i < 400; i++) {
+      previous = pickScareKind(Math.random, 1, previous as never);
+      seen.add(previous);
+    }
+    // Otherwise the "variety" is one kind in a rotation costume.
+    for (const kind of scareKindsFor(1)) expect(seen).toContain(kind);
+  });
+
+  it('is driven by the generator it is given, not by Math.random directly', () => {
+    // A deterministic rng has to give a deterministic fright, or none of this is
+    // reproducible in the acceptance run.
+    const alwaysZero = () => 0;
+    expect(pickScareKind(alwaysZero, 1, null)).toBe(pickScareKind(alwaysZero, 1, null));
   });
 });

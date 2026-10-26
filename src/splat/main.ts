@@ -32,9 +32,13 @@ import { ROOM_SPAWN, SplatScene } from './SplatScene.ts';
 import { EYE_HEIGHT, HOVER_HEIGHT } from '../viewer/voxel.ts';
 import {
   darknessForFloor,
+  pickScareKind,
+  SCARE_KIND_MS,
+  scareKindsFor,
   nextScareDelay,
   torchFlickerForFloor,
   torchRadiusForFloor,
+  type ScareKind,
 } from './horror.ts';
 import { summariseFrames } from './framerate.ts';
 import {
@@ -166,6 +170,10 @@ interface SplatDebug {
   torchOn: () => boolean;
   darkness: () => number;
   scareFaceShowing: () => boolean;
+  /** Which fright is on screen, or null. */
+  scareKind: () => string | null;
+  /** Every fright kind this floor may deal. */
+  scareKinds: () => string[];
   sinceScare: () => number;
   scareAfter: () => number;
   torchStyle: () => { inner: string; outer: string; dark: string; background: string };
@@ -267,6 +275,8 @@ const debug: SplatDebug = {
   torchOn: () => false,
   darkness: () => 0,
   scareFaceShowing: () => false,
+  scareKind: () => null,
+  scareKinds: () => ['flash'],
   sinceScare: () => 0,
   scareAfter: () => 0,
   torchStyle: () => ({ inner: '', outer: '', dark: '', background: '' }),
@@ -519,6 +529,11 @@ let sinceScare = 0;
 let scareAfter = 0;
 let torchAccumulator = 0;
 let scareTimeout = 0;
+let doubleTimeout = 0;
+/** Avoids the same fright twice in a row, the way `pickScareFace` avoids a face. */
+let lastScareKind: ScareKind | null = null;
+/** The kind on screen right now, so the acceptance run can see which fired. */
+let currentScareKind: ScareKind | null = null;
 
 /**
  * The audio graph, once boot has built it.
@@ -569,26 +584,71 @@ function applyFloorHorror(floor: number): void {
  * read to force a reflow between removing and re-adding the animation class —
  * without it the browser coalesces the two changes and a repeat fright does not
  * animate at all, which is the classic way a scare works once and never again.
+ *
+ * The *kind* varies with depth as well as the face does. One effect repeated is
+ * one scare however many faces it wears, and a player who has learnt the shape of
+ * it stops flinching; see `SCARE_KINDS`.
  */
-function fireScare(intensity = 1): void {
+/**
+ * How frightening a floor is, 0..1.
+ *
+ * Pulled out of the frame loop so the debug hook reports the same number the
+ * loop uses. Two expressions for this would drift, and the acceptance run reads
+ * one of them.
+ */
+function scareIntensityForFloor(floor: number): number {
+  return Math.min(1, 0.5 + floor * 0.08);
+}
+
+function fireScare(intensity = 1, forceKind?: ScareKind): void {
   if (!scaresEnabled) return;
   scareCount += 1;
   sinceScare = 0;
   audioSink?.scare(intensity);
 
-  scareLayer.classList.remove('on');
-  void scareLayer.offsetWidth;
-  scareLayer.classList.add('on');
+  const kind = forceKind ?? pickScareKind(Math.random, intensity, lastScareKind);
+  lastScareKind = kind;
+  currentScareKind = kind;
 
-  view.classList.remove('shake');
-  void view.offsetWidth;
-  view.classList.add('shake');
+  const holdMs = SCARE_KIND_MS[kind];
+  scareLayer.classList.remove('on', 'lunge', 'blackout');
+  view.classList.remove('shake', 'blackout-shake');
+  // Force a reflow between removing and re-adding, or a repeat does not animate.
+  void scareLayer.offsetWidth;
+
+  scareLayer.classList.add('on');
+  if (kind === 'lunge') scareLayer.classList.add('lunge');
+  if (kind === 'blackout') {
+    scareLayer.classList.add('blackout');
+    view.classList.add('blackout-shake');
+  } else {
+    view.classList.add('shake');
+  }
+
+  // A blackout is the torch going out, so the torch has to actually go out --
+  // otherwise the light comes back before the screen does and the moment is a
+  // CSS class rather than an event.
+  const torchWasOn = torchOn;
+  if (kind === 'blackout' && torchWasOn) setTorch(false);
 
   window.clearTimeout(scareTimeout);
+  window.clearTimeout(doubleTimeout);
+
+  if (kind === 'double') {
+    // The relief between the two is the setup for the second one.
+    doubleTimeout = window.setTimeout(() => {
+      scareLayer.classList.remove('on');
+      void scareLayer.offsetWidth;
+      scareLayer.classList.add('on');
+    }, SCARE_MS + 210);
+  }
+
   scareTimeout = window.setTimeout(() => {
-    scareLayer.classList.remove('on');
-    view.classList.remove('shake');
-  }, SCARE_MS);
+    scareLayer.classList.remove('on', 'lunge', 'blackout');
+    view.classList.remove('shake', 'blackout-shake');
+    if (currentScareKind === kind) currentScareKind = null;
+    if (kind === 'blackout' && torchWasOn) setTorch(true);
+  }, holdMs);
 }
 
 /** Turn the frights off entirely, for a player who does not want them. */
@@ -1125,7 +1185,8 @@ async function main(): Promise<void> {
   debug.culling = () => scene.culling;
   debug.setSplatVisible = (visible) => scene.setSplatVisible(visible);
   debug.fps = () => currentFps();
-  debug.scare = (intensity?: number) => fireScare(intensity ?? 1);
+  debug.scare = (intensity?: number, kind?: ScareKind) =>
+    fireScare(intensity ?? 1, kind);
   /** How many frights the audio graph has actually played, or null with no audio. */
   debug.audioScares = () => (audio.available ? audio.scareCount : null);
   debug.scareCount = () => scareCount;
@@ -1135,6 +1196,10 @@ async function main(): Promise<void> {
   debug.torchOn = () => torchOn;
   debug.darkness = () => darknessForFloor(debug.floor);
   debug.scareFaceShowing = () => scareLayer.classList.contains('on');
+  // The kind, not just whether something is on screen: a blackout shows no
+  // face at all, so `scareFaceShowing` cannot tell the four apart.
+  debug.scareKind = () => currentScareKind;
+  debug.scareKinds = () => scareKindsFor(scareIntensityForFloor(debug.floor));
   debug.sinceScare = () => sinceScare;
   debug.scareAfter = () => scareAfter;
   /** The computed beam, so a test can tell a real torch from a transparent div. */
@@ -1287,7 +1352,7 @@ async function main(): Promise<void> {
       sinceScare += rawDt;
       if (sinceScare >= scareAfter) {
         // Scaled by depth: an early fright is a suggestion, a late one is not.
-        fireScare(Math.min(1, 0.5 + debug.floor * 0.08));
+        fireScare(scareIntensityForFloor(debug.floor));
         scareAfter = nextScareDelay(Math.random, debug.floor);
       }
     }
