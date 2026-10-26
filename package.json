@@ -10,6 +10,7 @@
     "preview": "vite preview --port 4173 --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "key:check": "node tools/check-key.mjs",
     "shoot": "node tools/shoot.mjs",
     "assets:plan": "node tools/generate-assets.mjs --dry-run",
     "assets:generate": "node tools/generate-assets.mjs",
