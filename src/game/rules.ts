@@ -12,8 +12,18 @@
  * pool. Floors 1-2 only use unmistakable object-level wrongness.
  */
 
-import { FOREIGN_ASSETS, INTRUDE_ANCHORS, ROOM, SLOTS, SPAWN, type ForeignAsset } from './catalog';
-import type { Anomaly, AnomalyKind, FloorPlan, MarkResult, RNG, SlotDef, Vec3 } from './types';
+import { FOREIGN_ASSETS, INTRUDE_ANCHORS, ROOM, SLOTS, SLOTS_BY_ID, SPAWN, type ForeignAsset } from './catalog';
+import type {
+  Anomaly,
+  AnomalyKind,
+  Bystander,
+  FloorPlan,
+  MarkResult,
+  PropKind,
+  RNG,
+  SlotDef,
+  Vec3,
+} from './types';
 
 /**
  * Wrong marks allowed before the run ends. The timer alone was not tense
@@ -108,7 +118,24 @@ function allowedKinds(budget: number, foreignOnly = false): AnomalyKind[] {
       : budget === 1
         ? ['intrude', 'stare', 'stare', 'warp', 'shift', 'invert']
         : ['intrude', 'stare', 'warp', 'shift', 'twin', 'twin', 'invert', 'swarm'];
-  if (foreignOnly) return all;
+  if (foreignOnly) {
+    // 'intrude' cannot survive a room that also contains bystanders.
+    //
+    // It means "an object that should not be here", which is a claim about what
+    // the object *is*. A bystander is an object of exactly the same kind standing
+    // in exactly the same sort of place, so once both exist the two are
+    // indistinguishable and marking either one is a coin flip. Every other kind
+    // is a claim about what the object *does* — it watches, it moved, it is
+    // duplicated, it is the wrong size, it is upside down — and those survive
+    // having innocent company, because innocence does nothing.
+    //
+    // Dropping it also resolves it: the player's question stops being "does this
+    // belong?" (unanswerable, and what the playtest complained about) and becomes
+    // "is this one behaving?" (answerable from the frame alone, which is the rule
+    // the rest of this file is built on).
+    const observable = all.filter((kind) => kind !== 'intrude');
+    return observable.length > 0 ? observable : ['stare'];
+  }
   const shared = all.filter((kind) => !FOREIGN_ONLY_KINDS.has(kind));
   // A floor with no kinds left would produce nothing at all.
   return shared.length > 0 ? shared : ['intrude'];
@@ -205,10 +232,12 @@ function buildStare(
   usedAnchors: Set<string>,
   anchors: readonly AnchorDef[],
   spawn: Vec3,
+  /** Pin it to one anchor — floor 1 needs the spot nearest the way in. */
+  pinned?: AnchorDef,
 ): Anomaly | null {
-  const free = anchors.filter((a) => !usedAnchors.has(a.id));
+  const free = pinned ? [pinned] : anchors.filter((a) => !usedAnchors.has(a.id));
   if (free.length === 0) return null;
-  const anchor = pick(rng, free);
+  const anchor = pinned ?? pick(rng, free);
   usedAnchors.add(anchor.id);
 
   const asset = pick(rng, horrorAssets());
@@ -230,6 +259,51 @@ function buildStare(
 
 function zoneName(zone: SlotDef['zone']): string {
   return { living: '客厅', kitchen: '厨房', bedroom: '卧室', hall: '玄关' }[zone];
+}
+
+/** What to call each prop when the player has just marked the wrong one. */
+const PROP_NAMES: Record<PropKind, string> = {
+  sofa: '沙发', coffee_table: '茶几', tv_stand: '电视柜', tv: '电视', rug: '地毯',
+  floor_lamp: '落地灯', bookshelf: '书架', armchair: '扶手椅', plant: '盆栽',
+  wall_art: '挂画', side_table: '边桌', ceiling_light: '吊灯', counter: '台面',
+  sink: '水槽', stove: '灶台', fridge: '冰箱', upper_cabinet: '吊柜',
+  dining_table: '餐桌', dining_chair: '餐椅', kettle: '水壶', microwave: '微波炉',
+  trash_bin: '垃圾桶', bed: '床', nightstand: '床头柜', table_lamp: '台灯',
+  wardrobe: '衣柜', desk: '书桌', desk_chair: '书桌椅', mirror: '镜子',
+  shoe_rack: '鞋架', doormat: '门垫', coat_hook: '衣帽钩',
+  umbrella_stand: '伞架', key_bowl: '钥匙碗',
+  duck: '橡皮鸭', gnome: '花园地精', cone: '路锥', shark: '鲨鱼',
+  horse: '马', washer: '洗衣机', vending: '自动售货机',
+  astronaut: '宇航员', flamingo: '火烈鸟', toilet: '马桶', cactus: '仙人掌',
+  eye: '眼球', mannequin: '人台', milk: '牛奶盒', piano: '钢琴',
+  face: '人脸', figure: '人影', hand: '手', doll: '玩偶', teeth: '牙', stain: '污渍',
+};
+
+/**
+ * Why the thing you just marked was ordinary.
+ *
+ * The playtest note was that the game kept saying "mark what does not belong"
+ * without ever saying how to tell. A miss is the one moment the player is
+ * certainly paying attention, so it is where the answer belongs: name the object
+ * they marked, then name the two tests every anomaly in this room passes and that
+ * object does not. "Wrong" on its own teaches nothing, and an unexplained rule is
+ * the thing that was actually complained about.
+ */
+export function explainMiss(plan: FloorPlan, slotId: string | null): string {
+  if (!slotId) return '那里什么都没有';
+
+  const bystander = plan.bystanders.find((b) => b.slotId === slotId);
+  if (bystander) return bystander.label;
+
+  // A slot the plan knows about but did not fill: still worth saying which test
+  // it failed, rather than falling back to a shrug.
+  const anchor = INTRUDE_ANCHORS.find((a) => a.id === slotId);
+  if (anchor) return `${placeOf(anchor)}这个东西 —— 待在原位，也没在看你`;
+
+  const slot = SLOTS_BY_ID.get(slotId);
+  if (slot) return `${zoneName(slot.zone)}的${PROP_NAMES[slot.kind] ?? '这个东西'} —— 待在原位，也没在看你`;
+
+  return '这个属于这个房间';
 }
 
 function buildSlotAnomaly(
@@ -432,16 +506,37 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
       : anchors.reduce((best, a) =>
           a.zone === 'living' && a.id === 'fx_living_centre' ? a : best, anchors[0]);
     const asset = FOREIGN_ASSETS.find((a) => a.key === 'duck') ?? FOREIGN_ASSETS[0];
-    anomalies.push({
-      id: nextId('intrude', anchor.id),
-      kind: 'intrude',
-      slotId: anchor.id,
-      assetKey: asset.key,
-      rotY: 0,
-      label: `${placeOf(anchor)}有一只不该在这里的${asset.name}`,
-    });
+    // In a reconstruction the scripted first anomaly is a 'stare': it is the one
+    // kind that needs no reference point at all, which is what a first floor
+    // should teach. It cannot be an 'intrude' any more — see allowedKinds — and
+    // building it through the real builder rather than by hand is what keeps it
+    // airborne, facing the way in, and labelled like every other stare.
+    const first = foreignOnly
+      ? buildStare(rng, usedAnchors, anchors, spawn, anchor)
+      : null;
+    anomalies.push(
+      first ?? {
+        id: nextId('intrude', anchor.id),
+        kind: 'intrude',
+        slotId: anchor.id,
+        assetKey: asset.key,
+        rotY: 0,
+        label: `${placeOf(anchor)}有一只不该在这里的${asset.name}`,
+      },
+    );
     usedAnchors.add(anchor.id);
-    return { floor, seed, anomalies, hiddenSlots, twinSlots, duration: durationForFloor(floor) };
+    const firstFloorBystanders = foreignOnly
+      ? buildBystanders(rng, anchors, usedAnchors, floor, 1)
+      : [];
+    return {
+      floor,
+      seed,
+      anomalies,
+      bystanders: firstFloorBystanders,
+      hiddenSlots,
+      twinSlots,
+      duration: durationForFloor(floor),
+    };
   }
 
   const requested = opts.kinds ? opts.kinds.slice() : null;
@@ -467,6 +562,7 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
       floor,
       seed,
       anomalies,
+      bystanders: buildBystanders(rng, anchors, usedAnchors, floor, count),
       hiddenSlots,
       twinSlots,
       duration: durationForFloor(floor),
@@ -505,10 +601,47 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
     floor,
     seed,
     anomalies,
+    // The procedural room supplies its own furniture, so it needs no bystanders.
+    bystanders: [],
     hiddenSlots,
     twinSlots,
     duration: durationForFloor(floor),
   };
+}
+
+/**
+ * Ordinary objects for the reconstruction, one per free anchor.
+ *
+ * One bystander per anomaly, so the room is roughly half innocent: enough that
+ * seeing a crisp 3D object is not by itself an answer, not so many that the
+ * anomalies get lost in clutter. Floor 1 gets a single one, because teaching the
+ * distinction is the point of that floor and two things to compare is enough.
+ *
+ * Deliberately drawn from the same catalogue as the anomalies. A bystander that
+ * looked *different* from an anomaly — a tamer object, a duller colour — would
+ * turn the game back into visual search with extra steps. These are the same
+ * absurd objects, standing still and doing nothing, and that is the contrast the
+ * player has to learn to read.
+ */
+function buildBystanders(
+  rng: RNG,
+  anchors: readonly AnchorDef[],
+  usedAnchors: ReadonlySet<string>,
+  floor: number,
+  anomalyCount: number,
+): Bystander[] {
+  const wanted = Math.max(1, Math.min(4, floor === 1 ? 1 : anomalyCount));
+  const free = anchors.filter((a) => !usedAnchors.has(a.id));
+  const chosen = shuffle(rng, free).slice(0, wanted);
+
+  return chosen.map((anchor) => {
+    const asset = FOREIGN_ASSETS[Math.floor(rng() * FOREIGN_ASSETS.length) % FOREIGN_ASSETS.length];
+    return {
+      slotId: anchor.id,
+      assetKey: asset.key,
+      label: `${placeOf(anchor)}这个${asset.name} —— 待在原位，也没在看你`,
+    };
+  });
 }
 
 function distance2d(a: Vec3, b: Vec3): number {

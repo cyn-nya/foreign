@@ -33,7 +33,7 @@ const MANIFEST = path.join(OUT_DIR, 'manifest.json');
 /* ---------------------------------------------------------------- args --- */
 
 function parseArgs(argv) {
-  const args = { only: null, force: false, dryRun: false, style: undefined, version: 'G1', concurrency: 2, timeoutMs: 15 * 60 * 1000 };
+  const args = { only: null, force: false, dryRun: false, style: undefined, version: 'G1', faceCount: undefined, concurrency: 2, timeoutMs: 15 * 60 * 1000 };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--dry-run') args.dryRun = true;
@@ -41,6 +41,7 @@ function parseArgs(argv) {
     else if (a === '--only') args.only = (argv[++i] ?? '').split(',').map((s) => s.trim()).filter(Boolean);
     else if (a === '--style') args.style = argv[++i];
     else if (a === '--version') args.version = argv[++i];
+    else if (a === '--face-count') args.faceCount = Number(argv[++i]);
     else if (a === '--concurrency') args.concurrency = Math.max(1, Number(argv[++i]) || 1);
     else if (a === '--timeout') args.timeoutMs = Math.max(60_000, Number(argv[++i]) || 0);
     else if (a === '--help' || a === '-h') args.help = true;
@@ -73,12 +74,76 @@ Options
   --style <name>       photorealistic | cartoon | anime | hand_painted
                        | cyberpunk | fantasy | glass        (default: photorealistic)
   --version <v>        G1 | G1-Turbo                        (default: G1)
+  --face-count <n>     override the per-asset triangle budget   (10000-300000)
   --concurrency <n>    parallel tasks                       (default: 2)
   --timeout <ms>       per-task timeout                     (default: 900000)
   --key <key>          API key (else AHOLO_API_KEY, else .env.local)
 
 Get a key at https://labs.aholo.ai/api-keys
 `;
+
+/**
+ * Create a task, tolerating the account's concurrent-task ceiling.
+ *
+ * The API allows only a few generations at once and answers the rest with
+ * `GENERATION_CONCURRENCY_LIMIT_EXCEEDED` — "当前已有进行中的生成任务，请等待完成后再试".
+ * That is a queue, not a verdict, but treating it as a failure cost 8 of 20
+ * assets on the first real run: the batch reported them as errors and they were
+ * simply never made. Retrying is the whole difference between "the account is
+ * busy" and "these assets do not exist".
+ */
+async function generateWithRetry(client, asset, args) {
+  const attempts = 6;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await client.generateGlb(
+        {
+          prompt: asset.prompt,
+          version: args.version,
+          style: args.style,
+          outputFormat: ['glb'],
+          // Omitting this lets Lux3D use its 300k maximum, which is ~16 MB and
+          // 296k triangles for a rubber duck. The budget belongs in the
+          // catalogue, next to the thing it describes.
+          faceCount: args.faceCount ?? asset.faceCount ?? 20000,
+        },
+        {
+          timeoutMs: args.timeoutMs,
+          onProgress: (elapsed) => {
+            if (elapsed % 30_000 < 4000) {
+              process.stdout.write(`\r  ${asset.key}: waiting ${Math.round(elapsed / 1000)}s   `);
+            }
+          },
+        },
+      );
+    } catch (error) {
+      const code = error instanceof AholoError ? error.code : undefined;
+      const message = error instanceof Error ? error.message : String(error);
+
+      // Permanent conditions, checked first. `c=-1` is the API's catch-all code —
+      // it means both "invalid appKey" and "no credits" — so the message is the
+      // only thing that distinguishes them, and a credit failure retried six
+      // times over five minutes is five minutes spent learning nothing.
+      const permanent =
+        /no credits|insufficient|not enough credits|额度|余额|invalid appKey/i.test(message) ||
+        code === 'BIZ_11003' ||
+        code === 'BIZ_24002';
+      const transient =
+        !permanent &&
+        (code === 'GENERATION_CONCURRENCY_LIMIT_EXCEEDED' ||
+          code === 'BIZ_11001' ||
+          /concurrency|进行中的生成任务|rate ?limit|too many requests/i.test(message));
+
+      if (!transient || attempt >= attempts) throw error;
+
+      // Long and growing: the ceiling clears when *another* asset finishes, and
+      // those take minutes, so a short backoff would just burn attempts.
+      const wait = Math.min(90_000, 15_000 * attempt);
+      console.log(`  ${asset.key}: account busy, retrying in ${wait / 1000}s (${attempt}/${attempts - 1})`);
+      await new Promise((resolve) => setTimeout(resolve, wait));
+    }
+  }
+}
 
 /* ---------------------------------------------------------------- main --- */
 
@@ -120,7 +185,7 @@ async function main() {
   if (args.dryRun) {
     console.log('\n--dry-run, plan only:\n');
     for (const a of todo) {
-      console.log(`  ${a.key.padEnd(12)} ${String(a.height).padStart(5)} m  ${a.prompt}`);
+      console.log(`  ${a.key.padEnd(12)} ${String(a.height).padStart(5)} m  ${String(a.faceCount ?? 20000).padStart(6)} faces  ${a.prompt}`);
     }
     console.log(`\nWould write ${todo.length} file(s) to public/assets/foreign/`);
     return;
@@ -158,22 +223,7 @@ async function main() {
       const started = Date.now();
       try {
         console.log(`\n▶ ${asset.key} — ${asset.name}`);
-        const { taskId, glbUrl } = await client.generateGlb(
-          {
-            prompt: asset.prompt,
-            version: args.version,
-            style: args.style,
-            outputFormat: ['glb'],
-          },
-          {
-            timeoutMs: args.timeoutMs,
-            onProgress: (elapsed) => {
-              if (elapsed % 30_000 < 4000) {
-                process.stdout.write(`\r  ${asset.key}: waiting ${Math.round(elapsed / 1000)}s   `);
-              }
-            },
-          },
-        );
+        const { taskId, glbUrl } = await generateWithRetry(client, asset, args);
 
         // result URLs expire after two hours — fetch it now
         const response = await fetch(glbUrl);

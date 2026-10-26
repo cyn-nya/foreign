@@ -252,6 +252,65 @@ try {
     `found=${missed.report.found}`,
   );
 
+  // The room now contains objects that are present and innocent. Without them
+  // there was no judgement in the game at all — the scan's own furniture is baked
+  // into the splat, so every crisp object *was* an anomaly and finding one was a
+  // visual-search task rather than a decision. This is the check that the
+  // judgement is real: a bystander looks exactly like an anomaly and must not
+  // score, while the anomaly on the same floor still must.
+  const judged = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(4);
+    const count = s.bystanderCount;
+    const tried = [];
+    // Only the bystanders the crosshair actually lands on can be marked, and
+    // which ones those are depends on the floor's layout. Asserting on a fixed
+    // index asserted on the harness's aim rather than on the game, and failed
+    // while the feature worked. So aim at each in turn, keep the ones that
+    // resolve, and mark only those.
+    for (let i = 0; i < count; i++) {
+      const slot = s.aimAtBystander(i);
+      if (!slot) continue;
+      if (s.crosshair() !== slot) {
+        tried.push({ slot, marker: s.crosshair(), reachable: false });
+        continue;
+      }
+      const report = s.mark();
+      tried.push({ slot, reachable: true, result: report.result, found: report.found });
+      await s.start(4); // reset the marks the probe spent
+    }
+    return { count, tried };
+  });
+  const reachable = judged.tried.filter((t) => t.reachable);
+  check(
+    'the room places innocent objects alongside the anomalies',
+    judged.count > 0 && judged.tried.length > 0,
+    `bystanders=${judged.count} aimed=${judged.tried.map((t) => t.slot).join(',') || 'none'}`,
+  );
+  check(
+    'marking an innocent object does not score',
+    reachable.length > 0 && reachable.every((t) => t.result === 'miss' && t.found === 0),
+    reachable.length
+      ? reachable.map((t) => `${t.slot}:${t.result}/found=${t.found}`).join(' ')
+      : `none of ${judged.count} bystanders was reached by the harness crosshair (` +
+        `${judged.tried.map((t) => `${t.slot}->${t.marker}`).join(' ')})`,
+  );
+
+  // The control. If every mark were a miss, the assertion above would pass while
+  // the game was unplayable.
+  const stillHits = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(4);
+    const slot = s.aimAt(0);
+    const report = s.mark();
+    return { slot, report };
+  });
+  check(
+    'and the anomaly on that same floor still scores',
+    stillHits.report.result === 'hit' && stillHits.report.found === 1,
+    `aimed=${stillHits.slot} result=${stillHits.report.result} found=${stillHits.report.found}`,
+  );
+
   // Burning all three marks has to end the run rather than leave it stuck.
   const burned = await page.evaluate(async () => {
     const s = window.__splat;

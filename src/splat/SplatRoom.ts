@@ -82,6 +82,8 @@ export class SplatRoom {
   private readonly bytes = new Map<string, ArrayBuffer>();
   private readonly missing = new Set<string>();
   private placed: PlacedAnomaly[] = [];
+  /** Innocent objects. Kept apart from `placed` so they can never score. */
+  private readonly bystanderNodes: Object3D[] = [];
 
   constructor(scene: Scene3D) {
     this.scene = scene;
@@ -89,6 +91,11 @@ export class SplatRoom {
 
   get placements(): readonly PlacedAnomaly[] {
     return this.placed;
+  }
+
+  /** The innocent objects, for the acceptance check to aim at. */
+  get bystanders(): readonly { node: Object3D; slotId: string }[] {
+    return this.bystanderNodes.map((node) => ({ node, slotId: String(node.userData.slotId) }));
   }
 
   get report(): AssetReport {
@@ -102,6 +109,12 @@ export class SplatRoom {
 
   /** Fetch the GLB bytes for each key. Missing files are remembered, not fatal. */
   async loadAssets(keys: readonly string[], signal?: AbortSignal): Promise<AssetReport> {
+    // `missing` is a veto for the rest of the session. That is deliberate but not
+    // free: one failed fetch removes that asset from the game until reload, and
+    // every later floor needing it silently places nothing. Retrying it on every
+    // floor was tried and hung the page (`await Promise.all` never settles when a
+    // fetch does not return), so the fix has to come with a timeout on the fetch
+    // itself rather than by removing the guard.
     const wanted = [...new Set(keys)].filter((key) => !this.bytes.has(key) && !this.missing.has(key));
     await Promise.all(
       wanted.map(async (key) => {
@@ -149,6 +162,11 @@ export class SplatRoom {
             : 1;
       for (let i = 0; i < copies; i++) {
         const node = await this.instantiate(buffer, anomaly, anchor, i, copies);
+        // Tagged like the bystanders so `pick` resolves both the same way. An
+        // anomaly that resolves by object identity and an innocent object that
+        // resolves by tag is two mechanisms where one will do, and the one that
+        // is forgotten is the one that silently stops working.
+        node.userData.slotId = anchor.id;
         this.scene.add(node as never);
         created.push({
           anomaly,
@@ -162,6 +180,33 @@ export class SplatRoom {
 
     this.placed = created;
     return created;
+  }
+
+  /**
+   * Put the innocent objects in the room.
+   *
+   * Nothing here watches, floats, duplicates or resizes — that is the entire
+   * distinction the player has to make. They load through the same path and sit
+   * at the same anchors as the anomalies, so a crisp object in the scan is no
+   * longer a giveaway.
+   */
+  async buildBystanders(plan: FloorPlan, anchors: readonly AnchorDef[]): Promise<void> {
+    const byId = new Map(anchors.map((anchor) => [anchor.id, anchor]));
+
+    for (const bystander of plan.bystanders) {
+      const anchor = byId.get(bystander.slotId);
+      const buffer = this.bytes.get(bystander.assetKey);
+      if (!anchor || !buffer) continue;
+
+      // Placed for its looks only: no entry in `placed`, so it can never be
+      // counted as found, cannot be the target of a hit, and is never animated.
+      const parsed = await loadGLTF(buffer.slice(0), { textureLoader: downloadTexture });
+      const node = parsed.scene as unknown as Object3D;
+      node.position.set(anchor.pos.x, anchor.pos.y, anchor.pos.z);
+      node.userData.slotId = bystander.slotId;
+      this.scene.add(node as never);
+      this.bystanderNodes.push(node);
+    }
   }
 
   private async instantiate(
@@ -223,6 +268,10 @@ export class SplatRoom {
     for (const item of this.placed) {
       item.node.parent?.remove(item.node);
     }
+    for (const node of this.bystanderNodes) {
+      node.parent?.remove(node);
+    }
+    this.bystanderNodes.length = 0;
     this.placed = [];
     this.clock = 0;
   }
@@ -274,14 +323,23 @@ export class SplatRoom {
    * names the leaf mesh — which for a GLB is several levels below the node that
    * carries the slot id — so the parent chain is walked up until it matches.
    */
-  pick(camera: PerspectiveCamera, viewHeight: number, nx = 0, ny = 0): string | null {
+  pick(camera: PerspectiveCamera, viewHeight: number, nx?: number, ny?: number): string | null {
     if (this.placed.length === 0) return null;
 
+    // (0, 0) is the centre of the view here, not a corner: the viewer's
+    // `setFromCamera` takes normalised device coordinates and uses `viewHeight`
+    // only for the projection. Passing pixels returns null for everything.
     const raycaster = new Raycaster();
-    raycaster.setFromCamera(new Vector2(nx, ny), camera, viewHeight);
+    raycaster.setFromCamera(new Vector2(nx ?? 0, ny ?? 0), camera, viewHeight);
 
+    // Bystanders are in the raycast, and this matters more than it looks. When
+    // they were left out, aiming at an innocent object found nothing at that
+    // spot and the ray carried on through it to whatever stood behind — so
+    // marking a bystander scored a hit on an anomaly the player could not see.
+    // The objects have to be equally solid to the crosshair or the distinction
+    // between them is not one the player can act on.
     const hits = raycaster.intersectObjects(
-      this.placed.map((item) => item.node),
+      [...this.placed.map((item) => item.node), ...this.bystanderNodes],
       true,
     );
     const first = hits[0];
@@ -289,6 +347,8 @@ export class SplatRoom {
 
     let node: Object3D | null = first.object;
     while (node) {
+      const id = node.userData?.slotId;
+      if (typeof id === 'string') return id;
       const match = this.placed.find((item) => item.node === node);
       if (match) return match.slotId;
       node = node.parent;

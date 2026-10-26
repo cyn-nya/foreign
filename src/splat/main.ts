@@ -12,14 +12,22 @@
  */
 
 import { FOREIGN_ASSETS } from '../game/catalog.ts';
-import { MAX_MISTAKES, formatClock, generateFloor, hitScore, judgeMark } from '../game/rules.ts';
+import { MAX_MISTAKES, explainMiss, formatClock, generateFloor, hitScore, judgeMark } from '../game/rules.ts';
 import type { AnomalyKind, FloorPlan } from '../game/types.ts';
 import { SplatPlayer } from './SplatPlayer.ts';
 import { SplatRoom } from './SplatRoom.ts';
 import { GameAudio, type AudioReport } from './audio.ts';
 import { ROOM_ANCHORS, ROOM_FLOOR_OPTIONS } from './roomAnchors.ts';
+import { Box3, Vector3, type Object3D } from '@manycore/aholo-viewer';
 import { ROOM_SPAWN, SplatScene } from './SplatScene.ts';
 import { EYE_HEIGHT, HOVER_HEIGHT } from '../viewer/voxel.ts';
+
+/**
+ * Floors are built one at a time; see startFloor. Declared at module scope
+ * because the autostart floor runs before the boot function reaches the
+ * declaration, and a `let` inside it would throw on the temporal dead zone.
+ */
+let floorChain: Promise<void> = Promise.resolve();
 
 /** Every asset a floor could ever ask for. */
 const ASSET_KEYS = FOREIGN_ASSETS.map((asset) => asset.key);
@@ -76,6 +84,9 @@ interface SplatDebug {
   mark: () => MarkReport;
   /** Aim the camera at one of the placed objects. Returns its slot id. */
   aimAt: (index: number) => string | null;
+  /** Look at an innocent object. Returns its slot id, for the miss assertion. */
+  aimAtBystander: (index: number) => string | null;
+  bystanderCount: number;
   /**
    * The watchers, with where each is looking and where it should be looking.
    * `yawError` is the whole mechanic in one number: it must stay at zero as the
@@ -83,6 +94,7 @@ interface SplatDebug {
    */
   watchers: () => { slotId: string; x: number; z: number; yaw: number; expectedYaw: number; yawError: number; y: number; baseY: number; elapsed: number }[];
   /** The anchors, with a ready-to-use eye position, so a harness can stand somewhere. */
+  crosshair: () => string | null;
   anchors: () => { id: string; floor: { x: number; y: number; z: number }; eye: { x: number; y: number; z: number } }[];
   /** Where each placed object is, in the room and on screen. */
   placements: () => { slotId: string; kind: string; assetKey?: string; x: number; y: number; z: number; rotX: number; scale: number; onScreen: boolean }[];
@@ -144,7 +156,10 @@ const debug: SplatDebug = {
   start: async () => undefined,
   mark: () => ({ result: 'miss', slotId: null, found: 0, marksLeft: MAX_MISTAKES, state: 'menu' }),
   aimAt: () => null,
+  aimAtBystander: () => null,
+  bystanderCount: 0,
   watchers: () => [],
+  crosshair: () => null,
   anchors: () => [],
   placements: () => [],
   tick: () => undefined,
@@ -190,7 +205,8 @@ function showMenu(assetLine: string, onStart: () => void): void {
     <h1 class="title">FOREIGN<span class="sub">异物</span></h1>
     <p class="tagline">
       这是一间被 3D 重建出来的<strong>真实房间</strong>。<br />
-      它原本是什么样就永远是什么样 —— 所以<strong>多出来的东西</strong>，就是异常。<br />
+      里面本来就摆着一些奇怪的模型 —— <strong>它们不是目标</strong>。<br />
+      只有<strong>动了的</strong>才算：在看你、飘起来、多了几个、变了形、倒过来。<br />
       找到它们，但别乱点：<strong>你只有 ${MAX_MISTAKES} 次标记机会</strong>。
     </p>
     <div class="actions">
@@ -282,7 +298,9 @@ async function main(): Promise<void> {
   const report = await room.loadAssets(ASSET_KEYS);
   debug.assets = { loaded: report.loaded.length, missing: report.missing };
 
-  debug.stage = 'ready';
+  // (stage 'ready' is set once the debug surface below is wired — see the
+  // note there. Announcing readiness before the harness can actually drive the
+  // game is how every acceptance check became a race.)
   debug.ready = true;
   const assetLine = report.missing.length
     ? `未检测到 ${report.missing.length} 个资产的 Lux3D 原模型 · 正在使用烘焙占位模型`
@@ -324,7 +342,31 @@ async function main(): Promise<void> {
   layout();
   window.addEventListener('resize', layout);
 
+  /**
+   * Floors are built one at a time.
+   *
+   * Every build ends by clearing the room, so two in flight at once race: the
+   * second clears, the first finishes placing into the cleared scene, and the
+   * result is an empty room that reports success. The autostart floor made this
+   * reachable on every load — it is fired without being awaited — and clicking
+   * "next floor" twice does the same thing. Queueing costs nothing here because
+   * a floor build is already seconds long.
+   */
   async function startFloor(floor = 1, seed?: number, lock = false, kinds?: AnomalyKind[]): Promise<void> {
+    const previous = floorChain;
+    let release!: () => void;
+    floorChain = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    try {
+      await buildFloorNow(floor, seed, lock, kinds);
+    } finally {
+      release();
+    }
+  }
+
+  async function buildFloorNow(floor = 1, seed?: number, lock = false, kinds?: AnomalyKind[]): Promise<void> {
     debug.floor = floor;
     debug.found = [];
     debug.marksLeft = MAX_MISTAKES;
@@ -337,9 +379,14 @@ async function main(): Promise<void> {
     debug.state = 'playing';
 
     // Make sure anything this floor needs is present before it appears.
-    await room.loadAssets(plan.anomalies.map((a) => a.assetKey ?? ''));
+    await room.loadAssets([
+      ...plan.anomalies.map((a) => a.assetKey ?? ''),
+      ...plan.bystanders.map((b) => b.assetKey),
+    ]);
     const placed = await room.buildFloor(plan, ROOM_ANCHORS);
     debug.placed = placed.length;
+    debug.bystanderCount = plan.bystanders.length;
+    await room.buildBystanders(plan, ROOM_ANCHORS);
 
     overlay.classList.add('hidden');
     overlay.innerHTML = '';
@@ -404,7 +451,7 @@ async function main(): Promise<void> {
       debug.marksLeft -= 1;
       debug.timeLeft = Math.max(0, debug.timeLeft - 8);
       audio.sting('miss');
-      toast(slotId ? '这个属于这个房间' : '那里什么都没有', 'bad');
+      toast(explainMiss(plan, slotId), 'bad');
     }
 
     syncHud();
@@ -489,18 +536,52 @@ async function main(): Promise<void> {
     scene.render();
   };
 
-  debug.teleport = (x, y, z, yaw, pitch) => {
-    player.spawnAt({ x, y, z, yaw: yaw ?? player.yaw, pitch: pitch ?? player.pitch });
-    debug.renderOnce();
-  };
+  /**
+   * Aim at an object's real centre, not at its origin plus a guess.
+   *
+   * The origin of a GLB is its base, so the old `position.y + 0.5` was tuned for
+   * things standing on the floor. A 'stare' floats 1.15–1.85 m up, and half a
+   * metre above *that* is over the top of it — the ray sailed past and landed on
+   * whatever stood behind, which is how marking an innocent object came back as a
+   * hit on an anomaly the player could not see. The bounding box is the honest
+   * answer for a floating object and a grounded one alike.
+   */
+  function aimAtNode(node: Object3D): void {
+    let x = node.position.x;
+    let y = node.position.y;
+    let z = node.position.z;
+    try {
+      const box = new Box3().setFromObject(node);
+      // An empty box has no centre. The viewer reports (0,0,0) for one, which is
+      // finite and finite-looking, so a plain isFinite check accepted it and the
+      // camera got aimed at the world origin instead of at the object — the ray
+      // then landed on whatever else happened to be there. A real centre is also
+      // near the object's own origin; anything further is the same failure.
+      if (!box.isEmpty()) {
+        const centre = box.getCenter(new Vector3());
+        const sane =
+          Number.isFinite(centre.x) &&
+          Number.isFinite(centre.y) &&
+          Number.isFinite(centre.z) &&
+          Math.hypot(centre.x - x, centre.y - y, centre.z - z) < 4;
+        if (sane) {
+          x = centre.x;
+          y = centre.y;
+          z = centre.z;
+        }
+      }
+    } catch {
+      // A subtree the viewer cannot measure is still aimed at by its origin.
+    }
+    lookAt(x, y, z);
+  }
 
-  debug.aimAt = (index) => {
-    const target = room.placements[index];
-    if (!target) return null;
+  /** Point the player's head at a world position, keeping their feet where they are. */
+  function lookAt(x: number, y: number, z: number): void {
     const eye = player.cameraState();
-    const dx = target.node.position.x - eye.x;
-    const dy = target.node.position.y + 0.5 - eye.y;
-    const dz = target.node.position.z - eye.z;
+    const dx = x - eye.x;
+    const dy = y - eye.y;
+    const dz = z - eye.z;
     const horizontal = Math.hypot(dx, dz);
     // forward = (-sin yaw, 0, -cos yaw) in this build's convention
     player.spawnAt({
@@ -511,6 +592,24 @@ async function main(): Promise<void> {
       pitch: Math.atan2(dy, horizontal),
     });
     debug.renderOnce();
+  }
+
+  debug.teleport = (x, y, z, yaw, pitch) => {
+    player.spawnAt({ x, y, z, yaw: yaw ?? player.yaw, pitch: pitch ?? player.pitch });
+    debug.renderOnce();
+  };
+
+  debug.aimAt = (index) => {
+    const target = room.placements[index];
+    if (!target) return null;
+    aimAtNode(target.node);
+    return target.slotId;
+  };
+
+  debug.aimAtBystander = (index) => {
+    const target = room.bystanders[index];
+    if (!target) return null;
+    aimAtNode(target.node);
     return target.slotId;
   };
 
@@ -537,6 +636,9 @@ async function main(): Promise<void> {
           elapsed: room.elapsed,
         };
       });
+
+  /** What the crosshair is on right now, without spending a mark. */
+  debug.crosshair = () => room.pick(scene.camera, scene.viewer.getSize().height);
 
   debug.anchors = () =>
     ROOM_ANCHORS.map((anchor) => ({
@@ -606,6 +708,13 @@ async function main(): Promise<void> {
     debug.frames++;
     requestAnimationFrame(frame);
   }
+  // Announced only here, and deliberately not earlier. `stage === 'ready'` is
+  // what every harness waits for; the debug accessors above are assigned after
+  // the viewer is constructed, so setting this at the top of the boot handed
+  // out stub functions that silently did nothing — an acceptance run that
+  // raced the rest of the boot and reported an empty room.
+  debug.stage = 'ready';
+
   requestAnimationFrame(frame);
 }
 

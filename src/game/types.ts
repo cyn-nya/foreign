@@ -146,10 +146,32 @@ export interface Anomaly {
   spread?: number;
 }
 
+/**
+ * An object that is simply there.
+ *
+ * Without these the game had no judgement in it at all: the reconstruction's own
+ * furniture is baked into the scan, so every crisp 3D object in the room *was* an
+ * anomaly, and spotting one was a visual-search task rather than a decision. A
+ * playtester put it as "没有明确说明怎么样算不该出现，如何判断" — there was nothing
+ * to judge.
+ *
+ * A bystander looks exactly like an anomaly and does nothing. That is the whole
+ * point: it is what makes "is this thing wrong?" a question with an answer.
+ */
+export interface Bystander {
+  /** The anchor it stands on — also the id the player marks. */
+  slotId: string;
+  assetKey: string;
+  /** Shown when the player marks it, so the miss teaches instead of scolding. */
+  label: string;
+}
+
 export interface FloorPlan {
   floor: number;
   seed: number;
   anomalies: Anomaly[];
+  /** Objects that are present and innocent. Never counted as targets. */
+  bystanders: Bystander[];
   /** Slots whose default prop must be hidden this floor. */
   hiddenSlots: string[];
   /** Slots rendered twice this floor. */

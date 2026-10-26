@@ -111,11 +111,15 @@ describe('generateFloor in foreignOnly mode', () => {
     expect(shape(a)).toEqual(shape(b));
   });
 
-  it('opens on a single unmissable intruder, as the procedural room does', () => {
+  it('opens on a single unmissable anomaly, nearest the way in', () => {
     const plan = generateFloor(1, 5, opts);
     expect(plan.anomalies).toHaveLength(1);
-    expect(plan.anomalies[0].kind).toBe('intrude');
-    expect(plan.anomalies[0].assetKey).toBe('duck');
+    // A 'stare', not the procedural room's 'intrude'. With bystanders in the room
+    // an object that is merely present is no longer distinguishable from an
+    // innocent one, so the first floor teaches the kind that needs no reference
+    // point at all: something is hanging in the air, turned to face you.
+    expect(plan.anomalies[0].kind).toBe('stare');
+    expect(plan.anomalies[0].assetKey).toBeTruthy();
     // nearest the way in, which is the direction the player is already facing
     const slot = anchorById(plan.anomalies[0].slotId)!;
     const nearest = Math.min(
@@ -218,6 +222,90 @@ describe('generateFloor in foreignOnly mode', () => {
         // no procedural room names leaking into a room that does not have them
         expect(anomaly.label).not.toMatch(/客厅|厨房|卧室|玄关/);
         if (anomaly.assetKey) expect(anomaly.label).toContain(nameOf(anomaly.assetKey));
+      }
+    }
+  });
+});
+
+/**
+ * The room contains objects that are present and innocent.
+ *
+ * Before these existed there was no judgement in the game at all: the scan's own
+ * furniture is baked into the splat, so every crisp 3D object *was* an anomaly
+ * and finding one was a visual-search task. The playtest note — "没有明确说明怎么样
+ * 算不该出现，如何判断" — was accurate, and the cause was that there was nothing to
+ * judge.
+ */
+describe('bystanders make the room a judgement call', () => {
+  it('puts innocent objects in the reconstruction', () => {
+    for (let floor = 1; floor <= 8; floor++) {
+      const plan = generateFloor(floor, 900 + floor, opts);
+      expect(plan.bystanders.length).toBeGreaterThan(0);
+      for (const b of plan.bystanders) {
+        // A bystander that is not in the catalogue would be invisible, and one
+        // that is not on an anchor would float.
+        expect(ASSETS_BY_KEY.has(b.assetKey)).toBe(true);
+        expect(anchorById(b.slotId)).not.toBeNull();
+        expect(b.label).toContain(nameOf(b.assetKey));
+      }
+    }
+  });
+
+  it('never puts a bystander where an anomaly is', () => {
+    for (let floor = 1; floor <= 10; floor++) {
+      for (let seed = 0; seed < 12; seed++) {
+        const plan = generateFloor(floor, seed * 31 + floor, opts);
+        const anomalySlots = new Set(plan.anomalies.map((a) => a.slotId));
+        for (const b of plan.bystanders) {
+          // Overlapping would make the mark ambiguous: one slot, two answers.
+          expect(anomalySlots.has(b.slotId)).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('counts bystanders as misses, and says which test they failed', () => {
+    const plan = generateFloor(4, 4321, opts);
+    expect(plan.bystanders.length).toBeGreaterThan(0);
+
+    for (const b of plan.bystanders) {
+      expect(judgeMark(plan, b.slotId, []).result).toBe('miss');
+      expect(b.label).toMatch(/待在原位|没在看你/);
+    }
+
+    // The control: an anomaly at its own slot must still be a hit, or "everything
+    // is a miss" would satisfy the assertion above.
+    for (const a of plan.anomalies) {
+      expect(judgeMark(plan, a.slotId, []).result).toBe('hit');
+    }
+  });
+
+  it('does not count bystanders toward the floor total', () => {
+    for (let floor = 1; floor <= 8; floor++) {
+      const plan = generateFloor(floor, 700 + floor, opts);
+      // The HUD shows found/total from plan.anomalies. If bystanders leaked into
+      // that count the floor would be unclearable.
+      const cleared = plan.anomalies.every((a) => judgeMark(plan, a.slotId, []).result === 'hit');
+      expect(cleared).toBe(true);
+      for (const b of plan.bystanders) {
+        expect(plan.anomalies.some((a) => a.slotId === b.slotId)).toBe(false);
+      }
+    }
+  });
+
+  it('leaves the procedural room without bystanders, because it has furniture', () => {
+    for (let floor = 1; floor <= 8; floor++) {
+      expect(generateFloor(floor, 200 + floor).bystanders).toEqual([]);
+    }
+  });
+
+  it('never rolls a kind that only means "this object is present"', () => {
+    // Every remaining kind is a claim about what the object *does*, which is what
+    // lets an innocent object of the same sort stand next to it and be innocent.
+    for (let floor = 1; floor <= 10; floor++) {
+      for (let seed = 0; seed < 10; seed++) {
+        const plan = generateFloor(floor, seed * 17 + floor, opts);
+        expect(plan.anomalies.map((a) => a.kind)).not.toContain('intrude');
       }
     }
   });

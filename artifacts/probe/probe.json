@@ -4,7 +4,7 @@
       "scene": "room",
       "stage": "done",
       "error": null,
-      "loadSeconds": 32.1,
+      "loadSeconds": 29.3,
       "views": []
     }
   ],
@@ -12,7 +12,7 @@
     {
       "name": "room: viewer initialised and loaded the splat",
       "ok": true,
-      "detail": "stage=done, 32.1s"
+      "detail": "stage=done, 29.3s"
     },
     {
       "name": "room: no page or console errors",
@@ -22,12 +22,12 @@
     {
       "name": "room: the .glb loads into the splat scene with real extent",
       "ok": true,
-      "detail": "./assets/foreign/eye.glb size 0.74 x 0.74 x 0.74"
+      "detail": "./assets/foreign/eye.glb size 0.02 x 0.02 x 0.02"
     },
     {
       "name": "room: a centre-screen ray picks the .glb",
       "ok": true,
-      "detail": "1 hit(s), nearest 2.30 m from a camera 2.5 m away"
+      "detail": "2 hit(s), nearest 2.87 m from a camera 2.5 m away"
     },
     {
       "name": "room: a corner ray misses the .glb",
