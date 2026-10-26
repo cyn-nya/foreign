@@ -269,10 +269,10 @@ def build():
     s = slide(prs)
     y = head(s, "验收不是「我看过了」", "工程严谨性", 8, "质量")
     text(s, MARGIN, y, Inches(7.3), Inches(0.6),
-         ["npm run verify  =  类型检查 → 单测 → 构建 → 验收，共 209 项断言，全部通过"],
+         ["npm run verify  =  类型检查 → 单测 → 构建 → 验收，共 212 项断言，全部通过"],
          size=14, color=INK, space=8)
     stats = [("113", "单元测试"), ("10", "体素"), ("10", "资产"), ("5", "splat"),
-             ("49", "真实房间"), ("15", "程序化"), ("7", "部署")]
+             ("52", "真实房间"), ("15", "程序化"), ("7", "部署")]
     for i, (v, k) in enumerate(stats):
         bx = MARGIN + Inches(i * 1.42)
         panel(s, bx, Inches(2.5), Inches(1.28), Inches(1.05))

@@ -1006,6 +1006,60 @@ try {
       `(level ${resolution.auto.level}, ${resolution.auto.changes} change(s))`,
   );
 
+  // --- the player is told the actual rule -------------------------------------
+  //
+  // This text has already been wrong once. It outlived the design it described:
+  // it called the room's contents strange models and told the player that only
+  // things that *moved* were targets — true before the household split, and
+  // afterwards an instruction to walk past a still generated intruder, which is
+  // the anomaly a player is most likely to miss. Nothing about testing the
+  // mechanic catches that, because the mechanic was correct the whole time.
+  //
+  // So the briefing is asserted against the design: it has to name both ways of
+  // being wrong, and it must not tell the player that stillness is innocence.
+  const briefing = await page.evaluate(() => {
+    const s = window.__splat;
+    return {
+      words: s.briefing(),
+      // The two kinds the design actually has, read from the catalogue the game
+      // generates its floors from rather than from a list copied into this file.
+      householdIsInnocent: s.assetWeirdness('mundane_plant') === 0,
+      // `foreignPool` excludes only 0, so anything above it is a legal intruder.
+      intruderIsGenerated: (s.assetWeirdness('gnome') ?? 0) > 0,
+      worstIsGenerated: (s.assetWeirdness('face') ?? 0) > 0,
+    };
+  });
+
+  const saysShouldNotExist = /不该存在/.test(briefing.words);
+  const saysFurnitureBehaving = /家具做了家具做不到的事/.test(briefing.words);
+  // The stale instruction, in the shape it took. "Only the ones that moved count".
+  const claimsOnlyMovement = /只有.*动了的.*才算/.test(briefing.words);
+  const claimsFiniteMarks = /次标记机会/.test(briefing.words);
+  // Positive requirements, and they are load-bearing: without them this check
+  // passes on an empty string, because text that says nothing contradicts nothing.
+  const mentionsInnocent = /不是目标/.test(briefing.words);
+  const substantial = briefing.words.length > 60;
+
+  check(
+    'the briefing names both ways to be wrong, not just the one that moves',
+    saysShouldNotExist && saysFurnitureBehaving,
+    `shouldNotExist=${saysShouldNotExist} furnitureBehaving=${saysFurnitureBehaving} :: ${briefing.words.slice(0, 90)}…`,
+  );
+  check(
+    'and does not still claim that only things which moved are targets',
+    !claimsOnlyMovement && !claimsFiniteMarks && mentionsInnocent && substantial,
+    `claimsOnlyMovement=${claimsOnlyMovement} claimsFiniteMarks=${claimsFiniteMarks} ` +
+      `mentionsInnocent=${mentionsInnocent} chars=${briefing.words.length}`,
+  );
+  // The control: the two kinds really are different, or the sentence above is
+  // describing a distinction the game does not make.
+  check(
+    'the briefing matches the room: furniture is innocent and the intruder is not',
+    briefing.householdIsInnocent && briefing.intruderIsGenerated && briefing.worstIsGenerated,
+    `mundane_plant is 0 -> ${briefing.householdIsInnocent}, ` +
+      `gnome is >0 -> ${briefing.intruderIsGenerated}, face is >0 -> ${briefing.worstIsGenerated}`,
+  );
+
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | ') || 'clean');
   check('no console errors', consoleErrors.length === 0, consoleErrors.slice(0, 2).join(' | ') || 'clean');
 } catch (error) {

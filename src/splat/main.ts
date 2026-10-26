@@ -137,6 +137,8 @@ interface SplatDebug {
    * The adaptive render resolution: its level, the multiplier actually applied,
    * and whether the controller is still steering it.
    */
+  /** The briefing text with its markup stripped, so a test can read the words. */
+  briefing: () => string;
   quality: () => { level: number; ratio: number; auto: boolean; changes: number };
   /** Pin the resolution at a level, or pass "auto" to hand it back. */
   setQuality: (level: number | 'auto') => { level: number; ratio: number; auto: boolean; changes: number };
@@ -244,6 +246,7 @@ const debug: SplatDebug = {
   aimAtBystander: () => null,
   assetWeirdness: () => null,
   perfWindow: () => ({ samples: 0, spanMs: 0, intervals: 0, historyMs: 0 }),
+  briefing: () => '',
   quality: () => ({ level: 0, ratio: 1, auto: false, changes: 0 }),
   setQuality: () => ({ level: 0, ratio: 1, auto: false, changes: 0 }),
   bystanderCount: 0,
@@ -313,17 +316,41 @@ function showFailure(message: string): void {
  *
  * There is no baseline to memorise: the scan is fixed, so anything in here that
  * was not part of the apartment is the anomaly.
+ *
+ * "Not part of the apartment" is two separate mistakes, and the player has to be
+ * told both, because they look nothing alike. Something that should not exist at
+ * all is an object the room never contained; furniture doing what furniture
+ * cannot is the *same* objects the player has already seen, behaving wrongly.
+ *
+ * This text has been wrong once already. It described the room contents as strange
+ * models and said only things that moved were targets — true before the household
+ * split, and afterwards an instruction to ignore the anomaly a player is most
+ * likely to miss. Prose about a mechanic rots silently when the mechanic changes
+ * underneath it, so the acceptance harness asserts both cases are named here.
  */
+/**
+ * The briefing, as a string, separate from the panel that displays it.
+ *
+ * The harness asserts on these words. It has to be able to, because the way this
+ * text fails is silently: the mechanic changes underneath it and the instruction
+ * keeps describing the old game, which no amount of testing the mechanic will
+ * catch. Kept as a function so both the menu and `debug.briefing()` render the
+ * same thing rather than two copies that drift.
+ */
+function briefingHtml(): string {
+  return `
+      这是一间被 3D 重建出来的<strong>真实房间</strong>。<br />
+      里面摆着的家具都是真的、也都正常 —— <strong>它们不是目标</strong>。<br />
+      要标记的只有两种：<strong>根本不该存在的</strong>（凭空多出来、不是家具的玩意），<br />
+      和<strong>家具做了家具做不到的事</strong>（浮起来、倒挂、变形、忽然变成一群）。<br />
+      打中不扣次数，<strong>打错才扣</strong>：你只有 ${MAX_MISTAKES} 次失手机会，每次还罚 8 秒。`;
+}
+
 function showMenu(assetLine: string, onStart: () => void): void {
   debug.state = 'menu';
   panel(`
     <h1 class="title">FOREIGN<span class="sub">异物</span></h1>
-    <p class="tagline">
-      这是一间被 3D 重建出来的<strong>真实房间</strong>。<br />
-      里面本来就摆着一些奇怪的模型 —— <strong>它们不是目标</strong>。<br />
-      只有<strong>动了的</strong>才算：在看你、飘起来、多了几个、变了形、倒过来。<br />
-      找到它们，但别乱点：<strong>你只有 ${MAX_MISTAKES} 次标记机会</strong>。
-    </p>
+    <p class="tagline">${briefingHtml()}</p>
     <div class="actions">
       <button id="start-btn" class="primary">进入现场</button>
     </div>
@@ -1147,6 +1174,8 @@ async function main(): Promise<void> {
   // rather than importing the viewer into module scope.
   applyPixelRatio = (ratio) => scene.setPixelRatio(ratio);
   applyPixelRatio(pixelRatioForLevel(quality.level));
+  /** The briefing text with its markup stripped, so a test can read the words. */
+  debug.briefing = () => briefingHtml().replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
   debug.quality = () => ({
     level: quality.level,
     ratio: scene.pixelRatio,
