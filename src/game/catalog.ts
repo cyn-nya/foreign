@@ -18,6 +18,7 @@
  *           x=-5                              x=5
  */
 
+import catalogue from '../../data/foreign-assets.json';
 import type { PropKind, SlotDef, Vec3 } from './types';
 
 export const ROOM = {
@@ -181,7 +182,7 @@ export interface ForeignAsset {
   key: string;
   /** Chinese name shown in the round report. */
   name: string;
-  /** Prompt handed to Lux3D. */
+  /** Prompt handed to Aholo Lux3D text-to-3D, verbatim. */
   prompt: string;
   placeholder: PropKind;
   /** Uniform scale applied to the procedural placeholder. */
@@ -189,32 +190,21 @@ export interface ForeignAsset {
   /**
    * Target height in metres for the loaded .glb. Generation output has no
    * canonical scale, so every model is normalised to this before it enters
-   * the room — otherwise a "milk carton" arrives two metres tall.
+   * the room - otherwise a "milk carton" arrives two metres tall.
    */
   height: number;
-  /** Default tint for the placeholder. */
+  /** Default tint for the procedural placeholder. */
   color: number;
   /** 1 = screaming obvious, 3 = genuinely unsettling. */
   weirdness: 1 | 2 | 3;
 }
 
-export const FOREIGN_ASSETS: ForeignAsset[] = [
-  { key: 'duck', name: '巨型橡皮鸭', prompt: 'a giant yellow rubber duck, glossy plastic toy, product photo', placeholder: 'duck', scale: 1, height: 1.05, color: 0xffd93b, weirdness: 1 },
-  { key: 'cone', name: '交通锥', prompt: 'an orange traffic cone with reflective white stripes', placeholder: 'cone', scale: 1, height: 0.72, color: 0xff6b1a, weirdness: 1 },
-  { key: 'gnome', name: '花园地精', prompt: 'a ceramic garden gnome statue with red hat', placeholder: 'gnome', scale: 1, height: 0.68, color: 0xd8462f, weirdness: 2 },
-  { key: 'milk', name: '牛奶盒', prompt: 'a carton of milk, studio product shot', placeholder: 'milk', scale: 1, height: 0.26, color: 0xf2f4f8, weirdness: 2 },
-  { key: 'cactus', name: '仙人掌', prompt: 'a potted saguaro cactus in a terracotta pot', placeholder: 'cactus', scale: 1, height: 0.85, color: 0x3f8f52, weirdness: 1 },
-  { key: 'vending', name: '自动贩卖机', prompt: 'a japanese vending machine, full body, front view', placeholder: 'vending', scale: 1, height: 1.85, color: 0xe23b3b, weirdness: 1 },
-  { key: 'washer', name: '洗衣机', prompt: 'a front-loading washing machine, white enamel', placeholder: 'washer', scale: 1, height: 0.88, color: 0xdfe4ea, weirdness: 2 },
-  { key: 'toilet', name: '马桶', prompt: 'a white ceramic toilet, isolated on white', placeholder: 'toilet', scale: 1, height: 0.78, color: 0xf4f6f8, weirdness: 2 },
-  { key: 'flamingo', name: '塑料火烈鸟', prompt: 'a pink plastic flamingo lawn ornament', placeholder: 'flamingo', scale: 1, height: 0.95, color: 0xff7fb0, weirdness: 2 },
-  { key: 'astronaut', name: '宇航员头盔', prompt: 'an astronaut helmet with gold visor', placeholder: 'astronaut', scale: 1, height: 0.45, color: 0xcfd6de, weirdness: 2 },
-  { key: 'shark', name: '鲨鱼', prompt: 'a great white shark, full body, side view', placeholder: 'shark', scale: 1, height: 1.5, color: 0x7d8b99, weirdness: 2 },
-  { key: 'horse', name: '木马', prompt: 'a wooden carousel horse on a stand', placeholder: 'horse', scale: 1, height: 1.35, color: 0xb5793c, weirdness: 2 },
-  { key: 'mannequin', name: '人台模特', prompt: 'a featureless white mannequin torso on a stand', placeholder: 'mannequin', scale: 1, height: 1.65, color: 0xeceae4, weirdness: 3 },
-  { key: 'piano', name: '三角钢琴', prompt: 'a black grand piano with open lid', placeholder: 'piano', scale: 1, height: 1.0, color: 0x14161a, weirdness: 2 },
-  { key: 'eye', name: '巨型眼球', prompt: 'a giant realistic human eyeball, iris detail', placeholder: 'eye', scale: 1, height: 0.75, color: 0xf0f2f5, weirdness: 3 },
-];
+/**
+ * Authored in data/foreign-assets.json because two consumers need the exact
+ * same list: this game, and tools/generate-assets.mjs which pushes each
+ * `prompt` through Lux3D. Duplicating it would let the two drift apart.
+ */
+export const FOREIGN_ASSETS: ForeignAsset[] = catalogue.assets as ForeignAsset[];
 
 export const ASSETS_BY_KEY = new Map(FOREIGN_ASSETS.map((a) => [a.key, a]));
 export const SLOTS_BY_ID = new Map(SLOTS.map((s2) => [s2.id, s2]));

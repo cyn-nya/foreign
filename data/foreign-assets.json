@@ -1,0 +1,20 @@
+{
+  "$comment": "The foreign-object catalogue. This is DATA, shared by two consumers: the game (src/game/catalog.ts) and the asset generator (tools/generate-assets.mjs). `prompt` is sent verbatim to Aholo Lux3D text-to-3D; `height` is the metres the loaded model is normalised to, because generation output has no canonical scale.",
+  "assets": [
+    { "key": "duck", "name": "巨型橡皮鸭", "prompt": "a giant yellow rubber duck, glossy plastic toy, full body, product photo, white background", "placeholder": "duck", "scale": 1, "height": 1.05, "color": 16767291, "weirdness": 1 },
+    { "key": "cone", "name": "交通锥", "prompt": "an orange traffic cone with two reflective white stripes, full body", "placeholder": "cone", "scale": 1, "height": 0.72, "color": 16739130, "weirdness": 1 },
+    { "key": "gnome", "name": "花园地精", "prompt": "a ceramic garden gnome statue with a tall red pointed hat and white beard", "placeholder": "gnome", "scale": 1, "height": 0.68, "color": 14173743, "weirdness": 2 },
+    { "key": "milk", "name": "牛奶盒", "prompt": "a one litre carton of milk, gable top, studio product shot, white background", "placeholder": "milk", "scale": 1, "height": 0.26, "color": 15922424, "weirdness": 2 },
+    { "key": "cactus", "name": "仙人掌", "prompt": "a potted saguaro cactus in a terracotta pot", "placeholder": "cactus", "scale": 1, "height": 0.85, "color": 4165458, "weirdness": 1 },
+    { "key": "vending", "name": "自动贩卖机", "prompt": "a japanese vending machine, red and white, full body, front view", "placeholder": "vending", "scale": 1, "height": 1.85, "color": 14826299, "weirdness": 1 },
+    { "key": "washer", "name": "洗衣机", "prompt": "a front-loading washing machine, white enamel, closed round door", "placeholder": "washer", "scale": 1, "height": 0.88, "color": 14673130, "weirdness": 2 },
+    { "key": "toilet", "name": "马桶", "prompt": "a white ceramic toilet with cistern, isolated on white background", "placeholder": "toilet", "scale": 1, "height": 0.78, "color": 16054008, "weirdness": 2 },
+    { "key": "flamingo", "name": "塑料火烈鸟", "prompt": "a pink plastic flamingo lawn ornament on thin metal legs", "placeholder": "flamingo", "scale": 1, "height": 0.95, "color": 16744368, "weirdness": 2 },
+    { "key": "astronaut", "name": "宇航员头盔", "prompt": "an astronaut helmet with a gold mirrored visor", "placeholder": "astronaut", "scale": 1, "height": 0.45, "color": 13620958, "weirdness": 2 },
+    { "key": "shark", "name": "鲨鱼", "prompt": "a great white shark, full body, side view, mouth closed", "placeholder": "shark", "scale": 1, "height": 1.5, "color": 8231833, "weirdness": 2 },
+    { "key": "horse", "name": "木马", "prompt": "a wooden carousel horse on a metal stand, painted, nostalgic", "placeholder": "horse", "scale": 1, "height": 1.35, "color": 11893052, "weirdness": 2 },
+    { "key": "mannequin", "name": "人台模特", "prompt": "a featureless white mannequin torso on a slim metal stand", "placeholder": "mannequin", "scale": 1, "height": 1.65, "color": 15526628, "weirdness": 3 },
+    { "key": "piano", "name": "三角钢琴", "prompt": "a black grand piano with the lid open, polished lacquer", "placeholder": "piano", "scale": 1, "height": 1.0, "color": 1316378, "weirdness": 2 },
+    { "key": "eye", "name": "巨型眼球", "prompt": "a giant realistic human eyeball, detailed blue iris, glossy sclera", "placeholder": "eye", "scale": 1, "height": 0.75, "color": 15790581, "weirdness": 3 }
+  ]
+}
