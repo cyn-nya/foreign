@@ -227,3 +227,23 @@ button.ghost:hover { color: var(--fg); border-color: var(--fg); }
 }
 .progress-note.dim { color: rgba(139, 152, 168, 0.6); }
 .progress-note.bad { color: var(--warn); }
+
+/* Live frame rate. Hidden until F3, because a number in the corner of a horror
+   game is not atmosphere — but it has to be readable the moment it is asked for,
+   because the whole point is that the player can read it out. */
+.perf {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.62);
+  color: #9fe8b0;
+  font: 500 13px/1.45 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  letter-spacing: 0.02em;
+  white-space: pre;
+  pointer-events: none;
+  z-index: 40;
+}
+.perf.warn { color: #ffd166; }
+.perf.bad { color: #ff7a7a; }

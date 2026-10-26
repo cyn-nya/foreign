@@ -335,6 +335,56 @@ try {
     `state=${burned.state} marksLeft=${burned.marksLeft}`,
   );
 
+  // The frame-rate counter exists because this harness cannot measure the game's
+  // real cost — an empty room renders at 0.5-1.8 fps under software
+  // rasterisation, so the player's machine is the only trustworthy measurement.
+  // A counter that reads plausibly while the loop is stalled would be worse than
+  // none, so this checks it against the frame counter it is derived from.
+  const perf = await page.evaluate(async () => {
+    const s = window.__splat;
+    const framesBefore = s.frames;
+    // Five seconds, matching the counter's own window. A shorter sample than the
+    // window compares two different periods and reports a disagreement that is
+    // only the mismatch.
+    await new Promise((r) => setTimeout(r, 5_000));
+    const framesAfter = s.frames;
+    const fps = s.fps();
+    s.togglePerf();
+    const shown = document.getElementById('hud-perf');
+    return {
+      advanced: framesAfter - framesBefore,
+      fps,
+      visible: s.perfVisible(),
+      text: shown ? shown.textContent : null,
+      hiddenClass: shown ? shown.classList.contains('hidden') : null,
+    };
+  });
+  // The counter and `debug.frames` measure the same thing by different routes, so
+  // they have to agree. Requiring only "fps > 0" was too weak and passed on a
+  // counter that read 51.4 fps while the loop managed two frames in three
+  // seconds: `dt` is clamped to 50 ms for physics, and the counter was recording
+  // the clamped value, so every stalled frame looked like a healthy 20 fps frame.
+  const observed = perf.advanced / 5;
+  const agrees =
+    perf.fps !== null &&
+    observed > 0 &&
+    perf.fps > observed / 4 &&
+    perf.fps < observed * 4;
+  check(
+    'the frame-rate counter agrees with the frame counter',
+    perf.advanced > 0 && agrees,
+    `frames +${perf.advanced} in 5s (${observed.toFixed(2)} fps by counting), ` +
+      `counter says ${perf.fps === null ? 'null' : perf.fps.toFixed(2)} fps`,
+  );
+  check(
+    'F3 reveals it and it states a real number',
+    perf.visible === true &&
+      perf.hiddenClass === false &&
+      typeof perf.text === 'string' &&
+      /[0-9]+\.[0-9] fps/.test(perf.text),
+    `visible=${perf.visible} hidden=${perf.hiddenClass} text=${JSON.stringify(perf.text)}`,
+  );
+
   // Clearing the LAST floor has to end the run in the player's favour. A win
   // condition that only exists as a constant in rules.ts is not a win condition:
   // this clears floor 8 for real and reads the state back.

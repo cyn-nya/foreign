@@ -117,6 +117,9 @@ interface SplatDebug {
   setCulling: (patch: Record<string, boolean>) => void;
   culling: () => Record<string, boolean>;
   setSplatVisible: (visible: boolean) => void;
+  fps: () => number | null;
+  togglePerf: () => void;
+  perfVisible: () => boolean;
   splatVisible: () => boolean;
   removeSplat: () => void;
   restoreSplat: () => void;
@@ -150,6 +153,7 @@ const el = {
   time: document.getElementById('hud-time') as HTMLElement,
   marks: document.getElementById('hud-marks') as HTMLElement,
   toast: document.getElementById('hud-toast') as HTMLElement,
+  perf: document.getElementById('hud-perf') as HTMLElement,
 };
 
 const debug: SplatDebug = {
@@ -195,6 +199,9 @@ const debug: SplatDebug = {
   setCulling: () => undefined,
   culling: () => ({}),
   setSplatVisible: () => undefined,
+  fps: () => null,
+  togglePerf: () => undefined,
+  perfVisible: () => false,
   splatVisible: () => false,
   removeSplat: () => undefined,
   restoreSplat: () => undefined,
@@ -258,6 +265,15 @@ function showMenu(assetLine: string, onStart: () => void): void {
     <p class="progress-note dim">${assetLine}</p>
   `);
   document.getElementById('start-btn')?.addEventListener('click', onStart);
+
+  // F3 rather than the browser's own F12/devtools: the number has to be readable
+  // by a player who is not going to open a console.
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'F3') {
+      e.preventDefault();
+      togglePerf();
+    }
+  });
 }
 
 function toast(message: string, kind: 'good' | 'bad' | 'info' = 'info'): void {
@@ -266,6 +282,101 @@ function toast(message: string, kind: 'good' | 'bad' | 'info' = 'info'): void {
   window.setTimeout(() => {
     el.toast.className = 'toast';
   }, 2600);
+}
+
+/**
+ * Live frame rate, for measuring the one thing this machine cannot.
+ *
+ * Every performance number this repository produces comes from headless
+ * software rasterisation, where an empty room already runs at 0.5-1.8 fps — so
+ * the harness cannot see the game's real cost and the earlier optimisation work
+ * was reading noise. The only trustworthy measurement is the player's own
+ * machine, so the game has to be able to report it.
+ *
+ * The frame deltas are kept as a window rather than averaged from the start, so
+ * the number describes now: a room that hitches when a floor appears has to show
+ * the hitch, not an average that hides it.
+ */
+const PERF_WINDOW_MS = 5_000;
+const MAX_PERF_SAMPLES = 600;
+const frameTimes: number[] = [];
+let perfVisible = false;
+let perfAccumulator = 0;
+
+/**
+ * Timestamps, not deltas, and the window is in milliseconds.
+ *
+ * A 60-frame window sounds like "the last second" only while the loop is fast.
+ * At two frames per second it spans half a minute and at 0.3 fps it spans three
+ * minutes, so the counter spent a stalled floor reporting the frame rate from
+ * before the floor loaded — it read 25.9 fps while one frame was taking 1.28 s.
+ * A frame-count window cannot describe "now" when the thing it measures is
+ * allowed to be arbitrarily slow.
+ */
+function recordFrame(now: number): void {
+  frameTimes.push(now);
+  if (frameTimes.length > MAX_PERF_SAMPLES) frameTimes.shift();
+}
+
+/**
+ * Frames completed in the last few seconds, and the slowest of them.
+ *
+ * Sustained rate over the window, not the gap between the first and last frame
+ * in it. Those differ exactly when the loop is unhealthy: with two frames 49 ms
+ * apart at the end of a five-second window and nothing before them, dividing by
+ * the span reports 20.4 fps for a loop that managed two frames in five seconds.
+ * Dividing by the window reports 0.4 fps, which is what happened.
+ */
+function recentFrames(): { fps: number; worstMs: number; count: number } {
+  if (frameTimes.length < 2) return { fps: 0, worstMs: 0, count: frameTimes.length };
+  const newest = frameTimes[frameTimes.length - 1];
+  const from = newest - PERF_WINDOW_MS;
+  const recent = frameTimes.filter((t) => t >= from);
+  if (recent.length < 2) return { fps: 0, worstMs: 0, count: recent.length };
+  // The window is the full span, or the whole history while it is still shorter
+  // than one window — otherwise the first second after load reads as a spike.
+  const oldest = Math.max(frameTimes[0], from);
+  const elapsed = (newest - oldest) / 1000;
+  let worst = 0;
+  for (let i = 1; i < recent.length; i++) worst = Math.max(worst, recent[i] - recent[i - 1]);
+  const intervals = recent.length - 1;
+  return {
+    fps: elapsed > 0 ? intervals / elapsed : 0,
+    worstMs: worst,
+    count: recent.length,
+  };
+}
+
+/**
+ * Frame rate over the last few seconds.
+ *
+ * Zero means "fewer than two frames in five seconds" — which is a reading, not a
+ * missing one, and a much more useful thing to print than a plausible number
+ * carried over from when the room was still loading.
+ */
+export function currentFps(): number | null {
+  if (frameTimes.length < 2) return null;
+  return recentFrames().fps;
+}
+
+function togglePerf(): void {
+  perfVisible = !perfVisible;
+  el.perf.classList.toggle('hidden', !perfVisible);
+  if (perfVisible) paintPerf();
+}
+
+function paintPerf(): void {
+  if (!perfVisible) return;
+  const fps = currentFps();
+  const { worstMs, count } = recentFrames();
+  // `debug.frames` is the total, so a stalled loop is visible as a number that
+  // never moves rather than as a number that reads plausibly.
+  const value = fps === null ? '—' : fps.toFixed(1);
+  el.perf.textContent =
+    `${value} fps   最慢 ${worstMs.toFixed(0)} ms   帧 ${debug.frames}　近 5 秒 ${count} 帧` +
+    `\n${debug.placed} 模型 · 扫描 ${debug.splatPresent() ? '在' : '移除'}`;
+  const tone = fps === null ? '' : fps < 15 ? 'bad' : fps < 30 ? 'warn' : '';
+  el.perf.className = `perf${tone ? ` ${tone}` : ''}`;
 }
 
 function syncHud(): void {
@@ -763,6 +874,9 @@ async function main(): Promise<void> {
   debug.setCulling = (patch) => scene.setCulling(patch);
   debug.culling = () => scene.culling;
   debug.setSplatVisible = (visible) => scene.setSplatVisible(visible);
+  debug.fps = () => currentFps();
+  debug.togglePerf = () => togglePerf();
+  debug.perfVisible = () => perfVisible;
   debug.splatVisible = () => scene.splatVisible;
   debug.removeSplat = () => scene.removeSplat();
   debug.restoreSplat = () => scene.restoreSplat();
@@ -812,8 +926,15 @@ async function main(): Promise<void> {
 
   let previous = performance.now();
   function frame(now: number): void {
-    const dt = Math.min(0.05, (now - previous) / 1000);
+    // Two different numbers, and conflating them made the frame counter lie.
+    // `dt` is clamped so a long stall cannot teleport the player through a wall;
+    // the raw delta is what the frame actually took. Recording `dt` reported
+    // 51.4 fps while the loop was managing two frames in three seconds, because
+    // every stalled frame was recorded as exactly the 50 ms ceiling.
+    const rawDt = (now - previous) / 1000;
+    const dt = Math.min(0.05, rawDt);
     previous = now;
+    recordFrame(now);
     player.update(dt);
     // The room animates against the player's eye: what watches you has to be
     // updated before the frame is drawn, or it lags a frame behind.
@@ -842,6 +963,11 @@ async function main(): Promise<void> {
       locked: player.isLocked,
     };
     debug.frames++;
+    perfAccumulator += rawDt;
+    if (perfAccumulator >= 0.25) {
+      perfAccumulator = 0;
+      paintPerf();
+    }
     requestAnimationFrame(frame);
   }
   // Announced only here, and deliberately not earlier. `stage === 'ready'` is
