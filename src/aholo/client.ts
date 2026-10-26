@@ -67,6 +67,22 @@ export interface TaskResult {
   failReason?: string;
 }
 
+export interface GenerationRecord {
+  taskId: number;
+  status: TaskStatusValue;
+  /** Unix ms. */
+  created: number;
+  /** Unix ms. */
+  lastModified: number;
+}
+
+export interface TaskPage {
+  items: GenerationRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface TextTo3DRequest {
   /** Natural-language prompt. Required. */
   prompt: string;
@@ -126,6 +142,32 @@ export class AholoClient {
     if (typeof this.fetchImpl !== 'function') {
       throw new AholoError('No fetch implementation available.', 'no-fetch');
     }
+  }
+
+  /**
+   * Read-only listing of this account's generation records.
+   *
+   * Costs no credits, so it is the right call for checking that an API key
+   * works before spending anything: see tools/check-key.mjs.
+   */
+  async listTasks(options: { page?: number; pageSize?: number; status?: TaskStatusValue } = {}): Promise<TaskPage> {
+    const query: Record<string, number> = {
+      page: options.page ?? 1,
+      pagesize: options.pageSize ?? 20,
+    };
+    if (options.status !== undefined) query.status = options.status;
+
+    const data = await this.request<Partial<TaskPage>>({
+      method: 'GET',
+      path: '/lux3d/v1/generate/task/list',
+      query,
+    });
+    return {
+      items: data?.items ?? [],
+      total: data?.total ?? 0,
+      page: data?.page ?? query.page,
+      pageSize: data?.pageSize ?? query.pagesize,
+    };
   }
 
   /* ------------------------------------------------------------------ *

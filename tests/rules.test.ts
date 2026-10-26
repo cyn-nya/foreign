@@ -8,13 +8,15 @@ import {
   hitScore,
   judgeMark,
   makeSeed,
+  MAX_MISTAKES,
   mulberry32,
   resetAnomalySerial,
   SCORE,
 } from '../src/game/rules';
 import { ANCHORS_BY_ID, FOREIGN_ASSETS, SLOTS, SLOTS_BY_ID } from '../src/game/catalog';
+import type { AnomalyKind } from '../src/game/types';
 
-const ANOMALY_KINDS = ['intrude', 'vanish', 'shift', 'warp', 'twin'] as const;
+const ANOMALY_KINDS = ['intrude', 'stare', 'shift', 'warp', 'twin'] as const;
 
 describe('rng', () => {
   it('is deterministic for a given seed', () => {
@@ -76,13 +78,14 @@ describe('floor generation', () => {
       const plan = generateFloor(floor, makeSeed(floor, 2026));
       for (const a of plan.anomalies) {
         expect(ANOMALY_KINDS).toContain(a.kind);
-        if (a.kind === 'intrude') {
+        if (a.kind === 'intrude' || a.kind === 'stare') {
+          // placed objects hang off a synthetic anchor, not a furniture slot
           expect(ANCHORS_BY_ID.has(a.slotId)).toBe(true);
           expect(FOREIGN_ASSETS.some((f) => f.key === a.assetKey)).toBe(true);
         } else {
           expect(SLOTS_BY_ID.has(a.slotId)).toBe(true);
           // anchored props (wall art, rugs, ceiling lights) must not be
-          // vanished or teleported — they are part of the architecture
+          // floated or duplicated — they are part of the architecture
           expect(SLOTS_BY_ID.get(a.slotId)?.anchored).toBeFalsy();
         }
       }
@@ -102,7 +105,6 @@ describe('floor generation', () => {
     resetAnomalySerial();
     const plan = generateFloor(12, makeSeed(12, 3));
     for (const a of plan.anomalies) {
-      if (a.kind === 'vanish') expect(plan.hiddenSlots).toContain(a.slotId);
       if (a.kind === 'twin') expect(plan.twinSlots).toContain(a.slotId);
     }
   });
@@ -126,6 +128,103 @@ describe('floor generation', () => {
     resetAnomalySerial();
     const plan = generateFloor(99, makeSeed(99, 1));
     expect(plan.anomalies.length).toBeLessThanOrEqual(Math.min(6, SLOTS.length));
+  });
+});
+
+/**
+ * The redesign contract.
+ *
+ * Playtest feedback: the old anomaly set was not judgeable. 'vanish' and the
+ * small 'shift' nudge could only be spotted by remembering the room's baseline,
+ * which made the game a memory test. Every kind is now self-evident, and these
+ * tests keep it that way — a regression here is a design regression, not a
+ * cosmetic one.
+ */
+describe('every anomaly is judgeable without memorising the room', () => {
+  const EVIDENT: AnomalyKind[] = ['intrude', 'stare', 'shift', 'warp', 'twin'];
+
+  it('never produces a kind that needs a memorised baseline', () => {
+    resetAnomalySerial();
+    for (let floor = 1; floor <= 30; floor++) {
+      const plan = generateFloor(floor, makeSeed(floor, 21));
+      for (const a of plan.anomalies) expect(EVIDENT).toContain(a.kind);
+      // nothing is ever removed from the room any more
+      expect(plan.hiddenSlots).toEqual([]);
+    }
+  });
+
+  it('uses only unmissable object-level wrongness on the first two floors', () => {
+    resetAnomalySerial();
+    for (let floor = 1; floor <= 2; floor++) {
+      for (let salt = 0; salt < 12; salt++) {
+        const plan = generateFloor(floor, makeSeed(floor, salt));
+        for (const a of plan.anomalies) expect(['intrude', 'stare']).toContain(a.kind);
+      }
+    }
+  });
+
+  it('always leaves real air under a shifted prop', () => {
+    resetAnomalySerial();
+    let checked = 0;
+    for (let floor = 3; floor <= 30; floor++) {
+      const plan = generateFloor(floor, makeSeed(floor, 4));
+      for (const a of plan.anomalies) {
+        if (a.kind !== 'shift') continue;
+        checked++;
+        expect(a.offset?.y ?? 0).toBeGreaterThanOrEqual(0.3);
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('always makes a warp either absurdly sized or wrongly coloured', () => {
+    resetAnomalySerial();
+    let checked = 0;
+    for (let floor = 3; floor <= 30; floor++) {
+      const plan = generateFloor(floor, makeSeed(floor, 6));
+      for (const a of plan.anomalies) {
+        if (a.kind !== 'warp') continue;
+        checked++;
+        const extremeSize = a.scale !== undefined && (a.scale <= 0.6 || a.scale >= 2);
+        expect(extremeSize || a.tint !== undefined).toBe(true);
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('always makes at least three copies of a twinned prop', () => {
+    resetAnomalySerial();
+    let checked = 0;
+    for (let floor = 5; floor <= 30; floor++) {
+      const plan = generateFloor(floor, makeSeed(floor, 9));
+      for (const a of plan.anomalies) {
+        if (a.kind !== 'twin') continue;
+        checked++;
+        expect(a.count ?? 0).toBeGreaterThanOrEqual(3);
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('parks a stare at head height, facing the spawn, using a horror asset', () => {
+    resetAnomalySerial();
+    let checked = 0;
+    for (let floor = 1; floor <= 30; floor++) {
+      const plan = generateFloor(floor, makeSeed(floor, 13));
+      for (const a of plan.anomalies) {
+        if (a.kind !== 'stare') continue;
+        checked++;
+        expect(a.offset?.y ?? 0).toBeGreaterThan(1);
+        expect(typeof a.rotY).toBe('number');
+        expect(FOREIGN_ASSETS.find((x) => x.key === a.assetKey)?.weirdness).toBe(3);
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('offers a small, finite budget of wrong marks', () => {
+    expect(MAX_MISTAKES).toBeGreaterThan(0);
+    expect(MAX_MISTAKES).toBeLessThanOrEqual(5);
   });
 });
 

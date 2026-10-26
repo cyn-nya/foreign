@@ -103,12 +103,29 @@ html, body {
 .toast.bad { color: var(--warn); }
 .toast.info { color: var(--gold); }
 
+/* Remaining wrong-mark budget. Turns red on the last one so the cost of a
+   careless click is visible before it is paid. */
+.stat .value.marks { font-size: 15px; letter-spacing: 0.18em; color: var(--accent); }
+.stat .value.marks.low { color: var(--warn); }
+
 .hint {
   position: absolute; bottom: 18px; left: 0; right: 0;
   text-align: center;
   font-size: 11px; letter-spacing: 0.16em;
   color: rgba(139, 152, 168, 0.62);
 }
+.hint strong { color: rgba(214, 226, 240, 0.86); font-weight: 500; }
+
+/* The one-sentence rule, given its own emphasis. The earlier version buried it
+   in a list of anomaly types, which left players unsure what counted. */
+.rule {
+  max-width: 560px; margin: 0 auto 22px;
+  padding: 14px 18px;
+  border-left: 2px solid var(--accent);
+  background: rgba(94, 234, 212, 0.05);
+  color: var(--fg); font-size: 14px; line-height: 1.85; text-align: left;
+}
+.rule strong { color: var(--accent); font-weight: 500; }
 
 /* ---------- overlay ---------- */
 .overlay {

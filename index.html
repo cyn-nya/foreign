@@ -4,8 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>FOREIGN · 异物 — AI 生成的异常猎杀</title>
-    <meta name="description" content="在 AI 重建的真实空间里，找出不属于这里的异物。3D 内容由 Aholo Lux3D 生成。" />
-    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="description" content="在 AI 重建的真实空间里，找出不属于这里的异物。3D 内容由 Aholo Lux3D 生成。" />    <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
     <canvas id="viewport"></canvas>
@@ -29,9 +28,15 @@
           <span class="label">时间 TIME</span>
           <span class="value" id="hud-time">04:00</span>
         </div>
+        <div class="stat">
+          <span class="label">标记次数 MARKS</span>
+          <span class="value marks" id="hud-marks">●●●</span>
+        </div>
       </div>
       <div id="hud-toast" class="toast"></div>
-      <div class="hint">WASD 移动 · 鼠标环视 · 左键标记 · Shift 疾走 · Esc 暂停</div>
+      <div class="hint">
+        只标记<strong>不属于这个家</strong>的东西 · WASD 移动 · 左键标记 · Shift 疾走 · Esc 暂停
+      </div>
     </div>
 
     <!-- Every screen is rendered by the Game; keeps state in one place. -->

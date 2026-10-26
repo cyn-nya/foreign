@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3DGS 场景探针 · Aholo Viewer</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #05070a;
+        color: #e8eef6;
+        font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      #view {
+        position: absolute;
+        inset: 0;
+      }
+      #log {
+        position: absolute;
+        left: 12px;
+        top: 12px;
+        max-width: 60ch;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: rgba(5, 7, 10, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        white-space: pre-wrap;
+        pointer-events: none;
+      }
+      .ok {
+        color: #7ee787;
+      }
+      .bad {
+        color: #ff7b72;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="view"></div>
+    <pre id="log">booting…</pre>
+    <script type="module" src="/src/spike/probe.ts"></script>
+  </body>
+</html>

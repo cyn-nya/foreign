@@ -5,3 +5,5 @@ artifacts/
 *.local
 .env
 .env.*
+# the template is committed on purpose; only real keys stay out
+!.env.example

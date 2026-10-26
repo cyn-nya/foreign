@@ -155,7 +155,9 @@ export class Room {
 
     for (const slot of SLOTS) {
       const anomaly = bySlot.get(slot.id);
-      const hidden = anomaly?.kind === 'vanish';
+      // Honour the plan's contract rather than hardcoding a kind, so a future
+      // anomaly that needs a slot emptied can reuse this without a code change.
+      const hidden = plan.hiddenSlots.includes(slot.id);
       if (hidden) continue;
 
       const base = { x: slot.pos.x, y: slot.pos.y, z: slot.pos.z };
@@ -184,20 +186,30 @@ export class Room {
       this.attach(holder, slot.id);
 
       if (anomaly?.kind === 'twin') {
-        const twin = this.makeHolder(slot.id, slot.kind, slot.size, base, rotY + extraRotY, scale);
-        twin.position.set(
-          base.x + (offset?.x ?? 0.8),
-          base.y + (offset?.y ?? 0),
-          base.z + (offset?.z ?? 0.8),
-        );
-        if (anomaly.tint !== undefined) tintProp(twin, anomaly.tint);
-        this.attach(twin, slot.id);
+        // Copies are fanned around the original on a circle, so three or more
+        // of the same object read as absurd rather than as a coincidence.
+        const copies = Math.max(2, anomaly.count ?? 3);
+        const radius = Math.max(0.55, Math.hypot(offset?.x ?? 0.8, offset?.z ?? 0.8));
+        const startAngle = Math.atan2(offset?.z ?? 0.8, offset?.x ?? 0.8);
+        for (let i = 1; i < copies; i++) {
+          const ang = startAngle + (i / copies) * Math.PI * 2;
+          const twin = this.makeHolder(slot.id, slot.kind, slot.size, base, rotY + extraRotY, scale);
+          twin.position.set(
+            base.x + Math.cos(ang) * radius,
+            base.y + (offset?.y ?? 0),
+            base.z + Math.sin(ang) * radius,
+          );
+          if (anomaly.tint !== undefined) tintProp(twin, anomaly.tint);
+          this.attach(twin, slot.id);
+        }
       }
     }
 
-    // intruders
+    // objects that are placed, not furniture: 'intrude' sits on the floor,
+    // 'stare' hangs at head height facing the door
     for (const a of plan.anomalies) {
-      if (a.kind !== 'intrude' || !a.assetKey) continue;
+      const placed = a.kind === 'intrude' || a.kind === 'stare';
+      if (!placed || !a.assetKey) continue;
       const anchor = INTRUDE_ANCHORS.find((n) => n.id === a.slotId);
       if (!anchor) continue;
       const asset = ASSETS_BY_KEY.get(a.assetKey);
@@ -214,22 +226,31 @@ export class Room {
         this.trackGeometries(object);
       }
 
+      const lift = a.offset?.y ?? 0;
       const holder = new THREE.Group();
-      holder.position.set(anchor.pos.x, anchor.pos.y, anchor.pos.z);
-      holder.rotation.y = Math.random() * Math.PI * 2;
+      holder.position.set(
+        anchor.pos.x + (a.offset?.x ?? 0),
+        anchor.pos.y + lift,
+        anchor.pos.z + (a.offset?.z ?? 0),
+      );
+      // seeded, not Math.random(): the same floor must look the same every run
+      holder.rotation.y = a.rotY ?? 0;
       holder.scale.setScalar(asset?.scale ?? 1);
       holder.userData.slotId = a.slotId;
       holder.userData.isIntruder = true;
       holder.add(object);
       this.attach(holder, a.slotId);
 
-      const footprint = override ? 0.42 : DEFAULT_FOREIGN_SIZE.x / 2;
-      this.dynamicColliders.push({
-        minX: anchor.pos.x - footprint,
-        maxX: anchor.pos.x + footprint,
-        minZ: anchor.pos.z - footprint,
-        maxZ: anchor.pos.z + footprint,
-      });
+      // only floor-level objects block the player; a floating face must not
+      if (lift < 0.25) {
+        const footprint = override ? 0.42 : DEFAULT_FOREIGN_SIZE.x / 2;
+        this.dynamicColliders.push({
+          minX: anchor.pos.x - footprint,
+          maxX: anchor.pos.x + footprint,
+          minZ: anchor.pos.z - footprint,
+          maxZ: anchor.pos.z + footprint,
+        });
+      }
     }
   }
 

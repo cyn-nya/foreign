@@ -5,11 +5,12 @@
  */
 
 import * as THREE from 'three';
-import { SLOTS } from './catalog';
+import { ANCHORS_BY_ID, SLOTS, SLOTS_BY_ID } from './catalog';
 import { Room } from './Room';
 import { Player } from './Player';
 import { loadForeignAssets, type AssetLoadReport } from './assets';
 import {
+  MAX_MISTAKES,
   floorClearScore,
   formatClock,
   generateFloor,
@@ -17,9 +18,10 @@ import {
   judgeMark,
   makeSeed,
 } from './rules';
-import type { FloorPlan } from './types';
+import type { AnomalyKind, FloorPlan } from './types';
 
 type State = 'boot' | 'menu' | 'howto' | 'playing' | 'paused' | 'floorClear' | 'gameOver';
+type OverReason = 'time' | 'marks' | 'quit';
 
 const MISS_TIME_PENALTY = 8;
 const REACH = 4.0;
@@ -47,8 +49,13 @@ export class Game {
   private timeLeft = 0;
   private found: string[] = [];
   private floorMisses = 0;
+  /** Wrong marks left before the run ends. Restored every floor. */
+  private marksLeft = MAX_MISTAKES;
+  private overReason: OverReason = 'time';
   private runSalt = Math.floor(Math.random() * 0xfffffff);
   private fixedSeed: number | null = null;
+  /** Set only by debugStartFloor, so the harness can pin the anomaly mix. */
+  private forcedKinds: AnomalyKind[] | null = null;
   private stats: RunStats = { score: 0, floorsCleared: 0, hits: 0, misses: 0, startedAt: 0 };
   private assetReport: AssetLoadReport = { loaded: [], missing: [] };
   private hovered: string | null = null;
@@ -62,6 +69,7 @@ export class Game {
     found: document.getElementById('hud-found') as HTMLElement,
     total: document.getElementById('hud-total') as HTMLElement,
     time: document.getElementById('hud-time') as HTMLElement,
+    marks: document.getElementById('hud-marks') as HTMLElement,
     toast: document.getElementById('hud-toast') as HTMLElement,
   };
 
@@ -141,10 +149,11 @@ export class Game {
   private startFloor(floor: number): void {
     this.floor = floor;
     const seed = this.fixedSeed ? makeSeed(floor, this.fixedSeed) : makeSeed(floor, this.runSalt);
-    this.plan = generateFloor(floor, seed);
+    this.plan = generateFloor(floor, seed, this.forcedKinds ? { kinds: this.forcedKinds } : {});
     this.room.applyFloor(this.plan);
     this.found = [];
     this.floorMisses = 0;
+    this.marksLeft = MAX_MISTAKES;
     this.timeLeft = this.plan.duration;
     this.hovered = null;
 
@@ -154,7 +163,7 @@ export class Game {
     this.updateHud();
 
     if (floor === 1) {
-      this.toast('找出不属于这个房间的东西', 'info', 3.4);
+      this.toast(`只标记不属于这个家的东西 · 你有 ${MAX_MISTAKES} 次标记机会`, 'info', 4.0);
     } else {
       this.toast(`第 ${floor} 层 · 房间又变了`, 'info', 2.6);
     }
@@ -171,8 +180,19 @@ export class Game {
     if (outcome.result === 'miss') {
       this.floorMisses += 1;
       this.stats.misses += 1;
+      this.marksLeft -= 1;
       this.timeLeft = Math.max(0, this.timeLeft - MISS_TIME_PENALTY);
-      this.toast(`✗ 这里没有问题  −${MISS_TIME_PENALTY}s`, 'bad', 1.4);
+      this.updateHud();
+      if (this.marksLeft <= 0) {
+        this.toast(`✗ 这里没有问题 · 标记次数用尽`, 'bad', 2.4);
+        this.failRun('marks');
+        return;
+      }
+      this.toast(
+        `✗ 这里没有问题  −${MISS_TIME_PENALTY}s · 还剩 ${this.marksLeft} 次标记`,
+        'bad',
+        1.7,
+      );
       return;
     }
     if (outcome.result === 'repeat' || !outcome.anomaly) {
@@ -199,7 +219,8 @@ export class Game {
     this.setState('floorClear');
   }
 
-  private failRun(): void {
+  private failRun(reason: OverReason = 'time'): void {
+    this.overReason = reason;
     this.player.releaseLock();
     this.setState('gameOver');
   }
@@ -266,6 +287,9 @@ export class Game {
     this.el.floor.textContent = String(this.floor);
     this.el.found.textContent = String(this.found.length);
     this.el.total.textContent = String(this.plan?.anomalies.length ?? 0);
+    this.el.marks.textContent =
+      '●'.repeat(Math.max(0, this.marksLeft)) + '○'.repeat(Math.max(0, MAX_MISTAKES - this.marksLeft));
+    this.el.marks.classList.toggle('low', this.marksLeft <= 1);
     this.updateClock();
   }
 
@@ -340,8 +364,8 @@ export class Game {
       <h1 class="title">FOREIGN<span class="sub">异物</span></h1>
       <p class="tagline">
         你站在一间被 3D 重建的真实房间里。<br />
-        有些东西 <strong>不属于这里</strong> —— 它们是被生成出来的。<br />
-        在时间耗尽之前，把它们全部找出来。
+        房间里只该有<strong>普通的家具</strong> —— 有些东西<strong>不属于这里</strong>。<br />
+        找到它们，但别乱点：<strong>你只有 ${MAX_MISTAKES} 次标记机会</strong>。
       </p>
       <div class="actions">
         <button id="btn-start" class="primary">进入房间</button>
@@ -357,14 +381,22 @@ export class Game {
     this.setState('howto');
     this.renderOverlay(`
       <h1 class="title" style="font-size:30px">怎么玩<span class="sub">HOW TO PLAY</span></h1>
+      <p class="rule">
+        这是<strong>同一个房间</strong>。房间里本该只有<strong>普通的家具</strong>。<br />
+        标记任何<strong>不属于这个家</strong>的东西 —— 别管它原来在不在。
+      </p>
       <p class="tagline" style="text-align:left">
-        <strong>1 · 看</strong>　每次进入的走廊、客厅、厨房、卧室都是同一个房间。<br />
-        <strong>2 · 找</strong>　但每一层都有东西被改过：<br />
-        　　· 多了一件不该存在的东西<br />
-        　　· 少了一样本来在的东西<br />
-        　　· 有东西被挪动、浮空、放大、变色或复制<br />
-        <strong>3 · 标记</strong>　准星对准它，左键确认。标错扣 8 秒。<br />
-        <strong>4 · 下一层</strong>　全部找齐就下潜一层，房间重新排布。
+        <strong>什么样的东西算数</strong><br />
+        　· 根本不可能出现在家里的东西（一只雪茄鲨、一台贩卖机、一圈牙齿）<br />
+        　· 半空中浮着、正对着你的一件东西<br />
+        　· 尺寸离谱、或者颜色完全不对劲的家具<br />
+        　· 同一样东西出现了 3 个以上<br />
+        <br />
+        <strong>1 · 走</strong>　WASD 移动，鼠标环视。房间不大，绕一圈就能看完。<br />
+        <strong>2 · 标记</strong>　准星对准它，左键确认。<br />
+        <strong>3 · 代价</strong>　你<strong>只有 ${MAX_MISTAKES} 次标记机会</strong>，标错一次扣 8 秒并少一次机会，
+        机会用完本轮结束。看不准就不要点。<br />
+        <strong>4 · 下潜</strong>　全部找齐就下一层，房间重新排布、异常更多。
       </p>
       <div class="actions"><button id="btn-back" class="primary">明白了</button></div>
       <div class="asset-status">${this.assetLine()}</div>
@@ -385,7 +417,7 @@ export class Game {
       this.setState('playing');
       this.player.requestLock();
     });
-    this.bind('btn-quit', () => this.showGameOver(true));
+    this.bind('btn-quit', () => this.failRun('quit'));
   }
 
   private showFloorClear(): void {
@@ -404,11 +436,25 @@ export class Game {
     this.bind('btn-next', () => this.startFloor(this.floor + 1));
   }
 
-  private showGameOver(quit = false): void {
+  /**
+   * Rendered by setState('gameOver') — do NOT call setState again from here.
+   * setState dispatches to this method, so doing so recursed until the stack
+   * blew, crashing every game-over path (time out, out of marks, quit).
+   */
+  private showGameOver(): void {
     const elapsed = (performance.now() - this.stats.startedAt) / 1000;
-    this.setState('gameOver');
+    const heading = {
+      time: ['时间到', 'TIME UP'],
+      marks: ['标记次数用尽', 'OUT OF MARKS'],
+      quit: ['已放弃', 'ABANDONED'],
+    }[this.overReason];
+    const advice = {
+      time: '房间不大，先绕一圈再动手，比来回找快得多。',
+      marks: '看不准就别点 —— 标记机会比时间更贵。',
+      quit: '随时可以再来一轮，房间每局都不一样。',
+    }[this.overReason];
     this.renderOverlay(`
-      <h1 class="title" style="font-size:28px">${quit ? '已放弃' : '时间到'}<span class="sub">${quit ? 'ABANDONED' : 'TIME UP'}</span></h1>
+      <h1 class="title" style="font-size:28px">${heading[0]}<span class="sub">${heading[1]}</span></h1>
       <div class="big-score">${this.stats.score}</div>
       <div style="margin:18px 0 24px">
         <div class="score-line">抵达层数 <b>${this.floor}</b></div>
@@ -416,6 +462,7 @@ export class Game {
         <div class="score-line">正确标记 <b>${this.stats.hits}</b> · 误标 <b>${this.stats.misses}</b></div>
         <div class="score-line">用时 <b>${formatClock(elapsed)}</b></div>
       </div>
+      <p class="tagline" style="margin:0 0 18px">${advice}</p>
       <div class="actions">
         <button id="btn-again" class="primary">再来一轮</button>
         <button id="btn-menu" class="ghost">回主菜单</button>
@@ -461,11 +508,41 @@ export class Game {
       timeLeft: this.timeLeft,
       score: this.stats.score,
       found: this.found.length,
-      anomalies: this.plan?.anomalies ?? [],
+      marksLeft: this.marksLeft,
+      overReason: this.overReason,
+      // `pos` includes the anomaly's own offset, so the harness can aim at a
+      // floating object as easily as at a piece of furniture
+      anomalies: (this.plan?.anomalies ?? []).map((a) => {
+        const base = SLOTS_BY_ID.get(a.slotId)?.pos ?? ANCHORS_BY_ID.get(a.slotId)?.pos;
+        return {
+          ...a,
+          pos: base
+            ? {
+                x: base.x + (a.offset?.x ?? 0),
+                y: base.y + (a.offset?.y ?? 0),
+                z: base.z + (a.offset?.z ?? 0),
+              }
+            : null,
+        };
+      }),
       hovered: this.hovered,
       assets: this.assetReport,
       playerPos: { x: this.player.position.x, z: this.player.position.z },
     };
+  }
+
+  /**
+   * Start a specific floor, optionally forcing the anomaly mix — harness only.
+   * Without this the harness could only ever test whichever kinds the random
+   * floor happened to contain.
+   */
+  debugStartFloor(floor: number, kinds?: AnomalyKind[]): void {
+    this.forcedKinds = kinds ?? null;
+    try {
+      this.startFloor(floor);
+    } finally {
+      this.forcedKinds = null;
+    }
   }
 
   /** Force the camera to a position and orientation — screenshot harness only. */
@@ -528,6 +605,33 @@ export class Game {
       }
     }
     return visible;
+  }
+
+  /**
+   * Cast one ray from the camera at an exact world point and report what it
+   * passes through, nearest first.
+   *
+   * A ray fan is too coarse to prove a small floating object is present: a
+   * 0.8 m prop at 5 m subtends about the same angle as the gap between fan
+   * rays, so "the fan missed it" says nothing. This is the exact test, and it
+   * distinguishes "not rendered" from "hidden behind the sofa".
+   */
+  debugRayToPoint(x: number, y: number, z: number): {
+    distance: number;
+    hits: { slot: string | null; distance: number }[];
+  } {
+    const origin = this.camera.position.clone();
+    const direction = new THREE.Vector3(x, y, z).sub(origin);
+    const distance = direction.length();
+    const raycaster = new THREE.Raycaster(origin, direction.normalize(), 0.01, distance + 1.5);
+    const hits = raycaster.intersectObject(this.room.interactiveRoot(), true);
+    return {
+      distance: +distance.toFixed(2),
+      hits: hits.slice(0, 4).map((h) => ({
+        slot: this.room.resolveSlot(h.object),
+        distance: +h.distance.toFixed(2),
+      })),
+    };
   }
 
   /**

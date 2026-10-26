@@ -625,6 +625,71 @@ const FOREIGN: Partial<Record<PropKind, Builder>> = {
       cyl(0.04, 0.05, h * 0.62, mat(C.black, 0.3), w * 0.4, h * 0.31, d * 0.36),
       cyl(0.05, 0.06, h * 0.62, mat(C.black, 0.3), -w * 0.2, h * 0.31, -d * 0.42),
     ),
+
+  /* ---- horror placeholders -------------------------------------------------
+   * These are the 'stare' pool. They are deliberately the only props in the
+   * game with no plausible reason to exist in a flat, which is what makes the
+   * "does this belong here?" question answerable at a glance.
+   * ------------------------------------------------------------------------ */
+
+  face: ({ x: w, y: h }) =>
+    group(
+      // a flattened head, so the face reads from the front and is obvious from the side
+      ellipsoid(w * 0.46, h * 0.5, w * 0.24, mat(0xd9cfc4, 0.66), 0, h * 0.5),
+      sph(w * 0.105, mat(0x07080a, 0.12), -w * 0.17, h * 0.58, w * 0.19),
+      sph(w * 0.105, mat(0x07080a, 0.12), w * 0.17, h * 0.58, w * 0.19),
+      box(w * 0.24, h * 0.055, 0.012, mat(0x2a1015, 0.5), 0, h * 0.28, w * 0.21),
+      box(w * 0.12, h * 0.03, 0.012, mat(0x7a2630, 0.6), 0, h * 0.2, w * 0.2),
+    ),
+
+  figure: ({ x: w, y: h }) =>
+    group(
+      cyl(w * 0.34, w * 0.48, h * 0.8, mat(0x0a0b0d, 0.97), 0, h * 0.4),
+      sph(w * 0.23, mat(0x07080a, 0.97), 0, h * 0.9),
+      cyl(w * 0.32, w * 0.36, h * 0.08, mat(0x0a0b0d, 0.97), 0, h * 0.04),
+      // shoulders, so the silhouette is unmistakably a standing person
+      ellipsoid(w * 0.46, h * 0.05, w * 0.2, mat(0x0a0b0d, 0.97), 0, h * 0.78),
+    ),
+
+  hand: ({ x: w, y: h }) =>
+    group(
+      box(w * 0.64, h * 0.44, h * 0.52, mat(0xcfc2b6, 0.74), 0, h * 0.28),
+      ...Array.from({ length: 4 }, (_, i) =>
+        cyl(w * 0.058, w * 0.05, h * 0.5, mat(0xcfc2b6, 0.74), (i - 1.5) * w * 0.15, h * 0.72),
+      ),
+      cyl(w * 0.062, w * 0.055, h * 0.38, mat(0xcfc2b6, 0.74), w * 0.36, h * 0.42).rotateZ(-0.75),
+      cyl(w * 0.16, w * 0.19, h * 0.16, mat(0x8c2f38, 0.85), 0, h * 0.06),
+    ),
+
+  doll: ({ x: w, y: h }) =>
+    group(
+      cone(w * 0.44, h * 0.54, mat(0x2b2f3a, 0.9), 0, h * 0.27, 0, 14),
+      sph(w * 0.27, mat(0xe8e0d4, 0.52), 0, h * 0.75),
+      sph(w * 0.078, mat(0x07080a, 0.16), -w * 0.1, h * 0.79, w * 0.22),
+      sph(w * 0.078, mat(0x07080a, 0.16), w * 0.1, h * 0.79, w * 0.22),
+      // a hairline crack down the face
+      box(0.01, h * 0.16, 0.01, mat(0x3a2f2a, 0.9), w * 0.05, h * 0.72, w * 0.26),
+      cyl(w * 0.052, w * 0.052, h * 0.17, mat(0xe8e0d4, 0.62), -w * 0.27, h * 0.46).rotateZ(0.55),
+      cyl(w * 0.052, w * 0.052, h * 0.17, mat(0xe8e0d4, 0.62), w * 0.27, h * 0.46).rotateZ(-0.55),
+    ),
+
+  teeth: ({ x: w, y: h }) =>
+    group(
+      cyl(w * 0.3, w * 0.32, h * 0.5, mat(0x8c2f38, 0.86), 0, h * 0.25),
+      ...Array.from({ length: 12 }, (_, i) => {
+        const a = (i / 12) * Math.PI * 2;
+        return box(w * 0.17, h, w * 0.17, mat(0xf0ece2, 0.4), Math.cos(a) * w * 0.44, h * 0.62, Math.sin(a) * w * 0.44);
+      }),
+    ),
+
+  stain: ({ x: w, y: h }) =>
+    group(
+      // a flat, low pool — reads as wrong from across the room because a floor
+      // should not be that colour
+      cyl(w * 0.5, w * 0.54, h, mat(0x2a0708, 0.55), 0, h * 0.5),
+      cyl(w * 0.3, w * 0.34, h * 0.9, mat(0x3d0a0c, 0.5), w * 0.36, h * 0.45),
+      cyl(w * 0.18, w * 0.2, h * 0.8, mat(0x3d0a0c, 0.5), -w * 0.38, h * 0.4, w * 0.22),
+    ),
 };
 
 /* ======================================================================== *

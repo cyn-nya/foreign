@@ -1,13 +1,26 @@
 /**
  * Pure game rules — no three.js, no DOM. Fully unit-testable.
  *
- * Design note: floor 1 always has exactly one screamingly obvious anomaly.
- * It teaches the player the room and the verb ("mark the thing that is wrong").
- * Difficulty then ramps on two axes: how many anomalies, and how subtle they are.
+ * Design note: the player is never asked to remember the room. Every anomaly
+ * kind this module can produce is judgeable from the frame alone — something
+ * impossible is present, something is floating, something is the wrong size or
+ * colour, something has been copied three or more times. An earlier 'vanish'
+ * kind was removed precisely because it needed a memorised baseline, which
+ * made the game a memory test rather than an observation test.
+ *
+ * Difficulty ramps on two axes: how many anomalies, and which kinds are in the
+ * pool. Floors 1-2 only use unmistakable object-level wrongness.
  */
 
-import { FOREIGN_ASSETS, INTRUDE_ANCHORS, SLOTS, type ForeignAsset } from './catalog';
+import { FOREIGN_ASSETS, INTRUDE_ANCHORS, ROOM, SLOTS, SPAWN, type ForeignAsset } from './catalog';
 import type { Anomaly, AnomalyKind, FloorPlan, MarkResult, RNG, SlotDef } from './types';
+
+/**
+ * Wrong marks allowed before the run ends. The timer alone was not tense
+ * enough: with no cost to spamming the mark button, the optimal play was to
+ * click everything.
+ */
+export const MAX_MISTAKES = 3;
 
 /* ------------------------------------------------------------------ *
  * Deterministic RNG (mulberry32) — same seed, same floor, always.
@@ -71,7 +84,24 @@ function subtletyBudget(floor: number): number {
  * Anomaly construction
  * ------------------------------------------------------------------ */
 
-const LOUD_KINDS: AnomalyKind[] = ['intrude', 'vanish', 'shift', 'warp', 'twin'];
+/**
+ * Which kinds a floor may use. Repetition in these arrays is weighting.
+ * Floors 1-2 get only wrongness that no one could argue with: an object that
+ * cannot exist in a flat, and something watching you from head height.
+ */
+function allowedKinds(budget: number): AnomalyKind[] {
+  if (budget <= 0) return ['intrude', 'intrude', 'stare'];
+  if (budget === 1) return ['intrude', 'stare', 'stare', 'warp', 'shift'];
+  return ['intrude', 'stare', 'warp', 'shift', 'twin', 'twin'];
+}
+
+/** Colours that read as wrong on a household object. */
+const WRONG_TINTS = [0x8b0f14, 0x1f3a20, 0x4a4a52, 0x120b0b, 0xd9d2c4];
+
+/** The horror pool — weirdness 3, nothing here belongs in a home. */
+function horrorAssets(): ForeignAsset[] {
+  return FOREIGN_ASSETS.filter((a) => a.weirdness === 3);
+}
 
 let anomalySerial = 0;
 function nextId(kind: AnomalyKind, slotId: string): string {
@@ -84,7 +114,7 @@ export function resetAnomalySerial(): void {
   anomalySerial = 0;
 }
 
-/** A slot can be vanished / moved / warped / duplicated. */
+/** A slot can be moved / warped / duplicated. */
 function mutableSlots(): SlotDef[] {
   return SLOTS.filter((s) => !s.anchored);
 }
@@ -111,7 +141,37 @@ function buildIntrude(rng: RNG, budget: number, usedAnchors: Set<string>): Anoma
     kind: 'intrude',
     slotId: anchor.id,
     assetKey: asset.key,
+    // deterministic, seeded: the same floor must always look the same
+    rotY: rng() * Math.PI * 2,
     label: `${zoneName(anchor.zone)}出现了一个${asset.name}`,
+  };
+}
+
+/**
+ * Something hanging in the air at head height, turned to face the door.
+ * This is the kind that replaced 'vanish': it is impossible to miss and
+ * impossible to argue with, and it needs no memory of the room.
+ */
+function buildStare(rng: RNG, usedAnchors: Set<string>): Anomaly | null {
+  const anchors = INTRUDE_ANCHORS.filter((a) => !usedAnchors.has(a.id));
+  if (anchors.length === 0) return null;
+  const anchor = pick(rng, anchors);
+  usedAnchors.add(anchor.id);
+
+  const asset = pick(rng, horrorAssets());
+  const height = 1.15 + rng() * 0.7;
+  const dx = SPAWN.pos.x - anchor.pos.x;
+  const dz = SPAWN.pos.z - anchor.pos.z;
+
+  return {
+    id: nextId('stare', anchor.id),
+    kind: 'stare',
+    slotId: anchor.id,
+    assetKey: asset.key,
+    offset: { x: 0, y: height, z: 0 },
+    // atan2(dx, dz) points the prop's +z axis at the player's spawn
+    rotY: Math.atan2(dx, dz),
+    label: `${zoneName(anchor.zone)}半空浮着一个${asset.name}，正对着门口`,
   };
 }
 
@@ -125,45 +185,53 @@ function buildSlotAnomaly(
   budget: number,
   forcedKind?: AnomalyKind,
 ): Anomaly {
-  const kinds: AnomalyKind[] = budget <= 0 ? ['vanish', 'shift', 'twin'] : LOUD_KINDS;
-  // 'intrude' is handled separately; never picked here.
-  const usable = kinds.filter((k) => k !== 'intrude');
-  const kind: AnomalyKind = forcedKind && forcedKind !== 'intrude' ? forcedKind : pick(rng, usable);
+  const pool = allowedKinds(budget).filter((k) => k !== 'intrude' && k !== 'stare');
+  const kind: AnomalyKind = forcedKind && forcedKind !== 'intrude' && forcedKind !== 'stare'
+    ? forcedKind
+    : pick(rng, pool);
   const base = { id: nextId(kind, slot.id), kind, slotId: slot.id } as Anomaly;
 
   switch (kind) {
-    case 'vanish':
-      base.label = `${zoneName(slot.zone)}少了一件东西（${slot.id}）`;
-      break;
     case 'shift': {
+      // Always obviously adrift: off the floor, or pinned to the ceiling.
+      // A small lateral nudge was unreadable without a memorised baseline.
       const ang = rng() * Math.PI * 2;
-      const dist = 0.5 + rng() * 1.1;
-      const lift = rng() < 0.34 ? 0.35 + rng() * 1.1 : 0;
+      const dist = 0.4 + rng() * 1.2;
+      const ceiling = rng() < 0.3;
+      const lift = ceiling
+        ? Math.max(0.3, ROOM.wallHeight - slot.size.y * 0.5 - slot.pos.y)
+        : 0.5 + rng() * 1.2;
       base.offset = { x: Math.cos(ang) * dist, y: lift, z: Math.sin(ang) * dist };
-      base.rotY = (rng() - 0.5) * 1.6;
-      base.label = lift > 0
-        ? `有东西浮在半空（${slot.id}）`
-        : `有东西被挪到了别处（${slot.id}）`;
+      base.rotY = (rng() - 0.5) * Math.PI;
+      base.label = ceiling
+        ? `${zoneName(slot.zone)}的天花板上粘着东西`
+        : `${zoneName(slot.zone)}有东西浮在半空`;
       break;
     }
     case 'warp': {
-      // either a size warp or a colour warp, never both — clearer read
+      // either absurdly resized or recoloured, never both — clearer read
       if (rng() < 0.5) {
-        base.scale = rng() < 0.5 ? 0.45 + rng() * 0.2 : 1.7 + rng() * 0.9;
-        base.label = `有东西的尺寸不对（${slot.id}）`;
+        const huge = rng() < 0.5;
+        base.scale = huge ? 2.1 + rng() * 1.2 : 0.32 + rng() * 0.16;
+        base.label = huge
+          ? `${zoneName(slot.zone)}有东西大得离谱`
+          : `${zoneName(slot.zone)}有东西小得离谱`;
       } else {
-        base.tint = [0xff2d55, 0x00e5ff, 0xb14cff, 0x00ff6a, 0xff8a00][Math.floor(rng() * 5)];
-        base.label = `有东西的颜色不对劲（${slot.id}）`;
+        base.tint = pick(rng, WRONG_TINTS);
+        base.label = `${zoneName(slot.zone)}有东西的颜色完全不对劲`;
       }
       break;
     }
-    case 'twin':
-      base.offset = { x: (rng() - 0.5) * 1.2, y: 0, z: (rng() - 0.5) * 1.2 };
+    case 'twin': {
+      // three or more copies: two could be a coincidence, five cannot
+      base.count = 3 + Math.floor(rng() * 3);
+      base.offset = { x: (rng() - 0.5) * 1.7, y: 0, z: (rng() - 0.5) * 1.7 };
       base.rotY = (rng() - 0.5) * Math.PI;
-      base.label = `有东西被复制了一份（${slot.id}）`;
+      base.label = `${zoneName(slot.zone)}的同一个东西出现了 ${base.count} 个`;
       break;
+    }
     default:
-      base.label = `有东西不对劲（${slot.id}）`;
+      base.label = `${zoneName(slot.zone)}有东西不对劲`;
   }
   return base;
 }
@@ -198,6 +266,7 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
       kind: 'intrude',
       slotId: anchor.id,
       assetKey: asset.key,
+      rotY: 0,
       label: `客厅里有一只不该在这里的${asset.name}`,
     });
     usedAnchors.add(anchor.id);
@@ -205,26 +274,32 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
   }
 
   const requested = opts.kinds ? opts.kinds.slice() : null;
+  const kinds = allowedKinds(budget);
 
   // Candidate pools, ordered loud-first so early floors read clearly.
   const slotPool = shuffle(rng, budget <= 0 ? loudSlots() : mutableSlots());
 
   for (let i = 0; i < count; i++) {
     const forced = requested ? requested[i % requested.length] : null;
-    if (forced === 'intrude' || (!forced && rng() < 0.42 && usedAnchors.size < INTRUDE_ANCHORS.length)) {
-      const intrusion = buildIntrude(rng, budget, usedAnchors);
-      if (intrusion) {
-        anomalies.push(intrusion);
+    const kind = forced ?? pick(rng, kinds);
+
+    if (kind === 'intrude' || kind === 'stare') {
+      const spawned = kind === 'stare'
+        ? buildStare(rng, usedAnchors)
+        : buildIntrude(rng, budget, usedAnchors);
+      if (spawned) {
+        anomalies.push(spawned);
         continue;
       }
+      // out of anchors — fall through and fill the slot with something else
     }
 
     const slot = slotPool.find((s) => !usedSlots.has(s.id));
     if (!slot) break;
     usedSlots.add(slot.id);
 
-    const anomaly = buildSlotAnomaly(rng, slot, budget, forced ?? undefined);
-    if (anomaly.kind === 'vanish') hiddenSlots.push(slot.id);
+    const isObjectLevel = kind === 'intrude' || kind === 'stare';
+    const anomaly = buildSlotAnomaly(rng, slot, budget, isObjectLevel ? undefined : kind);
     if (anomaly.kind === 'twin') twinSlots.push(slot.id);
     anomalies.push(anomaly);
   }

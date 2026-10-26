@@ -62,7 +62,14 @@ export type PropKind =
   | 'eye'
   | 'mannequin'
   | 'milk'
-  | 'piano';
+  | 'piano'
+  // --- horror placeholders (weirdness 3, the 'stare' pool) ---
+  | 'face'
+  | 'figure'
+  | 'hand'
+  | 'doll'
+  | 'teeth'
+  | 'stain';
 
 export interface SlotDef {
   /** Stable id — also the id the player marks. */
@@ -82,24 +89,32 @@ export interface SlotDef {
   subtle?: boolean;
 }
 
+/**
+ * How a prop is wrong.
+ *
+ * Every kind here is designed to be judged WITHOUT comparing against the room's
+ * baseline state. That is deliberate: an earlier version had a 'vanish' kind,
+ * which is only detectable by remembering what used to be there — an unfair
+ * memory test rather than an observation test. It was replaced by 'stare'.
+ */
 export type AnomalyKind =
   /** An AI-generated object that simply should not be here. */
   | 'intrude'
-  /** Something that was here is gone. */
-  | 'vanish'
-  /** Something was moved, floated or rotated. */
+  /** Something is up at head height, facing you, and it was not there before. */
+  | 'stare'
+  /** Something floats, is upside down, or is stuck to the ceiling. */
   | 'shift'
-  /** Something changed size, colour, or turned into something else. */
+  /** Something is grotesquely the wrong size, or the wrong colour. */
   | 'warp'
-  /** Something was duplicated. */
+  /** Several identical copies of one household object. */
   | 'twin';
 
 export interface Anomaly {
   id: string;
   kind: AnomalyKind;
-  /** The slot the player must mark. For 'intrude' this is a synthetic anchor id. */
+  /** The slot the player must mark. For 'intrude'/'stare' this is a synthetic anchor id. */
   slotId: string;
-  /** Only for 'intrude': which AI-generated asset to place. */
+  /** For 'intrude' and 'stare': which AI-generated asset to place. */
   assetKey?: string;
   /** Reveal text shown after the round. */
   label: string;
@@ -108,6 +123,8 @@ export interface Anomaly {
   rotY?: number;
   scale?: number;
   tint?: number;
+  /** For 'twin': how many copies to place. Always 3 or more, so it reads as absurd. */
+  count?: number;
 }
 
 export interface FloorPlan {

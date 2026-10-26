@@ -225,6 +225,87 @@ async function main() {
     });
     await page.screenshot({ path: path.join(outDir, '08-floor-clear.png'), type: 'png' });
 
+    // --- gameplay: the limited budget of wrong marks -----------------------
+    // Playtest feedback asked for a real cost to guessing. These checks prove
+    // the budget is spent, is enforced, and actually ends the run.
+    await page.evaluate(() => window.__game.debugStartFloor(2));
+    await page.waitForTimeout(200);
+    const budgetBefore = await page.evaluate(() => window.__game.debug());
+    await page.evaluate(() => window.__game.debugMark('__not_a_slot__'));
+    await page.waitForTimeout(140);
+    const budgetAfter = await page.evaluate(() => window.__game.debug());
+    report.checks.push({
+      name: 'a wrong mark spends exactly one of the limited marks',
+      ok: budgetAfter.marksLeft === budgetBefore.marksLeft - 1 && budgetAfter.state === 'playing',
+      detail: `marks ${budgetBefore.marksLeft} -> ${budgetAfter.marksLeft}, state=${budgetAfter.state}`,
+    });
+
+    // burn whatever is left, then confirm the run is over
+    const cleanSlots = await page.evaluate(() => {
+      const anomalous = new Set(window.__game.debug().anomalies.map((a) => a.slotId));
+      return window.__game.debugCoverTargets().filter((id) => !anomalous.has(id));
+    });
+    for (let i = 1; i < budgetBefore.marksLeft; i++) {
+      await page.evaluate((slot) => window.__game.debugMark(slot), cleanSlots[i - 1]);
+      await page.waitForTimeout(90);
+    }
+    const exhausted = await page.evaluate(() => window.__game.debug());
+    report.checks.push({
+      name: 'running out of marks ends the run',
+      ok: exhausted.state === 'gameOver' && exhausted.overReason === 'marks' && exhausted.marksLeft === 0,
+      detail: `state=${exhausted.state} reason=${exhausted.overReason} marksLeft=${exhausted.marksLeft}`,
+    });
+    await page.screenshot({ path: path.join(outDir, '09-out-of-marks.png'), type: 'png' });
+
+    // --- gameplay: a horror 'stare' anomaly is real and seeable ------------
+    // The design fix for "how do I know what counts?" rests on these objects
+    // being unmissable, so this aims the player at one and requires the
+    // raycast fan to actually hit it.
+    await page.evaluate(() => window.__game.debugStartFloor(4, ['stare']));
+    await page.waitForTimeout(260);
+    const stareRun = await page.evaluate(() => window.__game.debug());
+    const stare = stareRun.anomalies.find((a) => a.kind === 'stare');
+    let stareRay = { distance: 0, hits: [] };
+    let stance = null;
+    if (stare?.pos) {
+      // The spawn is in the hall; a stare in the bedroom is legitimately behind
+      // a wall from there. Walk a small ring around it and require it to be
+      // unoccluded from at least one legal standing position — the same
+      // standard the furniture sweep is held to.
+      const aimY = stare.pos.y + 0.35;
+      for (let i = 0; i < 8 && !stance; i++) {
+        const ang = (i / 8) * Math.PI * 2;
+        const px = stare.pos.x + Math.cos(ang) * 1.7;
+        const pz = stare.pos.z + Math.sin(ang) * 1.7;
+        const dx = stare.pos.x - px;
+        const dz = stare.pos.z - pz;
+        await page.evaluate(
+          ({ x, z, yaw, pitch }) => window.__game.debugPlace(x, z, yaw, pitch),
+          { x: px, z: pz, yaw: Math.atan2(-dx, -dz), pitch: Math.atan((aimY - 1.6) / Math.hypot(dx, dz)) },
+        );
+        await page.waitForTimeout(110);
+        const ray = await page.evaluate(
+          ({ x, y, z }) => window.__game.debugRayToPoint(x, y, z),
+          { x: stare.pos.x, y: aimY, z: stare.pos.z },
+        );
+        if (ray.hits[0]?.slot === stare.slotId) {
+          stance = { x: +px.toFixed(2), z: +pz.toFixed(2) };
+          stareRay = ray;
+        }
+      }
+      if (stance) {
+        await page.screenshot({ path: path.join(outDir, '10-horror-stare.png'), type: 'png' });
+      }
+    }
+    report.checks.push({
+      name: 'a stare anomaly hangs at head height and is seeable from the floor',
+      ok: !!stare && (stare.offset?.y ?? 0) > 1 && stance !== null,
+      detail: stare
+        ? `asset=${stare.assetKey} y=${(stare.offset?.y ?? 0).toFixed(2)} ` +
+          `stance=${stance ? `(${stance.x}, ${stance.z})` : 'none'} ray=${JSON.stringify(stareRay.hits)}`
+        : 'no stare anomaly was produced',
+    });
+
     report.checks.push({
       name: 'no page or console errors',
       ok: problems.length === 0,
