@@ -11,12 +11,21 @@
  *
  * Open `spike.html?scene=bear` or `?scene=room`. Results are published on
  * `window.__probe` so tools/probe.mjs can read them without a human looking.
+ *
+ * Every setting below is copied from the official walk demo
+ * (`docs/research/spec/gh/ex-walk-demo.ts`), which is the only known-good
+ * configuration for this exact scene. The earlier version of this file used
+ * defaults instead and produced a smooth bright wash on every angle: the
+ * background won, TAA blended a single frame, and — most importantly — the
+ * splat was decoded without `SplatPackType.Compressed`.
  */
 
 import {
+  BackgroundMode,
+  Color,
+  PerspectiveCamera,
   SplatLoader,
   SplatUtils,
-  ToneMapping,
   Vector3,
   createViewer,
   setViewerConfig,
@@ -24,6 +33,12 @@ import {
 } from '@manycore/aholo-viewer';
 
 const GS = 'https://holo-cos.aholo3d.cn/aholo-opensource/gs_file';
+
+/** From WALK_CAMERA in the walk demo. */
+const WALK_CAMERA = { fov: 60, near: 0.1, far: 1_000_000 } as const;
+/** From WALK_SPLAT_PACK_TYPE / WALK_MAX_SH_DEGREE. */
+const WALK_MAX_SH_DEGREE = 3;
+const WALK_MAX_TEXTURE_SIZE = 8192;
 
 interface SceneSpec {
   id: string;
@@ -33,8 +48,7 @@ interface SceneSpec {
   /**
    * Camera pose. `yaw`/`pitch` follow the same convention as the official walk
    * demo (and as this game's Player): `forward = (-sin yaw, 0, -cos yaw)`, with
-   * the camera Euler order YXZ. The room scene is Y-up like every other scene,
-   * so only the standalone bear sample needs its own up vector.
+   * the camera Euler order YXZ.
    */
   pose: { x: number; y: number; z: number; yaw: number; pitch: number };
   up?: [number, number, number];
@@ -73,8 +87,14 @@ interface ProbeState {
   error: string | null;
   bytes: number | null;
   milliseconds: number | null;
+  /** Split of `milliseconds` — a slow load needs a different fix for each. */
+  downloadMs: number | null;
+  decodeMs: number | null;
   splatCount: number | null;
   drawCalls: number | null;
+  /** Whether the internal culling switches were reachable and disabled. */
+  cullingDisabled: boolean;
+  parseOptions: { shDegree: number; pack: string } | null;
   notes: string[];
 }
 
@@ -85,8 +105,12 @@ const state: ProbeState = {
   error: null,
   bytes: null,
   milliseconds: null,
+  downloadMs: null,
+  decodeMs: null,
   splatCount: null,
   drawCalls: null,
+  cullingDisabled: false,
+  parseOptions: null,
   notes: [],
 };
 (window as unknown as { __probe: ProbeState }).__probe = state;
@@ -126,42 +150,71 @@ async function main(): Promise<void> {
   say('✓ viewer created', 'ok');
 
   state.stage = 'configure';
-  // The raster settings are copied from the official splatting-basic example.
-  // Leaving them at their defaults is what produced the first two probes: a
-  // frame with the right mean brightness and essentially zero edge energy
-  // (0.87 grey levels per pixel on every angle, even on a different asset),
-  // i.e. huge soft blobs smearing the screen rather than a scene.
+  const size = viewer.getSize();
+
+  // A real perspective camera, because the default one uses a modest far plane
+  // and a huge scan in world units far above 1e3 would be clipped away.
+  const camera = new PerspectiveCamera(
+    WALK_CAMERA.fov,
+    size.width / Math.max(1, size.height),
+    WALK_CAMERA.near,
+    WALK_CAMERA.far,
+  );
+  camera.enableFrustumCulling = false;
+  camera.enableDetailCulling = false;
+  viewer.setCamera(camera);
+
+  // Exactly the walk demo's pipeline, plus the black background: without this
+  // the frame is dominated by the viewer's own backdrop and the splat cannot be
+  // judged from the statistics.
   setViewerConfig(viewer, {
     pipeline: {
-      Splatting: {
-        enabled: true,
-        pack: { precalculateEnabled: true },
-        raster: {
-          normalizedFalloff: false,
-          preBlurAmount: 0.3,
-          blurAmount: 0,
-          focalAdjustment: 2,
-          detailCullingThreshold: 1,
+      Background: {
+        background: {
+          active: BackgroundMode.BasicBackground,
+          basic: { color: new Color(0, 0, 0), alpha: 1 },
         },
-        composite: {
-          enabled: true,
-          highPrecisionEnabled: true,
-          toneMapping: ToneMapping.Neutral,
-          exposure: 1,
-        },
+        ground: { enabled: false },
       },
+      Splatting: { enabled: true },
+      // TAA blends across frames. A still probe renders one frame, so leaving
+      // it on averages the image toward the background.
+      TAA: { enabled: false },
     },
   });
 
-  const size = viewer.getSize();
-  say(`canvas ${size.width}×${size.height}`);
-
-  const camera = viewer.getCamera();
-  if (spec.up) {
-    camera.up.set(spec.up[0], spec.up[1], spec.up[2]);
+  // The walk demo reaches these through `as any`; `defaultViewport` is not in
+  // the public typings, so treat it as optional rather than assuming it exists.
+  const internals = viewer as unknown as {
+    defaultViewport?: {
+      drivenCullingConfig?: {
+        frustumCullingEnabled: boolean;
+        occlusionCullingEnabled: boolean;
+        detailCullingEnabled: boolean;
+        layersCullingEnabled: boolean;
+        triCullingEnabled: boolean;
+      };
+    };
+  };
+  const culling = internals.defaultViewport?.drivenCullingConfig;
+  if (culling) {
+    culling.frustumCullingEnabled = false;
+    culling.occlusionCullingEnabled = false;
+    culling.detailCullingEnabled = false;
+    culling.layersCullingEnabled = false;
+    culling.triCullingEnabled = false;
+    state.cullingDisabled = true;
+    say('✓ driven culling disabled', 'ok');
   } else {
-    camera.up.set(0, 1, 0);
+    say('! defaultViewport.drivenCullingConfig unreachable — culling left on');
   }
+
+  say(`canvas ${size.width}×${size.height} · fov ${WALK_CAMERA.fov} far ${WALK_CAMERA.far}`);
+
+  const detected = SplatLoader.detectSplatFileType(spec.url, new Uint8Array());
+  say(`file type: ${spec.url.split('.').pop()} → ${detected ?? 'undetected'}`);
+
+  camera.up.set(spec.up ? spec.up[0] : 0, spec.up ? spec.up[1] : 1, spec.up ? spec.up[2] : 0);
   camera.position.set(spec.pose.x, spec.pose.y, spec.pose.z);
   if (spec.lookAt) {
     camera.lookAt(new Vector3(spec.lookAt[0], spec.lookAt[1], spec.lookAt[2]));
@@ -172,13 +225,58 @@ async function main(): Promise<void> {
   // expose the camera so the harness can drive a look-around sweep
   (window as unknown as { __camera: unknown }).__camera = camera;
   (window as unknown as { __viewer: unknown }).__viewer = viewer;
+
+  /**
+   * Move the probe camera. A reconstructed scan does not cover every direction,
+   * so the harness uses this to find the region that actually has data.
+   */
+  (window as unknown as {
+    __setPose: (x: number, y: number, z: number, yaw: number, pitch: number) => boolean;
+  }).__setPose = (x, y, z, yaw, pitch) => {
+    camera.position.set(x, y, z);
+    camera.rotation.set(pitch, yaw, 0, 'YXZ');
+    viewer.render();
+    return true;
+  };
+
   state.stage = 'download+parse';
   const started = performance.now();
+  // Load time is a product constraint, not a detail: the full-quality decode of
+  // this 63 MB scan takes the best part of a minute, which no player will wait
+  // for. These two knobs are the ones that move it.
+  const shDegree = Number(params.get('sh') ?? WALK_MAX_SH_DEGREE);
+  const packName = params.get('pack') ?? 'compressed';
+  const packType = {
+    raw: SplatLoader.SplatPackType.Raw,
+    compressed: SplatLoader.SplatPackType.Compressed,
+    supercompressed: SplatLoader.SplatPackType.SuperCompressed,
+    sog: SplatLoader.SplatPackType.Sog,
+  }[packName] ?? SplatLoader.SplatPackType.Compressed;
+  state.parseOptions = { shDegree, pack: packName };
+  say(`parse options: sh=${shDegree} pack=${packName}`);
   say(`downloading ${spec.url.split('/').pop()} …`);
-  const data = await SplatLoader.parseSplatData(spec.type, spec.url);
+  // Fetch here rather than letting parseSplatData fetch, so download time and
+  // decode time can be told apart — a 63 MB scan is slow for either reason and
+  // they need completely different fixes.
+  const downloadStarted = performance.now();
+  const response = await fetch(spec.url);
+  if (!response.ok) throw new Error(`splat URL failed: HTTP ${response.status}`);
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  state.downloadMs = Math.round(performance.now() - downloadStarted);
+  state.bytes = bytes.byteLength;
+  say(`✓ downloaded ${(bytes.byteLength / 1e6).toFixed(1)} MB in ${(state.downloadMs / 1000).toFixed(1)}s`, 'ok');
+
+  const decodeStarted = performance.now();
+  const data = await SplatLoader.parseSplatData(
+    spec.type,
+    bytes,
+    packType,
+    { maxShDegree: shDegree, maxTextureSize: WALK_MAX_TEXTURE_SIZE },
+  );
+  state.decodeMs = Math.round(performance.now() - decodeStarted);
   state.milliseconds = Math.round(performance.now() - started);
   state.stage = 'createSplat';
-  say(`✓ parsed in ${(state.milliseconds / 1000).toFixed(1)}s`, 'ok');
+  say(`✓ decoded in ${(state.decodeMs / 1000).toFixed(1)}s`, 'ok');
 
   const splat = await SplatUtils.createSplat(data);
   state.stage = 'add';
@@ -195,8 +293,6 @@ async function main(): Promise<void> {
   try {
     const info = viewer.renderInfo;
     state.drawCalls = (info as unknown as { objectInfo?: { drawCalls?: number } })?.objectInfo?.drawCalls ?? null;
-    const splatCount = (splat as unknown as { splatCount?: number; count?: number });
-    state.splatCount = splatCount.splatCount ?? splatCount.count ?? null;
   } catch {
     // statistics are a nicety, not a gate
   }
@@ -209,9 +305,25 @@ async function main(): Promise<void> {
    * Control experiment: pull the splat back out and re-render from the same
    * camera. If the frame is unchanged, the splat was contributing nothing and
    * whatever we photographed was the viewer's own background.
+   *
+   * `__restoreSplat` must be called before any further measurement — the first
+   * version of tools/probe.mjs did not, so every sweep afterwards photographed
+   * an empty scene and reported it as "the scan has no data here".
    */
+  let attached = true;
   (window as unknown as { __removeSplat: () => boolean }).__removeSplat = () => {
-    viewer.getScene().remove(splat);
+    if (attached) {
+      viewer.getScene().remove(splat);
+      attached = false;
+    }
+    viewer.render();
+    return true;
+  };
+  (window as unknown as { __restoreSplat: () => boolean }).__restoreSplat = () => {
+    if (!attached) {
+      viewer.getScene().add(splat);
+      attached = true;
+    }
     viewer.render();
     return true;
   };
