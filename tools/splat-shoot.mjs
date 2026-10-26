@@ -140,7 +140,10 @@ try {
   const longDistance = Math.hypot(long.to[0] - long.from[0], long.to[2] - long.from[2]);
   check(
     'the room stops the player instead of letting them walk out of it',
-    longDistance < 12,
+    // The lower bound is the point. A walker that never moves also never
+    // escapes, so an upper bound alone passes while nothing works at all —
+    // which is exactly what happened when debug.walk was left as a stub.
+    longDistance > 1.0 && longDistance < 12,
     `${longDistance.toFixed(2)} m in 14.0 s (unobstructed would be ~35 m)`,
   );
 
@@ -149,7 +152,9 @@ try {
 
   check(
     'the player is still at a sane eye height, so they neither fell nor flew',
-    long.to[1] > -1.5 && long.to[1] < 4,
+    // `long` is all zeros when the walk stub was never replaced, so this has to
+    // confirm the walker is really standing somewhere, not merely in range.
+    longDistance > 1.0 && long.to[1] > -1.5 && long.to[1] < 4,
     `eye y=${long.to[1].toFixed(2)} (the floor is about -0.45)`,
   );
 
@@ -173,6 +178,100 @@ try {
     'strafing moves the player roughly perpendicular to walking',
     strafeDistance > 0.3,
     `${strafeDistance.toFixed(2)} m`,
+  );
+
+  // --- the game loop, in the real room --------------------------------------
+  await page.evaluate(() => window.__splat.start(1));
+  const floorStart = await page.evaluate(() => {
+    const s = window.__splat;
+    return {
+      state: s.state,
+      placed: s.placed,
+      anomalies: s.anomalyCount,
+      floor: s.floor,
+      marks: s.marksLeft,
+      loaded: s.assets.loaded,
+      missing: s.assets.missing,
+    };
+  });
+  check(
+    'floor 1 puts a foreign object in the reconstructed room',
+    floorStart.state === 'playing' && floorStart.placed >= 1 && floorStart.anomalies >= 1,
+    `state=${floorStart.state} placed=${floorStart.placed} anomaly=${floorStart.anomalies} ` +
+      `assets=${floorStart.loaded} missing=${floorStart.missing.length}`,
+  );
+  if (floorStart.missing.length > 0) {
+    console.log(`    missing assets: ${floorStart.missing.join(', ')}`);
+  }
+
+  const foreignBytes = await shoot(page, '03-foreign-object.png');
+  console.log(`    03-foreign-object.png ${Math.round(foreignBytes / 1024)} KB`);
+
+  // Aim at the object the way a player would, then mark it.
+  const aimed = await page.evaluate(() => {
+    const s = window.__splat;
+    const slot = s.aimAt(0);
+    const placement = s.placements()[0];
+    return { slot, onScreen: placement ? placement.onScreen : false, kind: placement?.kind };
+  });
+  const hit = await page.evaluate(() => window.__splat.mark());
+  check(
+    'aiming at the foreign object and marking it scores',
+    hit.result === 'hit' && hit.found === 1,
+    `aimed=${aimed.slot} kind=${aimed.kind} onScreen=${aimed.onScreen} ` +
+      `result=${hit.result} found=${hit.found} marksLeft=${hit.marksLeft}`,
+  );
+
+  const markedBytes = await shoot(page, '04-marked.png');
+  console.log(`    04-marked.png ${Math.round(markedBytes / 1024)} KB`);
+
+  check(
+    'clearing the floor advances to the next one',
+    hit.state === 'floorClear' || hit.state === 'playing',
+    `state after the hit was ${hit.state}`,
+  );
+
+  // A mark at the floor is a miss: it must cost a mark and time both, or
+  // guessing at random would be free.
+  const missed = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(4);
+    const before = { marks: s.marksLeft, time: s.timeLeft };
+    // look almost straight down, where there is only scanned floor
+    const p = s.player;
+    s.teleport(p.x, p.y, p.z, p.yaw, -1.45);
+    const report = s.mark();
+    return { before, report, after: { marks: s.marksLeft, time: s.timeLeft } };
+  });
+  check(
+    'a wrong mark costs a mark and time, and does not score',
+    missed.report.result === 'miss' &&
+      missed.after.marks === missed.before.marks - 1 &&
+      missed.after.time < missed.before.time,
+    `result=${missed.report.result} marks ${missed.before.marks}->${missed.after.marks} ` +
+      `time ${missed.before.time.toFixed(1)}->${missed.after.time.toFixed(1)}`,
+  );
+  check(
+    'marking the scanned room itself is not a hit',
+    missed.report.found === 0,
+    `found=${missed.report.found}`,
+  );
+
+  // Burning all three marks has to end the run rather than leave it stuck.
+  const burned = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(5);
+    for (let i = 0; i < 3; i++) {
+      const p = s.player;
+      s.teleport(p.x, p.y, p.z, p.yaw, -1.45);
+      s.mark();
+    }
+    return { state: s.state, marksLeft: s.marksLeft, floor: s.floor };
+  });
+  check(
+    'running out of marks ends the run',
+    burned.state === 'gameOver' && burned.marksLeft <= 0,
+    `state=${burned.state} marksLeft=${burned.marksLeft}`,
   );
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | ') || 'clean');
