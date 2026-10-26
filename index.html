@@ -41,8 +41,42 @@
       <div id="hud-toast" class="toast"></div>
       <div id="hud-perf" class="perf hidden" aria-live="off"></div>
       <div class="hint">
-        标记<strong>动了的</strong>东西 · 摆着不动的不是目标 · WASD 移动 · 左键标记 · Shift 疾走 · F3 帧率 · Esc 暂停
+        标记<strong>动了的</strong>东西 · 摆着不动的不是目标 · WASD 移动 · 左键标记 · Shift 疾走 · F 手电筒 · F3 帧率 · Esc 暂停
       </div>
+    </div>
+
+    <!-- Darkness. A torch beam rather than a vignette: it is the player's only
+         tool, and a tool that visibly stops being enough does more for dread
+         than a room that is simply dim. -->
+    <div id="dark" aria-hidden="true"></div>
+
+    <!-- The fright. Inline SVG rather than a loaded image, so it appears on the
+         frame it is asked for at any frame rate -- a jump scare that arrives
+         late is not a jump scare. Abstract on purpose: a pale face with black
+         sockets, no gore, which is both worse and reviewable. -->
+    <div id="scare" aria-hidden="true">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <radialGradient id="scare-flesh" cx="50%" cy="42%" r="62%">
+            <stop offset="0%" stop-color="#d8cfc4" />
+            <stop offset="62%" stop-color="#8d8378" />
+            <stop offset="100%" stop-color="#14100e" />
+          </radialGradient>
+          <radialGradient id="scare-socket" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#000" />
+            <stop offset="70%" stop-color="#000" />
+            <stop offset="100%" stop-color="#1a1410" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+        <rect width="100" height="100" fill="#050404" />
+        <ellipse cx="50" cy="50" rx="29" ry="41" fill="url(#scare-flesh)" />
+        <ellipse cx="39" cy="43" rx="8.4" ry="10.2" fill="url(#scare-socket)" />
+        <ellipse cx="61.5" cy="44.5" rx="7.6" ry="9.4" fill="url(#scare-socket)" />
+        <ellipse cx="50" cy="72" rx="7.5" ry="13" fill="#0a0708" />
+        <ellipse cx="50" cy="69.5" rx="5.4" ry="3" fill="#2a1d1c" />
+        <ellipse cx="39" cy="43" rx="1.5" ry="1.5" fill="#c9c0b4" opacity="0.55" />
+        <ellipse cx="61.5" cy="44.5" rx="1.4" ry="1.4" fill="#c9c0b4" opacity="0.45" />
+      </svg>
     </div>
 
     <div id="overlay" class="overlay"></div>

@@ -40,6 +40,7 @@ export class GameAudio {
    */
   private scratch: Float32Array<ArrayBuffer> | null = null;
   private tension = 0;
+  private scares = 0;
 
   /** Whether audio was ever successfully started on this page. */
   get available(): boolean {
@@ -172,9 +173,75 @@ export class GameAudio {
     osc.stop(t + 0.36);
   }
 
+  /**
+   * The fright itself: a burst of noise over a falling boom.
+   *
+   * Noise rather than a tone because a tone reads as a musical sting and the ear
+   * recognises it as a sound effect; a noise burst with no pitch reads as
+   * something happening in the room. The low sweep underneath is what makes it
+   * felt rather than heard.
+   *
+   * `intensity` 0..1 scales both. Nothing here relies on being loud to work —
+   * suddenness does the work, which is also what keeps it from being a hearing
+   * hazard at the volumes a judge will use.
+   */
+  scare(intensity = 1): void {
+    if (!this.context || !this.analyser) return;
+    const context = this.context;
+    const t = context.currentTime;
+    const level = Math.max(0, Math.min(1, intensity));
+
+    // Noise, shaped into a short slap.
+    const frames = Math.floor(context.sampleRate * 0.5);
+    const buffer = context.createBuffer(1, frames, context.sampleRate);
+    const channel = buffer.getChannelData(0);
+    for (let i = 0; i < frames; i++) {
+      const decay = Math.pow(1 - i / frames, 2.6);
+      channel[i] = (Math.random() * 2 - 1) * decay;
+    }
+    const noise = context.createBufferSource();
+    noise.buffer = buffer;
+    const noiseGain = context.createGain();
+    noiseGain.gain.setValueAtTime(0.0001, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.2 * level + 0.02, t + 0.006);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+    const noiseFilter = context.createBiquadFilter();
+    noiseFilter.type = 'highpass';
+    noiseFilter.frequency.value = 380;
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(this.analyser);
+    noise.start(t);
+    noise.stop(t + 0.5);
+
+    // The boom under it.
+    const boom = context.createOscillator();
+    boom.type = 'sawtooth';
+    boom.frequency.setValueAtTime(96, t);
+    boom.frequency.exponentialRampToValueAtTime(26, t + 0.5);
+    const boomGain = context.createGain();
+    boomGain.gain.setValueAtTime(0.0001, t);
+    boomGain.gain.exponentialRampToValueAtTime(0.16 * level + 0.02, t + 0.02);
+    boomGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.62);
+    const boomFilter = context.createBiquadFilter();
+    boomFilter.type = 'lowpass';
+    boomFilter.frequency.value = 420;
+    boom.connect(boomFilter);
+    boomFilter.connect(boomGain);
+    boomGain.connect(this.analyser);
+    boom.start(t);
+    boom.stop(t + 0.7);
+
+    this.scares += 1;
+  }
+
+  /** How many frights have been played, so a harness can assert they happen. */
+  get scareCount(): number {
+    return this.scares;
+  }
+
   /** Measure the graph, so a harness can assert sound is actually being made. */
-  read(): AudioReport {
-    const state = this.context ? this.context.state : 'none';
+  read(): AudioReport {    const state = this.context ? this.context.state : 'none';
     const gain = this.droneGain ? this.droneGain.gain.value / MAX_GAIN : 0;
     let rms = 0;
     if (this.analyser && this.scratch) {

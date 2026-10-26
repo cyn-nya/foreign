@@ -30,6 +30,12 @@ import { ROOM_ANCHORS, ROOM_FLOOR_OPTIONS } from './roomAnchors.ts';
 import { Box3, Vector3, type Object3D } from '@manycore/aholo-viewer';
 import { ROOM_SPAWN, SplatScene } from './SplatScene.ts';
 import { EYE_HEIGHT, HOVER_HEIGHT } from '../viewer/voxel.ts';
+import {
+  darknessForFloor,
+  nextScareDelay,
+  torchFlickerForFloor,
+  torchRadiusForFloor,
+} from './horror.ts';
 
 /**
  * Floors are built one at a time; see startFloor. Declared at module scope
@@ -118,6 +124,18 @@ interface SplatDebug {
   culling: () => Record<string, boolean>;
   setSplatVisible: (visible: boolean) => void;
   fps: () => number | null;
+  scare: (intensity?: number) => void;
+  audioScares: () => number | null;
+  scareCount: () => number;
+  setScaresEnabled: (on: boolean) => void;
+  scaresEnabled: () => boolean;
+  setTorch: (on: boolean) => void;
+  torchOn: () => boolean;
+  darkness: () => number;
+  scareFaceShowing: () => boolean;
+  sinceScare: () => number;
+  scareAfter: () => number;
+  torchStyle: () => { inner: string; outer: string; dark: string; background: string };
   togglePerf: () => void;
   perfVisible: () => boolean;
   splatVisible: () => boolean;
@@ -145,6 +163,8 @@ interface SplatDebug {
 const view = document.getElementById('view') as HTMLElement;
 const overlay = document.getElementById('overlay') as HTMLElement;
 const hud = document.getElementById('hud') as HTMLElement;
+const dark = document.getElementById('dark') as HTMLElement;
+const scareLayer = document.getElementById('scare') as HTMLElement;
 
 const el = {
   floor: document.getElementById('hud-floor') as HTMLElement,
@@ -200,6 +220,18 @@ const debug: SplatDebug = {
   culling: () => ({}),
   setSplatVisible: () => undefined,
   fps: () => null,
+  scare: () => undefined,
+  audioScares: () => null,
+  scareCount: () => 0,
+  setScaresEnabled: () => undefined,
+  scaresEnabled: () => false,
+  setTorch: () => undefined,
+  torchOn: () => false,
+  darkness: () => 0,
+  scareFaceShowing: () => false,
+  sinceScare: () => 0,
+  scareAfter: () => 0,
+  torchStyle: () => ({ inner: '', outer: '', dark: '', background: '' }),
   togglePerf: () => undefined,
   perfVisible: () => false,
   splatVisible: () => false,
@@ -272,6 +304,10 @@ function showMenu(assetLine: string, onStart: () => void): void {
     if (e.code === 'F3') {
       e.preventDefault();
       togglePerf();
+    }
+    if (e.code === 'KeyF' && !e.repeat) {
+      e.preventDefault();
+      setTorch(!torchOn);
     }
   });
 }
@@ -379,6 +415,110 @@ function paintPerf(): void {
   el.perf.className = `perf${tone ? ` ${tone}` : ''}`;
 }
 
+/**
+ * How long the face stays on screen.
+ *
+ * Short on purpose. A fright that lingers becomes a picture the player has time
+ * to examine and dismiss; 150 ms is about the limit of what the eye reads as
+ * sudden, and it is over before the brain catches up.
+ */
+const SCARE_MS = 150;
+
+let scaresEnabled = true;
+let torchOn = true;
+let scareCount = 0;
+/** Seconds of play since the last fright, and how long to wait for the next. */
+let sinceScare = 0;
+let scareAfter = 0;
+let torchAccumulator = 0;
+let scareTimeout = 0;
+
+/**
+ * The audio graph, once boot has built it.
+ *
+ * `fireScare` lives at module scope next to the other HUD helpers, but the audio
+ * graph is built inside boot because it needs a user gesture. Rather than move
+ * the fright machinery in there and make the frame loop reach back out, boot
+ * hands the graph over through this.
+ */
+let audioSink: { scare(intensity?: number): void } | null = null;
+
+/**
+ * Paint the torch beam for the current floor.
+ *
+ * Radii are computed in pixels from the window's shorter side. A percentage
+ * radius would make the beam cover a different fraction of a wide monitor than
+ * of a narrow one, so the same floor would be a different game depending on the
+ * display.
+ */
+function paintTorch(): void {
+  if (!torchOn) return;
+  const floor = debug.floor;
+  const flicker = torchFlickerForFloor(floor);
+  const radius = torchRadiusForFloor(floor) * (1 + (Math.random() - 0.5) * flicker * 0.3);
+  const side = Math.min(window.innerWidth, window.innerHeight);
+  dark.style.setProperty('--inner', `${(radius * side * 0.42).toFixed(1)}px`);
+  dark.style.setProperty('--outer', `${(radius * side * 0.98).toFixed(1)}px`);
+  dark.style.setProperty('--tx', `${(50 + (Math.random() - 0.5) * flicker * 7).toFixed(1)}%`);
+  dark.style.setProperty('--ty', `${(50 + (Math.random() - 0.5) * flicker * 5).toFixed(1)}%`);
+  dark.style.setProperty('--dark', darknessForFloor(floor).toFixed(3));
+}
+
+/** Set the floor's darkness once, without waiting for the next flicker tick. */
+function applyFloorHorror(floor: number): void {
+  dark.style.setProperty('--dark', darknessForFloor(floor).toFixed(3));
+  paintTorch();
+  // A new floor starts its own countdown, drawn fresh, so a run that has been
+  // deep does not carry a short fuse back up to a shallow floor.
+  sinceScare = 0;
+  scareAfter = nextScareDelay(Math.random, floor);
+}
+
+/**
+ * The fright.
+ *
+ * The sound, the face and the jolt are fired together, because a jump scare that
+ * arrives in pieces is four separate events rather than one. `offsetWidth` is
+ * read to force a reflow between removing and re-adding the animation class —
+ * without it the browser coalesces the two changes and a repeat fright does not
+ * animate at all, which is the classic way a scare works once and never again.
+ */
+function fireScare(intensity = 1): void {
+  if (!scaresEnabled) return;
+  scareCount += 1;
+  sinceScare = 0;
+  audioSink?.scare(intensity);
+
+  scareLayer.classList.remove('on');
+  void scareLayer.offsetWidth;
+  scareLayer.classList.add('on');
+
+  view.classList.remove('shake');
+  void view.offsetWidth;
+  view.classList.add('shake');
+
+  window.clearTimeout(scareTimeout);
+  scareTimeout = window.setTimeout(() => {
+    scareLayer.classList.remove('on');
+    view.classList.remove('shake');
+  }, SCARE_MS);
+}
+
+/** Turn the frights off entirely, for a player who does not want them. */
+function setScaresEnabled(on: boolean): void {
+  scaresEnabled = on;
+  if (!on) {
+    scareLayer.classList.remove('on');
+    view.classList.remove('shake');
+  }
+}
+
+function setTorch(on: boolean): void {
+  torchOn = on;
+  dark.classList.toggle('off', !on);
+  if (on) paintTorch();
+}
+
 function syncHud(): void {
   el.floor.textContent = `${debug.floor}/${FINAL_FLOOR}`;
   el.found.textContent = String(debug.found.length);
@@ -399,6 +539,7 @@ async function main(): Promise<void> {
   const room = new SplatRoom(scene.viewer.getScene());
   const player = new SplatPlayer(view);
   const audio = new GameAudio();
+  audioSink = audio;
   player.spawnAt(ROOM_SPAWN);
 
   // Retry the room before giving up on it.
@@ -566,6 +707,7 @@ async function main(): Promise<void> {
     // fiction is descending, and it also stops a lucky end-of-floor position
     // from trivialising the next one.
     player.respawn();
+    applyFloorHorror(floor);
     debug.renderOnce();
     syncHud();
     if (lock) player.requestLock();
@@ -574,6 +716,8 @@ async function main(): Promise<void> {
 
   function endRun(): void {
     debug.state = 'gameOver';
+    // The run is over, so the fright costs nothing and can be the loudest one.
+    fireScare(1);
     panel(`
       <h1 class="title">FOREIGN<span class="sub">异物</span></h1>
       <p class="tagline">标记用完了，但房间里还有东西。</p>
@@ -665,6 +809,10 @@ async function main(): Promise<void> {
       // random is free, and the game becomes a clicking exercise.
       debug.marksLeft -= 1;
       debug.mistakes += 1;
+      // Marking something innocent should feel bad immediately, before the HUD
+      // is read. Scaled by how many have been wasted, so the last mark left is
+      // worse than the first.
+      fireScare(0.55 + Math.min(0.45, debug.mistakes * 0.15));
       debug.timeLeft = Math.max(0, debug.timeLeft - 8);
       audio.sting('miss');
       toast(explainMiss(plan, slotId), 'bad');
@@ -875,6 +1023,28 @@ async function main(): Promise<void> {
   debug.culling = () => scene.culling;
   debug.setSplatVisible = (visible) => scene.setSplatVisible(visible);
   debug.fps = () => currentFps();
+  debug.scare = (intensity?: number) => fireScare(intensity ?? 1);
+  /** How many frights the audio graph has actually played, or null with no audio. */
+  debug.audioScares = () => (audio.available ? audio.scareCount : null);
+  debug.scareCount = () => scareCount;
+  debug.setScaresEnabled = (on) => setScaresEnabled(on);
+  debug.scaresEnabled = () => scaresEnabled;
+  debug.setTorch = (on) => setTorch(on);
+  debug.torchOn = () => torchOn;
+  debug.darkness = () => darknessForFloor(debug.floor);
+  debug.scareFaceShowing = () => scareLayer.classList.contains('on');
+  debug.sinceScare = () => sinceScare;
+  debug.scareAfter = () => scareAfter;
+  /** The computed beam, so a test can tell a real torch from a transparent div. */
+  debug.torchStyle = () => {
+    const style = getComputedStyle(dark);
+    return {
+      inner: style.getPropertyValue('--inner').trim(),
+      outer: style.getPropertyValue('--outer').trim(),
+      dark: style.getPropertyValue('--dark').trim(),
+      background: style.backgroundImage.slice(0, 60),
+    };
+  };
   debug.togglePerf = () => togglePerf();
   debug.perfVisible = () => perfVisible;
   debug.splatVisible = () => scene.splatVisible;
@@ -964,6 +1134,25 @@ async function main(): Promise<void> {
     };
     debug.frames++;
     perfAccumulator += rawDt;
+
+    // The torch flickers at about 14 Hz rather than every frame. Setting custom
+    // properties costs a style recalculation, and a beam that jitters at the
+    // frame rate reads as noise rather than as a flame.
+    torchAccumulator += rawDt;
+    if (torchAccumulator >= 0.07) {
+      torchAccumulator = 0;
+      paintTorch();
+    }
+
+    // The quiet between frights, which shortens with depth.
+    if (debug.state === 'playing') {
+      sinceScare += rawDt;
+      if (sinceScare >= scareAfter) {
+        // Scaled by depth: an early fright is a suggestion, a late one is not.
+        fireScare(Math.min(1, 0.5 + debug.floor * 0.08));
+        scareAfter = nextScareDelay(Math.random, debug.floor);
+      }
+    }
     if (perfAccumulator >= 0.25) {
       perfAccumulator = 0;
       paintPerf();

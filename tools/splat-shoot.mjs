@@ -259,6 +259,93 @@ try {
     `found=${missed.report.found}`,
   );
 
+  // A wrong mark has to cost something the player feels before they read the
+  // HUD. Sound and picture together, counted, and then taken away again.
+  const fright = await page.evaluate(async () => {
+    const s = window.__splat;
+    s.setScaresEnabled(true);
+    // A fresh floor. `mark` returns `miss` and does nothing at all unless the
+    // state is `playing`, so marking on a finished run looked exactly like a
+    // scare that failed to fire.
+    await s.start(5);
+    const started = { state: s.state, marks: s.marksLeft, bystanders: s.bystanderCount };
+    const before = s.scareCount();
+    const audioBefore = s.audioScares();
+    await s.aimAtBystander(0);
+    const report = s.mark();
+    const during = {
+      showing: s.scareFaceShowing(),
+      count: s.scareCount(),
+    };
+    // The face is deliberately brief; wait past its window and it must be gone.
+    await new Promise((r) => setTimeout(r, 600));
+    return {
+      started,
+      before,
+      audioBefore,
+      audioAfter: s.audioScares(),
+      result: report.result,
+      during,
+      after: s.scareFaceShowing(),
+    };
+  });
+  check(
+    'a wrong mark fires a fright',
+    fright.started.state === 'playing' &&
+      fright.result === 'miss' &&
+      fright.during.count === fright.before + 1 &&
+      fright.during.showing === true,
+    `floor state=${fright.started.state} marks=${fright.started.marks} ` +
+      `bystanders=${fright.started.bystanders} result=${fright.result} ` +
+      `scares ${fright.before}->${fright.during.count} face=${fright.during.showing}`,
+  );
+  check(
+    'the fright is taken away again rather than left on screen',
+    fright.after === false,
+    `face showing 600ms later = ${fright.after}`,
+  );
+  check(
+    'the fright makes a sound',
+    fright.audioBefore === null || fright.audioAfter > fright.audioBefore,
+    `audio scares ${fright.audioBefore} -> ${fright.audioAfter}`,
+  );
+
+  // Darkness and torch, read back from the DOM rather than from the curve. A
+  // curve that returns the right numbers while nothing is painted is exactly the
+  // failure this is here to catch.
+  const gloom = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(1);
+    const shallow = { curve: s.darkness(), style: s.torchStyle(), floor: s.floor };
+    await s.start(6);
+    const deep = { curve: s.darkness(), style: s.torchStyle(), floor: s.floor };
+    s.setTorch(false);
+    const off = { on: s.torchOn(), hidden: document.getElementById('dark').classList.contains('off') };
+    s.setTorch(true);
+    const on = { on: s.torchOn(), hidden: document.getElementById('dark').classList.contains('off') };
+    return { shallow, deep, off, on };
+  });
+  check(
+    'the room is darker on a deeper floor, in the DOM and not just in the curve',
+    gloom.deep.curve > gloom.shallow.curve &&
+      parseFloat(gloom.deep.style.dark) > parseFloat(gloom.shallow.style.dark),
+    `floor ${gloom.shallow.floor} dark=${gloom.shallow.style.dark} -> ` +
+      `floor ${gloom.deep.floor} dark=${gloom.deep.style.dark}`,
+  );
+  check(
+    'the torch paints a real beam, narrower the deeper the run',
+    /px$/.test(gloom.shallow.style.inner) &&
+      /gradient/.test(gloom.shallow.style.background) &&
+      parseFloat(gloom.deep.style.outer) < parseFloat(gloom.shallow.style.outer),
+    `inner ${gloom.shallow.style.inner}->${gloom.deep.style.inner}, ` +
+      `outer ${gloom.shallow.style.outer}->${gloom.deep.style.outer}`,
+  );
+  check(
+    'F turns the torch off and on',
+    gloom.off.on === false && gloom.off.hidden === true && gloom.on.on === true && gloom.on.hidden === false,
+    `off -> on=${gloom.off.on} hidden=${gloom.off.hidden}; on -> on=${gloom.on.on} hidden=${gloom.on.hidden}`,
+  );
+
   // The room now contains objects that are present and innocent. Without them
   // there was no judgement in the game at all — the scan's own furniture is baked
   // into the splat, so every crisp object *was* an anomaly and finding one was a
@@ -430,7 +517,11 @@ try {
 
   // A demo link has to open straight into a live floor, so the autostart path is
   // part of the deliverable rather than a convenience.
-  await page.goto(`${base}/?autostart=1&floor=3&seed=4242`, { waitUntil: 'load', timeout: 60_000 });
+  // Matches the readiness wait below rather than being shorter than it. The
+  // check is that the autostart link opens a live floor, not that a 63 MB scan
+  // loads inside a minute on a machine that has been running browsers for an
+  // hour -- which is what a 60 s `load` budget was silently asserting.
+  await page.goto(`${base}/?autostart=1&floor=3&seed=4242`, { waitUntil: 'load', timeout: 240_000 });
   await page.waitForFunction(() => window.__splat && window.__splat.ready, null, { timeout: 240_000 });
   const auto = await page.evaluate(() => {
     const s = window.__splat;
