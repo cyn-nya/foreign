@@ -112,6 +112,7 @@ npm run verify
 | `splat:shoot` | **29 项**，真实房间：默认入口、行走、碰撞对照、玩法闭环、注视者、音效、新异常类型 |
 | `shoot` | 15 项，程序化房间：每个视角确实渲染出家具、每件家具都看得到 |
 | `deploy:check` | 7 项，**构建产物在子路径下真的能跑** |
+| `deploy:check:live` | 8 项，同上，但直接打线上 URL，并**确认这就是当前构建** |
 
 ### 两条贯穿始终的检查原则
 
@@ -186,6 +187,18 @@ npm run deploy
 
 先跑 `deploy:check` 验证构建产物在子路径下可运行，**通过后**才把 `dist/`
 发布到 `gh-pages` 分支。GitHub Pages 从该分支提供服务。
+
+Pages 是异步重建的，推送完站点还是旧的。等它跑完，再确认提交链接上跑的是
+**这次构建**：
+
+```bash
+npm run deploy:check:live
+```
+
+这条会直接打开线上 URL 实测（8 项）。其中一项把线上 `index.html` 引用的
+bundle 文件名和本地 `dist/` 比对 —— 因为「链接能用」和「链接是我刚验收的
+那个东西」是两个不同的断言。**改了游戏、本地验收全绿、忘了重新部署**是一条
+非常容易走上的路，而其他每一项都会照常通过：旧构建也能跑。
 
 > 不用 GitHub Actions 是因为 GitHub 不允许 OAuth app 在没有 `workflow`
 > scope 的情况下推送 `.github/workflows/`。若要改用 Actions，见

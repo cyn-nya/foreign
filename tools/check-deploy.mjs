@@ -17,7 +17,7 @@
  * green local run.
  */
 
-import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -66,6 +66,39 @@ let server;
 if (liveUrl) {
   console.log(`testing the published site directly: ${liveUrl}`);
   server = { url: liveUrl.replace(/\/+$/, ''), close: async () => {} };
+
+  // A published site can work perfectly and still be an old build. "The demo link
+  // works" and "the demo link is the thing I just verified locally" are different
+  // claims, and forgetting to redeploy after a change is the ordinary way to fail
+  // the second one — with every other check here still green, because the old
+  // build also worked fine.
+  //
+  // This is the check that matters most for a submission: the judges click the
+  // link, not the working tree.
+  const entryBundle = (html) => html.match(/assets\/index-[\w-]+\.js/)?.[0] ?? null;
+  const localIndex = join(dist, 'index.html');
+  const localEntry = existsSync(localIndex) ? entryBundle(readFileSync(localIndex, 'utf8')) : null;
+
+  if (!localEntry) {
+    console.log('  (skipped the build-freshness check — no local dist/index.html to compare against)');
+  } else {
+    let liveEntry;
+    try {
+      // Cache-buster: Pages caches index.html aggressively, and a stale copy here
+      // would report a stale site as current.
+      const response = await fetch(`${server.url}/?freshness=${Date.now()}`);
+      liveEntry = entryBundle(await response.text());
+    } catch (error) {
+      liveEntry = `unreachable (${error instanceof Error ? error.message : error})`;
+    }
+    check(
+      'the published site is the current build',
+      liveEntry === localEntry,
+      liveEntry === localEntry
+        ? `both serve ${localEntry}`
+        : `live=${liveEntry} local=${localEntry} — run \`npm run deploy\``,
+    );
+  }
 } else {
   if (!existsSync(join(dist, 'index.html'))) {
     console.error('dist/index.html is missing — run `npm run build` first.');

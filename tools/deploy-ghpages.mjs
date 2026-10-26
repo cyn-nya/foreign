@@ -103,3 +103,8 @@ console.log(`\npushed ${branch}.`);
 console.log('If this is the first publish, enable Pages once:');
 console.log('  gh api -X POST repos/<owner>/<repo>/pages --input pages.json');
 console.log('with {"source":{"branch":"gh-pages","path":"/"}}');
+console.log('');
+console.log('Pages rebuilds asynchronously, so the site is not current yet. Once it');
+console.log('finishes, confirm the submitted link serves *this* build — not merely a');
+console.log('build that happens to work:');
+console.log('  npm run deploy:check:live');
