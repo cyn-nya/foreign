@@ -1,0 +1,651 @@
+
+===== lux3d_ArticulationAnimationRequest =====
+{
+ "type": "object",
+ "required": [
+  "glbUrl",
+  "prompt"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "glbUrl": {
+   "type": "string",
+   "format": "uri",
+   "minLength": 1,
+   "description": "输入 GLB 模型的公网 HTTP(S) URL，必须可由服务端访问。如需上传本地文件，请先调用 [Asset 文件上传接口](https://labs.aholo3d.cn/api-docs/api-reference#tag/asset)，再将返回的 URL 填入此字段。",
+   "example": "https://assets.aholo3d.cn/examples/cubely/joint-motion/target-model.glb"
+  },
+  "prompt": {
+   "type": "string",
+   "minLength": 1,
+   "pattern": ".*\\S.*",
+   "description": "描述需要运动的部件及期望的关节运动方式，不能仅包含空白字符。",
+   "example": "保持底座固定，为盖子添加旋转关节，让盖子缓慢打开和闭合。"
+  }
+ },
+ "description": "模型关节化与动画请求。glbUrl 和 prompt 均必填，不接受其他字段。"
+}
+
+===== lux3d_HumanoidAnimationRetargetRequest =====
+{
+ "type": "object",
+ "required": [
+  "rigModelUrl",
+  "animationIds"
+ ],
+ "properties": {
+  "rigModelUrl": {
+   "type": "string",
+   "format": "uri",
+   "description": "已绑骨 GLB 模型的公网 HTTPS URL。如需上传本地文件，请先调用 [Asset 文件上传接口](https://labs.aholo3d.cn/api-docs/api-reference#tag/asset)，再将返回的 URL 填入此字段。",
+   "example": "https://qhstaticssl.kujiale.com/application/octetstream/1790240555913/rigModel.glb"
+  },
+  "animationIds": {
+   "type": "array",
+   "minItems": 1,
+   "maxItems": 10,
+   "uniqueItems": true,
+   "items": {
+    "type": "string",
+    "minLength": 1,
+    "enum": [
+     "A_TPose",
+     "Dance_Loop",
+     "Idle_Rail_Call",
+     "Idle_TalkingPhone_Loop",
+     "Idle_Talking_Loop",
+     "Yes",
+     "Crouch_Idle_Loop",
+     "Idle_FoldArms_Loop",
+     "Idle_Lantern_Loop",
+     "Idle_Loop",
+     "Idle_No_Loop",
+     "Idle_Rail_Loop",
+     "Idle_Torch_Loop",
+     "ClimbUp_1m",
+     "Crouch_Fwd_Loop",
+     "Jog_Fwd_Loop",
+     "Sprint_Loop",
+     "Swim_Fwd_Loop",
+     "Swim_Idle_Loop",
+     "Walk_Formal_Loop",
+     "Walk_Loop",
+     "Jump_Land",
+     "Jump_Loop",
+     "Jump_Start",
+     "NinjaJump_Idle_Loop",
+     "NinjaJump_Land",
+     "NinjaJump_Start",
+     "Roll",
+     "Slide_Exit",
+     "Slide_Loop",
+     "Slide_Start",
+     "Sword_Attack",
+     "Sword_Block",
+     "Sword_Dash",
+     "Sword_Heavy_Combo",
+     "Sword_Idle",
+     "Sword_Regular_A",
+     "Sword_Regular_A_Rec",
+     "Sword_Regular_B",
+     "Sword_Regular_B_Rec",
+     "Sword_Regular_C",
+     "Sword_Regular_Combo",
+     "Idle_Shield_Break",
+     "Idle_Shield_Loop",
+     "Shield_Dash",
+     "Shield_OneShot",
+     "Melee_Hook",
+     "Melee_Hook_Rec",
+     "Punch_Cross",
+     "Punch_Jab",
+     "Pistol_Aim_Down",
+     "Pistol_Aim_Neutral",
+     "Pistol_Aim_Up",
+     "Pistol_Idle_Loop",
+     "Pistol_Reload",
+     "Pistol_Shoot",
+     "Spell_Simple_Enter",
+     "Spell_Simple_Exit",
+     "Spell_Simple_Idle_Loop",
+     "Spell_Simple_Shoot",
+     "Chest_Open",
+     "Consume",
+     "Driving_Loop",
+     "Farm_Harvest",
+     "Farm_PlantSeed",
+     "Farm_Watering",
+     "Fixing_Kneeling",
+     "Interact",
+     "OverhandThrow",
+     "PickUp_Table",
+     "Push_Loop",
+     "TreeChopping_Loop",
+     "Walk_Carry_Loop",
+     "LayToIdle",
+     "Sitting_Enter",
+     "Sitting_Exit",
+     "Sitting_Idle_Loop",
+     "Sitting_Talking_Loop",
+     "Death01",
+     "Hit_Chest",
+     "Hit_Head",
+     "Hit_Knockback",
+     "Zombie_Idle_Loop",
+     "Zombie_Scratch",
+     "Zombie_Walk_Fwd_Loop"
+    ]
+   },
+   "description": "动作 ID 列表，从以下 85 个可选值中选择 1–10 个，不可重复，区分大小写。"
+  },
+  "animationOutputMode": {
+   "type": "string",
+   "enum": [
+    "separate",
+    "combined"
+   ],
+   "default": "separate",
+   "description": "separate 为每个动作生成一个完整文件；combined 将所选动作合并到一个文件，每个动作保留为独立动画片段。"
+  },
+  "outFormat": {
+   "type": "string",
+   "enum": [
+    "glb",
+    "fbx"
+   ],
+   "default": "glb",
+   "description": "输出文件格式。"
+  },
+  "animateInPlace": {
+   "type": "boolean",
+   "default": false,
+   "description": "是否生成原地动画。"
+  }
+ }
+}
+
+===== lux3d_HumanoidAutoRigRequest =====
+{
+ "type": "object",
+ "required": [
+  "modelUrl"
+ ],
+ "properties": {
+  "modelUrl": {
+   "type": "string",
+   "format": "uri",
+   "description": "GLB 模型的公网 HTTPS URL。如需上传本地文件，请先调用 [Asset 文件上传接口](https://labs.aholo3d.cn/api-docs/api-reference#tag/asset)，再将返回的 URL 填入此字段。"
+  }
+ }
+}
+
+===== lux3d_ImageToFourViewRequest =====
+{
+ "type": "object",
+ "properties": {
+  "img": {
+   "minLength": 1,
+   "pattern": ".*\\S.*",
+   "type": "string",
+   "description": "单张图片 URL。img 和 prompt 至少提供一个，传入的值不能为空白。如需上传本地文件，请先调用 [Asset 文件上传接口](https://labs.aholo3d.cn/api-docs/api-reference#tag/asset)，再将返回的 URL 填入此字段。",
+   "example": "https://qhstaticssl.kujiale.com/image/jpeg/1784775590613/image_to_3d_model.jpg"
+  },
+  "prompt": {
+   "minLength": 1,
+   "pattern": ".*\\S.*",
+   "type": "string",
+   "description": "文字提示词，可单独用于纯文字生成四视图，也可与 img 组合使用。img 和 prompt 至少提供一个，传入的值不能为空白。",
+   "example": "一把现代简约浅色原木餐椅，纯白背景"
+  }
+ },
+ "description": "多模态四视图请求体，img 和 prompt 至少提供一个，支持纯图片、纯文字或图文组合输入。"
+}
+
+===== lux3d_MaterialTransferRequest =====
+{
+ "required": [
+  "img",
+  "meshUrl",
+  "version"
+ ],
+ "type": "object",
+ "properties": {
+  "img": {
+   "minLength": 1,
+   "pattern": ".*\\S.*",
+   "type": "string",
+   "description": "材质参考图片 URL。如需上传本地文件，请先调用 [Asset 文件上传接口](https://labs.aholo3d.cn/api-docs/api-reference#tag/asset)，再将返回的 URL 填入此字段。",
+   "example": "https://qhstaticssl.kujiale.com/image/png/1784776951878/material_transfer_input.png"
+  },
+  "meshUrl": {
+   "minLength": 1,
+   "pattern": ".*\\S.*",
+   "type": "string",
+   "description": "模型 GLB 文件 URL。如需上传本地文件，请先调用 [Asset 文件上传接口](https://labs.aholo3d.cn/api-docs/api-reference#tag/asset)，再将返回的 URL 填入此字段。",
+   "example": "https://qhstaticssl.kujiale.com/application/octetstream/1784776896628/material_transfer_model.glb"
+  },
+  "version": {
+   "type": "string",
+   "description": "必填，当前固定传 v3.0-standard。",
+   "enum": [
+    "v3.0-standard"
+   ],
+   "example": "v3.0-standard"
+  },
+  "outputFormat": {
+   "type": "array",
+   "uniqueItems": true,
+   "items": {
+    "type": "string",
+    "enum": [
+     "zip",
+     "glb",
+     "usdz",
+     "obj_zip",
+     "fbx_zip"
+    ]
+   },
+   "description": "请求的输出格式：zip、glb、usdz、obj_zip 或 fbx_zip。",
+   "example": [
+    "zip",
+    "glb"
+   ]
+  },
+  "aiPredictSize": {
+   "type": "boolean",
+   "description": "是否预测模型尺寸；为 true 时忽略 customSize。"
+  },
+  "customSize": {
+   "type": "number",
+   "format": "float",
+   "minimum": 0,
+   "exclusiveMinimum": true,
+   "description": "aiPredictSize 为 false 或未传时使用的目标高度（mm）；省略时保持原始尺寸。"
+  }
+ },
+ "description": "材质重绘请求体，version 当前固定为 v3.0-standard。"
+}
+
+===== lux3d_MultiFormatExportRequest =====
+{
+ "required": [
+  "modelUrl"
+ ],
+ "type": "object",
+ "properties": {
+  "modelUrl": {
+   "minLength": 1,
+   "type": "string",
+   "description": "模型公网 URL，支持 .zip 或 .glb。ZIP 输入必须来自 Lux3D 生成任务；GLB 输入时 outputFormat 不能为空。如需上传本地文件，请先调用 [Asset 文件上传接口](https://labs.aholo3d.cn/api-docs/api-reference#tag/asset)，再将返回的 URL 填入此字段；其中 ZIP 仍必须是 Lux3D 生成任务产物。",
+   "example": "https://qhstaticssl.kujiale.com/application/octetstream/1784776896628/model.glb"
+  },
+  "outputFormat": {
+   "type": "array",
+   "uniqueItems": true,
+   "items": {
+    "type": "string",
+    "enum": [
+     "usdz",
+     "obj_zip",
+     "fbx_zip",
+     "stl",
+     "3mf"
+    ]
+   },
+   "description": "可选导出格式，支持单项或组合：usdz、obj_zip、fbx_zip、stl、3mf。outputFormat 不接受 glb。\n- usdz：Apple 生态常用的 AR 模型格式，适用于 iOS、iPadOS 和 Quick Look 等 AR 预览场景。\n- obj_zip：包含 OBJ、MTL 和贴图文件的压缩包，兼容常见 3D 软件和 DCC 工具。\n- fbx_zip：包含 FBX 模型及贴图资源的压缩包，适用于 Maya、3ds Max、Blender 等主流 DCC 工作流。\n- stl：面向 3D 打印和几何交换的网格格式，不包含材质和贴图信息。\n- 3mf：面向 3D 打印的 3D Manufacturing Format，适合需要制造/打印格式交付的场景。\nZIP 输入时可以省略或传空数组；GLB 输入时至少需要一个值。\n",
+   "example": [
+    "usdz",
+    "obj_zip",
+    "stl",
+    "3mf"
+   ]
+  }
+ },
+ "description": "多格式导出任务请求体。"
+}
+
+===== lux3d_MultimodalToImageRequest =====
+{
+ "type": "object",
+ "properties": {
+  "img": {
+   "minLength": 1,
+   "pattern": ".*\\S.*",
+   "type": "string",
+   "description": "单张参考图片 URL，可单独使用或与 prompt 组合。img 和 prompt 至少提供一个，传入的值不能为空白。如需上传本地文件，请先调用 [Asset 文件上传接口](https://labs.aholo3d.cn/api-docs/api-reference#tag/asset)，再将返回的 URL 填入此字段。",
+   "example": "https://qhstaticssl.kujiale.com/image/jpeg/1784775590613/image_to_3d_model.jpg"
+  },
+  "prompt": {
+   "minLength": 1,
+   "pattern": ".*\\S.*",
+   "type": "string",
+   "description": "图片生成提示词，可单独使用或与 img 组合。img 和 prompt 至少提供一个，传入的值不能为空白。",
+   "example": "把椅子改成浅色原木材质，保持造型和视角"
+  }
+ },
+ "description": "多模态单图生成请求体，img 和 prompt 至少提供一个，支持纯图片、纯文字或图文组合输入。"
+}
+
+===== lux3d_PartSplitRequest =====
+{
+ "required": [
+  "glbUrl"
+ ],
+ "type": "object",
+ "properties": {
+  "glbUrl": {
+   "minLength": 1,
+   "pattern": ".*\\S.*",
+   "type": "string",
+   "description": "待拆分的 GLB 模型公网 URL，必须可由服务端访问。如需上传本地文件，请先调用 [Asset 文件上传接口](https://labs.aholo3d.cn/api-docs/api-reference#tag/asset)，再将返回的 URL 填入此字段；也可使用仍在有效期内的 Lux3D GLB 任务产物 URL。",
+   "example": "https://qhstaticssl.kujiale.com/model/gltfbinary/1790144390549/14B82261CD6DF53FA6B406240E20CB2C.glb"
+  }
+ },
+ "description": "部件拆分任务请求体。"
+}
+
+===== lux3d_TaskListData =====
+{
+ "type": "object",
+ "properties": {
+  "items": {
+   "type": "array",
+   "items": {
+    "$ref": "#/components/schemas/lux3d_TaskListItem"
+   }
+  },
+  "total": {
+   "type": "integer",
+   "description": "符合条件的任务总数"
+  },
+  "page": {
+   "type": "integer",
+   "description": "当前页码"
+  },
+  "pageSize": {
+   "type": "integer",
+   "description": "每页数量"
+  }
+ }
+}
+
+===== lux3d_TaskListItem =====
+{
+ "type": "object",
+ "properties": {
+  "taskId": {
+   "type": "integer",
+   "format": "int64",
+   "description": "任务 ID"
+  },
+  "status": {
+   "type": "integer",
+   "description": "任务状态：0-初始化，1-运行中，3-成功，4-失败，6-已取消。",
+   "enum": [
+    0,
+    1,
+    3,
+    4,
+    6
+   ]
+  },
+  "created": {
+   "type": "integer",
+   "format": "int64",
+   "description": "任务创建时间，Unix 毫秒时间戳"
+  },
+  "lastModified": {
+   "type": "integer",
+   "format": "int64",
+   "description": "任务最后修改时间，Unix 毫秒时间戳"
+  }
+ }
+}
+
+===== lux3d_TaskListResponse =====
+{
+ "type": "object",
+ "properties": {
+  "f": {
+   "type": "object",
+   "nullable": true,
+   "additionalProperties": true,
+   "description": "失败信息；成功时为 null。"
+  },
+  "d": {
+   "$ref": "#/components/schemas/lux3d_TaskListData"
+  },
+  "m": {
+   "type": "string",
+   "nullable": true,
+   "description": "提示信息。成功时为空字符串 \"\"。"
+  },
+  "c": {
+   "type": "string",
+   "nullable": true,
+   "description": "状态码。成功时为 \"0\"，失败时为错误码字符串。"
+  }
+ },
+ "description": "生成记录分页响应体。\n列表接口与创建、查询接口的成功响应一致：f 为 null、c 为 \"0\"、m 为 \"\"（空字符串）。请按 c === \"0\" 判断成功。\n"
+}
+
+===== lux3d_TaskQueryData =====
+{
+ "type": "object",
+ "properties": {
+  "taskId": {
+   "type": "integer",
+   "description": "任务ID",
+   "format": "int64",
+   "example": 1389513
+  },
+  "outputs": {
+   "type": "array",
+   "description": "任务结果列表，具体格式和顺序见“查询生成任务”接口说明。运行中的任务可能返回部分结果。",
+   "items": {
+    "$ref": "#/components/schemas/lux3d_TaskOutput"
+   }
+  },
+  "status": {
+   "type": "integer",
+   "description": "任务状态：0-初始化，1-运行中，3-成功，4-失败，6-已取消。",
+   "format": "int32",
+   "enum": [
+    0,
+    1,
+    3,
+    4,
+    6
+   ],
+   "example": 3
+  }
+ },
+ "description": "任务查询数据。"
+}
+
+===== spatialunderstanding_SpatialUnderstandingTaskListQueryRequest =====
+{
+ "type": "object",
+ "properties": {
+  "pageNum": {
+   "minimum": 0,
+   "type": "integer",
+   "description": "页码，从 1 起；`0` 与 `1` 均视为第一页。",
+   "format": "int32",
+   "example": 1
+  },
+  "pageSize": {
+   "maximum": 100,
+   "minimum": 0,
+   "type": "integer",
+   "description": "每页条数，最大 100；为 0 或未传时按 20 条计。",
+   "format": "int32",
+   "example": 20
+  },
+  "statusList": {
+   "type": "array",
+   "description": "按任务状态过滤（大写字符串）；为空表示不按状态过滤。",
+   "items": {
+    "$ref": "#/components/schemas/spatialunderstanding_SpatialUnderstandingTaskStatus"
+   }
+  }
+ },
+ "description": "分页查询空间理解任务列表的请求体：`pageNum` 从 1 起（`0` 与 `1` 均视为第一页）；`pageSize` 为每页条数（1-100，缺省或 0 时按 20 条计）。仅查询当前账号下的任务数据。"
+}
+
+===== spatialunderstanding_SpatialUnderstandingTaskResult =====
+{
+ "type": "object",
+ "properties": {
+  "resultSslUrl": {
+   "type": "string",
+   "description": "空间理解结果文件的访问地址。UTF-8 纯文本，一行一个实体；服务端不提供解析后的 JSON，请自行下载并解析。\n\n坐标系：单位米，右手系，Z-up（[ScanNet Alignment](https://github.com/ScanNet/ScanNet/tree/master/Alignment)）。\n\n行格式：`{id}={Type}(arg1,arg2,...)`。未知 `Type` 请跳过该行，不要整文件失败。\n\n| Type | 行格式 |\n| --- | --- |\n| Wall | `wall_{n}=Wall(ax,ay,az,bx,by,bz,height,thickness)` |\n| Door | `door_{n}=Door(wall_id,position_x,position_y,position_z,width,height)` |\n| Window | `window_{n}=Window(wall_id,position_x,position_y,position_z,width,height)` |\n| Bbox | `bbox_{n}=Bbox(class,position_x,position_y,position_z,angle_z,scale_x,scale_y,scale_z)` |\n\n| 类型 | 字段 | 数据类型 | 说明 |\n| --- | --- | --- | --- |\n| Wall | `ax, ay, az` | number | 墙体底部基准线起点 A 的三维坐标。 |\n| Wall | `bx, by, bz` | number | 墙体底部基准线终点 B 的三维坐标。 |\n| Wall | `height` | number | 墙体高度。 |\n| Wall | `thickness` | number | 墙体厚度；当前输出为 `0.0`，因为识别的是房间内轮廓的边。 |\n| Door | `wall_id` | string | 门所属墙体的标识符，例如 `wall_0`，应引用当前文件中已有的墙体。 |\n| Door | `position_x, position_y, position_z` | number | 门洞中心点的三维坐标。 |\n| Door | `width` | number | 门洞沿所属墙体方向的宽度。 |\n| Door | `height` | number | 门洞的垂直高度。 |\n| Window | `wall_id` | string | 窗所属墙体的标识符，例如 `wall_4`，应引用当前文件中已有的墙体。 |\n| Window | `position_x, position_y, position_z` | number | 窗洞中心点的三维坐标。 |\n| Window | `width` | number | 窗洞沿所属墙体方向的宽度。 |\n| Window | `height` | number | 窗洞的垂直高度。 |\n| Bbox | `class` | string | 物体类别，例如 `chair`、`sofa`、`carpet`、`coffee_table`。 |\n| Bbox | `position_x, position_y, position_z` | number | 三维包围盒中心点坐标。 |\n| Bbox | `angle_z` | number | 包围盒绕 Z 轴的旋转角，即水平方向朝向。 |\n| Bbox | `scale_x` | number | 包围盒局部 X 轴方向的完整尺寸，非半尺寸。 |\n| Bbox | `scale_y` | number | 包围盒局部 Y 轴方向的完整尺寸，非半尺寸。 |\n| Bbox | `scale_z` | number | 包围盒局部 Z 轴方向的完整尺寸，即高度。 |\n\n解析建议：按行读取。`class` 可能含空格（如 `dining chair`），不要按第一个逗号切分；应从右侧取 7 个数字，左侧整段作为 `class`。`class` 一般无引号。数字为浮点。\n\n格式示意：\n\n```\nwall_0=Wall(1.6857,-4.4625,0.0,4.6798,-4.4474,0.0,2.73,0.0)\ndoor_0=Door(wall_0,3.1734,-4.4550,1.05,1.3852,2.1)\nwindow_0=Window(wall_4,5.6622,-1.0338,1.65,0.6883,1.5)\nbbox_0=Bbox(carpet,-3.009,4.371,-1.401,-1.5708,5.718,6.734,0.109)\n```\n\n**常见 class**\n\n| class | 中文 |\n| --- | --- |\n| curtain | 窗帘 |\n| painting | 装饰画 |\n| nightstand | 床头柜 |\n| chandelier | 吊灯 |\n| wardrobe | 衣柜 |\n| bed | 床 |\n| carpet | 地毯 |\n| sofa | 沙发 |\n| dining chair | 餐椅 |\n| bathroom cabinet | 浴室柜 |\n| television | 电视 |\n| toilet | 坐便器 |\n| dining table combination | 餐桌组合 |\n| chair | 椅子 |\n| shower | 花洒 |\n| plants | 绿植 |\n| tv cabinet | 电视柜 |\n| coffee table | 茶几/茶座 |\n| illumination | 照明 |\n| shoe cabinet | 鞋柜 |\n| refrigerator | 冰箱 |\n| shower room | 淋浴房 |\n| wall decoration | 墙饰/挂件 |\n| cupboard | 橱柜 |\n| side table | 边几 |\n| stool | 凳子 |\n| wine cabinet | 酒柜 |\n| bookcase | 书柜 |\n| combination sofa | 组合沙发 |\n| air conditioner | 空调 |\n| washing cabinet | 洗衣机柜 |\n| pillow | 抱枕/靠垫 |\n| stove | 灶台 |\n| dressing table | 梳妆台 |\n| desk | 书桌 |\n| cushion | 坐垫 |\n| floor-standing lamp | 落地灯 |\n| dining table | 餐桌 |\n| washing machine | 洗衣机 |\n| hand sink | 洗手台 |\n| clothes rack | 晾衣架 |\n| mirror | 镜子 |\n| sideboard | 餐边柜 |\n| computer | 电脑 |\n| potted bonsai | 盆栽盆景 |\n| range hood | 抽油烟机 |\n| entrance cabinet | 玄关柜 |\n| cupboard | 斗柜 |\n| gas stove | 燃气灶 |\n| multifunctional combination bed | 多功能组合床 |\n| leisure table and chair combination | 休闲桌椅组合 |\n| bar chair | 吧台椅 |\n| screen | 屏风 |\n| sink | 水槽 |\n| bar | 吧台 |\n| tub | 浴缸 |\n| decorative cabinet | 装饰柜 |\n| wall cabinet | 壁柜 |\n| integrated stove | 集成灶 |\n| micro-wave oven | 微波炉 |",
+   "example": "https://holo-cos.aholo3d.cn/resource/openapi/xxx-result.txt"
+  }
+ },
+ "description": "空间理解任务产物。仅任务成功时返回。`resultSslUrl` 指向 UTF-8 文本（DSL），含 Wall / Door / Window / Bbox，需自行下载解析。"
+}
+
+===== spatialunderstanding_SpatialUnderstandingTaskStatus =====
+{
+ "type": "string",
+ "description": "空间理解任务状态。**进行中**：`PENDING` 排队中；`RUNNING` 执行中。**终态**：`SUCCEEDED` 成功；`FAILED` 失败；`TIMEOUT` 超时。",
+ "example": "SUCCEEDED",
+ "enum": [
+  "PENDING",
+  "RUNNING",
+  "SUCCEEDED",
+  "FAILED",
+  "TIMEOUT"
+ ]
+}
+
+===== world_GenerateWorldResourceItem =====
+{
+ "required": [
+  "url"
+ ],
+ "type": "object",
+ "properties": {
+  "url": {
+   "minLength": 1,
+   "type": "string",
+   "description": "图片资源 URL；扩展名须为 image：.jpg / .jpeg / .png / .webp。",
+   "example": "https://cdn.example.com/input/room.jpg"
+  },
+  "type": {
+   "$ref": "#/components/schemas/world_WorldOpenApiGenResourceType"
+  }
+ },
+ "description": "生成任务单条输入资源（图片）。未传 `type` 时按图片处理。image：.jpg / .jpeg / .png / .webp。"
+}
+
+===== world_WorldAssetBundle =====
+{
+ "type": "object",
+ "properties": {
+  "splats": {
+   "$ref": "#/components/schemas/world_WorldSplatBundle"
+  },
+  "imagery": {
+   "$ref": "#/components/schemas/world_WorldImagery"
+  },
+  "semanticsMetadata": {
+   "$ref": "#/components/schemas/world_WorldSemanticsMetadata"
+  }
+ },
+ "description": "世界产物容器。3D 重建任务成功时填充 `splats`（ply/spz/lodMetaPath 在 `splats.urls` 中）；AI 生成任务另在 `imagery.panoUrl` 返回全景图下载地址。"
+}
+
+===== world_WorldOpenApiGenResourceType =====
+{
+ "type": "string",
+ "description": "生成任务输入资源类型，仅支持 image（图片），支持 .jpg / .jpeg / .png / .webp。",
+ "example": "image",
+ "enum": [
+  "image"
+ ]
+}
+
+===== world_WorldOpenApiProjectScene =====
+{
+ "type": "string",
+ "description": "项目场景类型。model：物体场景；space：室内场景。",
+ "example": "space",
+ "enum": [
+  "model",
+  "space"
+ ]
+}
+
+===== world_WorldOpenApiResourceType =====
+{
+ "type": "string",
+ "description": "输入资源类型。image：图片，支持 .jpg / .jpeg / .png / .webp；video：普通视频，支持 .mp4 / .mov；insv：Insta360 全景视频，支持 .insv。",
+ "example": "image",
+ "enum": [
+  "image",
+  "video",
+  "insv"
+ ]
+}
+
+===== world_WorldOpenApiTaskQuality =====
+{
+ "type": "string",
+ "description": "3DGS 重建任务质量档位。low：极速预览；normal：标准；high：专业。",
+ "example": "high",
+ "enum": [
+  "low",
+  "normal",
+  "high"
+ ]
+}
+
+===== world_WorldOpenApiTaskStatus =====
+{
+ "type": "string",
+ "description": "重建任务状态。**进行中**：`PENDING` 排队中；`PREPROCESSING` 预处理中；`RUNNING` 执行中。**终态**：`SUCCEEDED` 成功；`FAILED` 失败；`CANCELED` 取消；`TIMEOUT` 超时；`REJECTED` 被拒绝。",
+ "example": "SUCCEEDED",
+ "enum": [
+  "PENDING",
+  "PREPROCESSING",
+  "RUNNING",
+  "SUCCEEDED",
+  "FAILED",
+  "CANCELED",
+  "TIMEOUT",
+  "REJECTED"
+ ]
+}
+
+===== world_WorldOpenApiUpAxis =====
+{
+ "type": "string",
+ "description": "世界坐标 up 轴。Y：+Y 朝上（glTF/USD 默认）；Z：+Z 朝上（本服务 3DGS 产出约定）。",
+ "example": "Z",
+ "enum": [
+  "Y",
+  "Z"
+ ]
+}
+
+===== world_WorldResourceItem =====
+{
+ "required": [
+  "url"
+ ],
+ "type": "object",
+ "properties": {
+  "url": {
+   "minLength": 1,
+   "type": "string",
+   "description": "资源地址 URL；扩展名须与 `type` 一致（image：.jpg / .jpeg / .png / .webp；video：.mp4 / .mov；insv：.insv。）。",
+   "example": "https://cdn.example.com/input/room-001.jpg"
+  },
+  "type": {
+   "$ref": "#/components/schemas/world_WorldOpenApiResourceType"
+  }
+ },
+ "description": "重建任务单条输入资源。未传 `type` 按图片计；普通视频传 `video`；Insta360 全景视频传 `insv`。image：.jpg / .jpeg / .png / .webp；video：.mp4 / .mov；insv：.insv。"
+}

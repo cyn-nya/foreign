@@ -1,0 +1,19 @@
+# Aholo Viewer
+
+> High-performance 3D Gaussian Splatting rendering for web applications.
+
+AI assistants should use the markdown corpus under `/llm/` before scraping the human-facing site.
+
+## Primary Docs
+
+- [AI documentation index](/llm/index.md): overview and recommended reading order.
+- [Manual](/llm/manual/index.md): product manual, 9 pages.
+- [API Reference](/llm/api/index.md): exported SDK symbols, 154 entries.
+- [Examples](/llm/examples/index.md): runnable TypeScript examples, 7 demos.
+
+## Recommended Use
+
+- Start with `/llm/manual/getting-started.md` for setup.
+- Read `/llm/manual/basic-concepts.md` for the scene, camera, and renderer model.
+- Use `/llm/api/index.md` to locate public exports.
+- Use `/llm/examples/index.md` for runnable integration patterns.

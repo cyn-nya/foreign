@@ -1,0 +1,63 @@
+{
+  "name": "@manycore/aholo-viewer",
+  "version": "1.11.0",
+  "description": "A compact TypeScript renderer core used by the Aholo Viewer website and examples.",
+  "author": "egs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/manycoretech/aholo-viewer.git",
+    "directory": "packages/renderer"
+  },
+  "license": "MIT",
+  "keywords": [
+    "aholo",
+    "renderer",
+    "viewer",
+    "webgl",
+    "webgl2",
+    "3d",
+    "3d-gaussian-splatting",
+    "gaussian-splatting",
+    "canvas",
+    "html5"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    ".build": "pnpm run .egs:types && node ../../scripts/build-package.mjs",
+    ".check": "tsc -p tsconfig.json --noEmit",
+    ".clean": "node ../../scripts/clean-package.mjs",
+    ".egs:types": "node ../../scripts/prepare-egs-types.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@qunhe/egs": "workspace:*",
+    "@qunhe/egs-animation": "workspace:*",
+    "@qunhe/egs-draco-loader": "workspace:*",
+    "@qunhe/egs-gltf-loader": "workspace:*",
+    "@qunhe/egs-lib": "workspace:*",
+    "@qunhe/egs-splat-loader": "workspace:*",
+    "@qunhe/egs-splat-utils": "workspace:*",
+    "@qunhe/egs-texture-loader": "workspace:*",
+    "@qunhe/egs-xr": "workspace:*",
+    "@types/node": "^22.20.0",
+    "esbuild": "^0.28.2",
+    "tslib": "catalog:",
+    "typescript": "catalog:"
+  }
+}

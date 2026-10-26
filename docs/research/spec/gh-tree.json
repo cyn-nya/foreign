@@ -1,0 +1,3696 @@
+{
+  "sha": "4e95c9587b5ae5be9dacbf5a69e7eeb069d2ebc0",
+  "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/4e95c9587b5ae5be9dacbf5a69e7eeb069d2ebc0",
+  "tree": [
+    {
+      "path": ".codex",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d78d60534bd652209cbb5a8bc9fb547310e8db93",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/d78d60534bd652209cbb5a8bc9fb547310e8db93"
+    },
+    {
+      "path": ".codex/config.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "741b01a9c9c83541f10872007829588306a7979c",
+      "size": 33,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/741b01a9c9c83541f10872007829588306a7979c"
+    },
+    {
+      "path": ".codex/skills",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d68b4f15d8c47efc7af14d59e83cd0729c491eb6",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/d68b4f15d8c47efc7af14d59e83cd0729c491eb6"
+    },
+    {
+      "path": ".codex/skills/aholo-docs",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "451fc25efad29ce606b174a977863206f54ae49a",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/451fc25efad29ce606b174a977863206f54ae49a"
+    },
+    {
+      "path": ".codex/skills/aholo-docs/SKILL.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "61c3535a7e71ca55dc8236fc5af9dbbc02aed51d",
+      "size": 1361,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/61c3535a7e71ca55dc8236fc5af9dbbc02aed51d"
+    },
+    {
+      "path": ".codex/skills/aholo-docs/agents",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "4c330e576092683e63c2914250db55a7d53f4a79",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/4c330e576092683e63c2914250db55a7d53f4a79"
+    },
+    {
+      "path": ".codex/skills/aholo-docs/agents/openai.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "943961606277f8ab7b0ab20f6a82806fd83e4934",
+      "size": 211,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/943961606277f8ab7b0ab20f6a82806fd83e4934"
+    },
+    {
+      "path": ".codex/skills/aholo-examples",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2ed167d621fd2358438a4a1c9ab9c60586fa2b2b",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/2ed167d621fd2358438a4a1c9ab9c60586fa2b2b"
+    },
+    {
+      "path": ".codex/skills/aholo-examples/SKILL.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a0b0bafeb6960349dce74785d7871922f9d4eb79",
+      "size": 2319,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a0b0bafeb6960349dce74785d7871922f9d4eb79"
+    },
+    {
+      "path": ".codex/skills/aholo-examples/agents",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "45a4fab35c0f07bec4e2c3bcc6cf32ee8d545db4",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/45a4fab35c0f07bec4e2c3bcc6cf32ee8d545db4"
+    },
+    {
+      "path": ".codex/skills/aholo-examples/agents/openai.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bc0b4ce7a6367dcdbfbef5d6bb13940aa7ccb4c8",
+      "size": 212,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/bc0b4ce7a6367dcdbfbef5d6bb13940aa7ccb4c8"
+    },
+    {
+      "path": ".codex/skills/aholo-renderer",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "32efc641f2dace95962813ce2e551016f80f92e4",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/32efc641f2dace95962813ce2e551016f80f92e4"
+    },
+    {
+      "path": ".codex/skills/aholo-renderer/SKILL.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2d6e73780fc6c1ca230e3a2932d61725ba3fcc16",
+      "size": 763,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/2d6e73780fc6c1ca230e3a2932d61725ba3fcc16"
+    },
+    {
+      "path": ".codex/skills/aholo-renderer/agents",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "b06f83e3ac91baaac6468d3d889fc3a81f120498",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/b06f83e3ac91baaac6468d3d889fc3a81f120498"
+    },
+    {
+      "path": ".codex/skills/aholo-renderer/agents/openai.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "702916565bd53c325452add3a4a80aa9537a0f3e",
+      "size": 240,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/702916565bd53c325452add3a4a80aa9537a0f3e"
+    },
+    {
+      "path": ".codex/skills/aholo-site",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "151cb4d19f6a88d97f9b37718e74ee301a13cdd9",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/151cb4d19f6a88d97f9b37718e74ee301a13cdd9"
+    },
+    {
+      "path": ".codex/skills/aholo-site/SKILL.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "870ba821737b6edd1d4f1e950632a71bf7d51e33",
+      "size": 2118,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/870ba821737b6edd1d4f1e950632a71bf7d51e33"
+    },
+    {
+      "path": ".codex/skills/aholo-site/agents",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "8d45308f707a5f7fd1dd917e9cc331a8084e5723",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/8d45308f707a5f7fd1dd917e9cc331a8084e5723"
+    },
+    {
+      "path": ".codex/skills/aholo-site/agents/openai.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "be6d047a8846522d93471185bde5e440732811e1",
+      "size": 239,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/be6d047a8846522d93471185bde5e440732811e1"
+    },
+    {
+      "path": ".codex/skills/aholo-viewer",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f5fc746102805b333a3276e70a6a49e2e90ad318",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/f5fc746102805b333a3276e70a6a49e2e90ad318"
+    },
+    {
+      "path": ".codex/skills/aholo-viewer/SKILL.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "aa3a53529e505e1cbc32e25b95d62cc0037476c7",
+      "size": 1517,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/aa3a53529e505e1cbc32e25b95d62cc0037476c7"
+    },
+    {
+      "path": ".codex/skills/aholo-viewer/agents",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "5f1743a5f2563a874c7ac2d4806e783d62f642c7",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/5f1743a5f2563a874c7ac2d4806e783d62f642c7"
+    },
+    {
+      "path": ".codex/skills/aholo-viewer/agents/openai.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6f87590920042b01905dbea47f5080fad62f88d0",
+      "size": 240,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/6f87590920042b01905dbea47f5080fad62f88d0"
+    },
+    {
+      "path": ".codex/skills/frontend-design",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a9da5d6ab0a0d7fc3823917a127734029d706cac",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/a9da5d6ab0a0d7fc3823917a127734029d706cac"
+    },
+    {
+      "path": ".codex/skills/frontend-design/LICENSE.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f433b1a53f5b830a205fd2df78e2b34974656c7b",
+      "size": 10174,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f433b1a53f5b830a205fd2df78e2b34974656c7b"
+    },
+    {
+      "path": ".codex/skills/frontend-design/SKILL.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "81a27f5a2f7d76b99dd8c9300d93d681299bed62",
+      "size": 1391,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/81a27f5a2f7d76b99dd8c9300d93d681299bed62"
+    },
+    {
+      "path": ".codex/skills/frontend-design/agents",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "e5af638b66917ba57e0fc4599252576b1205ec03",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/e5af638b66917ba57e0fc4599252576b1205ec03"
+    },
+    {
+      "path": ".codex/skills/frontend-design/agents/openai.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e0bcb27811b6eaba300d3929e3cea6fba43123d2",
+      "size": 251,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/e0bcb27811b6eaba300d3929e3cea6fba43123d2"
+    },
+    {
+      "path": ".editorconfig",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f026e5fdfe3c659400c281a2e7f58454333b6f74",
+      "size": 242,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f026e5fdfe3c659400c281a2e7f58454333b6f74"
+    },
+    {
+      "path": ".gitattributes",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1e559c2ac750ad05f736c6a2d94d086f9b1e89ae",
+      "size": 46,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/1e559c2ac750ad05f736c6a2d94d086f9b1e89ae"
+    },
+    {
+      "path": ".github",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "3fe73d44e9c4bddfd7985658c7686151787bb0ce",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/3fe73d44e9c4bddfd7985658c7686151787bb0ce"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "e17c4a95da8784d94b88f90d2e7bdb0587481131",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/e17c4a95da8784d94b88f90d2e7bdb0587481131"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug_report.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5445094a418904c8aad97871e7d67729810dfb96",
+      "size": 1317,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5445094a418904c8aad97871e7d67729810dfb96"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/custom.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "96a47352abc25191907c309a9de8c45f15c2dede",
+      "size": 123,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/96a47352abc25191907c309a9de8c45f15c2dede"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature_request.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2f28cead03959213f1f1abd3f8a3a76f280bc1a0",
+      "size": 594,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/2f28cead03959213f1f1abd3f8a3a76f280bc1a0"
+    },
+    {
+      "path": ".github/build-native-linux.Dockerfile",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fdd5ef885b87b9619f85f24c8f16bf7808f7f76a",
+      "size": 4119,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/fdd5ef885b87b9619f85f24c8f16bf7808f7f76a"
+    },
+    {
+      "path": ".github/workflows",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "fa6de8021991274c1ec36ae995752b0355afb861",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/fa6de8021991274c1ec36ae995752b0355afb861"
+    },
+    {
+      "path": ".github/workflows/build-native.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "67146ada5e7c9945debe8e4d9ec16e10eac1daf0",
+      "size": 12343,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/67146ada5e7c9945debe8e4d9ec16e10eac1daf0"
+    },
+    {
+      "path": ".github/workflows/check.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cdebee926decb84570b7b34af7b29d9fc90b0a4a",
+      "size": 435,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/cdebee926decb84570b7b34af7b29d9fc90b0a4a"
+    },
+    {
+      "path": ".github/workflows/publish.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ce0d7ce2c07c8bd88b4f8a93cfa0f71b899a8ebb",
+      "size": 5413,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/ce0d7ce2c07c8bd88b4f8a93cfa0f71b899a8ebb"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7978a20ff5d6febcac28cbc280edb43ffa5edf43",
+      "size": 348,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/7978a20ff5d6febcac28cbc280edb43ffa5edf43"
+    },
+    {
+      "path": ".gitmodules",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "272bad50a475c9911c38ea2affdc76c9b8268060",
+      "size": 122,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/272bad50a475c9911c38ea2affdc76c9b8268060"
+    },
+    {
+      "path": ".husky",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "81952c1e4dae37a24ad710dfed2256fe20649695",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/81952c1e4dae37a24ad710dfed2256fe20649695"
+    },
+    {
+      "path": ".husky/pre-commit",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1ecebb9b4acc4836699099c1b94f751888cba2d0",
+      "size": 47,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/1ecebb9b4acc4836699099c1b94f751888cba2d0"
+    },
+    {
+      "path": ".vscode",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "61ec35fb489844c4ee9c7575638add9e5eb4d3b1",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/61ec35fb489844c4ee9c7575638add9e5eb4d3b1"
+    },
+    {
+      "path": ".vscode/extensions.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b628bc026ffbf59d3a86d795ff3747c5f56a33c2",
+      "size": 130,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b628bc026ffbf59d3a86d795ff3747c5f56a33c2"
+    },
+    {
+      "path": ".vscode/settings.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "04a0d99cc175e783d9f3084716ae2b1cc5dfc894",
+      "size": 546,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/04a0d99cc175e783d9f3084716ae2b1cc5dfc894"
+    },
+    {
+      "path": "AGENTS.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f09690222a81d4d62a7dde162c93aaaf40f0349d",
+      "size": 4016,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f09690222a81d4d62a7dde162c93aaaf40f0349d"
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8d6424f2dc0c8675e9e46ba675a6d8b961f34cab",
+      "size": 1074,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/8d6424f2dc0c8675e9e46ba675a6d8b961f34cab"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7013a1864004185ecc17af2e961e1bc1b6008bf6",
+      "size": 4811,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/7013a1864004185ecc17af2e961e1bc1b6008bf6"
+    },
+    {
+      "path": "ci",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "1cf4a8e24a1637a8db33315cf47e8115ea5b980d",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/1cf4a8e24a1637a8db33315cf47e8115ea5b980d"
+    },
+    {
+      "path": "ci/check.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d4b3d5094de621436034e3a4fc1a8a369ccb449a",
+      "size": 184,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d4b3d5094de621436034e3a4fc1a8a369ccb449a"
+    },
+    {
+      "path": "ci/publish.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7bf4ea0f4fded8b8c214af28eda17248563db160",
+      "size": 151,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/7bf4ea0f4fded8b8c214af28eda17248563db160"
+    },
+    {
+      "path": "docs",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2d7a95090a7350d8400ee79e03dafe49a171e354",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/2d7a95090a7350d8400ee79e03dafe49a171e354"
+    },
+    {
+      "path": "docs/ai",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c0835e303f45628bf8a5d36ed255f7daa9ef01f0",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/c0835e303f45628bf8a5d36ed255f7daa9ef01f0"
+    },
+    {
+      "path": "docs/ai/skills",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "ce018f322bdc4be3394400ae7620030a5a977dd1",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/ce018f322bdc4be3394400ae7620030a5a977dd1"
+    },
+    {
+      "path": "docs/ai/skills/use-aholo-viewer",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "72e68fb68f6256ba6236a0e06cf7e7f3bf1fc374",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/72e68fb68f6256ba6236a0e06cf7e7f3bf1fc374"
+    },
+    {
+      "path": "docs/ai/skills/use-aholo-viewer/SKILL.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "48fc2fd1baaf727f783cc202c168f32eb19a37d0",
+      "size": 8837,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/48fc2fd1baaf727f783cc202c168f32eb19a37d0"
+    },
+    {
+      "path": "docs/ai/skills/use-aholo-viewer/agents",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "7472a9b199e595d20aa1167f67033755874652b5",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/7472a9b199e595d20aa1167f67033755874652b5"
+    },
+    {
+      "path": "docs/ai/skills/use-aholo-viewer/agents/claude.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "91fedcba26ca50dc9f04dbb45cf8b2c8920d6d0e",
+      "size": 2797,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/91fedcba26ca50dc9f04dbb45cf8b2c8920d6d0e"
+    },
+    {
+      "path": "docs/ai/skills/use-aholo-viewer/agents/openai.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cfa2af7eb37831702bdbe3164f13206be709260d",
+      "size": 220,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/cfa2af7eb37831702bdbe3164f13206be709260d"
+    },
+    {
+      "path": "docs/ai/vibe-coding-guide.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ee24066dfa7feb5c9e2166b8b9fb7b057d41baee",
+      "size": 3162,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/ee24066dfa7feb5c9e2166b8b9fb7b057d41baee"
+    },
+    {
+      "path": "docs/architecture.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "efbf3aceef6014487d781ffdf10e37396f196008",
+      "size": 10095,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/efbf3aceef6014487d781ffdf10e37396f196008"
+    },
+    {
+      "path": "external",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6cd8b554660279645adb7f2d8d90fcb83b96072e",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/6cd8b554660279645adb7f2d8d90fcb83b96072e"
+    },
+    {
+      "path": "external/egs-core",
+      "mode": "160000",
+      "type": "commit",
+      "sha": "78aa5d8f31fff80079e979e10b255cbbbb2415b4"
+    },
+    {
+      "path": "external/splat-dev-server",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "24e5673950a8d76d8135c8aa2ded00eb1d03a8f7",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/24e5673950a8d76d8135c8aa2ded00eb1d03a8f7"
+    },
+    {
+      "path": "external/splat-dev-server/CHANGELOG.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2bd315c2d02ebf4061ca5481c8813074067839eb",
+      "size": 66,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/2bd315c2d02ebf4061ca5481c8813074067839eb"
+    },
+    {
+      "path": "external/splat-dev-server/LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8d6424f2dc0c8675e9e46ba675a6d8b961f34cab",
+      "size": 1074,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/8d6424f2dc0c8675e9e46ba675a6d8b961f34cab"
+    },
+    {
+      "path": "external/splat-dev-server/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "878161d299b81b51c6d1dce11a6edb1baaa48db3",
+      "size": 513,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/878161d299b81b51c6d1dce11a6edb1baaa48db3"
+    },
+    {
+      "path": "external/splat-dev-server/bin",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "33225e6b43522abe180b601db64b9954437d03b6",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/33225e6b43522abe180b601db64b9954437d03b6"
+    },
+    {
+      "path": "external/splat-dev-server/bin/merge.js",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "3513a8636331f71451d41e60b5bbc5d5640bbabb",
+      "size": 705,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/3513a8636331f71451d41e60b5bbc5d5640bbabb"
+    },
+    {
+      "path": "external/splat-dev-server/bin/server.js",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "53fed3db9f3eceae39b9578f3404ab90876ca50d",
+      "size": 658,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/53fed3db9f3eceae39b9578f3404ab90876ca50d"
+    },
+    {
+      "path": "external/splat-dev-server/package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8fb6e7e02a0bbac82c1eba80ea717665a3df034e",
+      "size": 727,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/8fb6e7e02a0bbac82c1eba80ea717665a3df034e"
+    },
+    {
+      "path": "external/splat-dev-server/src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "78a9b4234251dca67c00e2804d00cd7bd7839fa8",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/78a9b4234251dca67c00e2804d00cd7bd7839fa8"
+    },
+    {
+      "path": "external/splat-dev-server/src/merge.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0bfe367a98c02ff197b0a188ad4595496ec56b3a",
+      "size": 2425,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/0bfe367a98c02ff197b0a188ad4595496ec56b3a"
+    },
+    {
+      "path": "external/splat-dev-server/src/server.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8b72e78a55a07749ed79520cbd42f05fc1cd4ca0",
+      "size": 1761,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/8b72e78a55a07749ed79520cbd42f05fc1cd4ca0"
+    },
+    {
+      "path": "lint-staged.config.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "beb9cfd9b1cf5e5a16eeb15d8aac76e56d953ec8",
+      "size": 259,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/beb9cfd9b1cf5e5a16eeb15d8aac76e56d953ec8"
+    },
+    {
+      "path": "oxfmt.config.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2799b61805bf4c8ab4449d25eab1a5bd30308a22",
+      "size": 488,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/2799b61805bf4c8ab4449d25eab1a5bd30308a22"
+    },
+    {
+      "path": "oxlint.config.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "702f40129be8d4fe3147c68f8768e733fcc9a35f",
+      "size": 1343,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/702f40129be8d4fe3147c68f8768e733fcc9a35f"
+    },
+    {
+      "path": "package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "eac229c0baaff0828fa7a40c23709cb351a4463f",
+      "size": 2350,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/eac229c0baaff0828fa7a40c23709cb351a4463f"
+    },
+    {
+      "path": "packages",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d7967338d7a1567a3e2ff99c29cf9cc595e4668c",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/d7967338d7a1567a3e2ff99c29cf9cc595e4668c"
+    },
+    {
+      "path": "packages/renderer",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "7a3705d617b2be2cde7d3cedf449f87d84f2874d",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/7a3705d617b2be2cde7d3cedf449f87d84f2874d"
+    },
+    {
+      "path": "packages/renderer/CHANGELOG.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ed43a16a03cae667fccdc0e3abbd3a0009669e52",
+      "size": 9511,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/ed43a16a03cae667fccdc0e3abbd3a0009669e52"
+    },
+    {
+      "path": "packages/renderer/LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8d6424f2dc0c8675e9e46ba675a6d8b961f34cab",
+      "size": 1074,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/8d6424f2dc0c8675e9e46ba675a6d8b961f34cab"
+    },
+    {
+      "path": "packages/renderer/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8fc8aeaeaac20b237a9a50e698b0c10a2eb8327b",
+      "size": 2151,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/8fc8aeaeaac20b237a9a50e698b0c10a2eb8327b"
+    },
+    {
+      "path": "packages/renderer/package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f5242b4eb5e412e045c911e5f48aa15a5e744013",
+      "size": 1645,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f5242b4eb5e412e045c911e5f48aa15a5e744013"
+    },
+    {
+      "path": "packages/renderer/src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "254bd7f741eef1958de5a9826520d0e3d1006d73",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/254bd7f741eef1958de5a9826520d0e3d1006d73"
+    },
+    {
+      "path": "packages/renderer/src/animation.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b6e8f8b79315a209f895b0aca694810cf5f84db7",
+      "size": 260,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b6e8f8b79315a209f895b0aca694810cf5f84db7"
+    },
+    {
+      "path": "packages/renderer/src/draco-loader.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f634a58cea8ea9f97a36d27d43e9e6772d3fb044",
+      "size": 78,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f634a58cea8ea9f97a36d27d43e9e6772d3fb044"
+    },
+    {
+      "path": "packages/renderer/src/events.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "edac9363cf7e68f17cf575a355b5989e9df01fc9",
+      "size": 84,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/edac9363cf7e68f17cf575a355b5989e9df01fc9"
+    },
+    {
+      "path": "packages/renderer/src/gltf-loader.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ca405d6df053057257e3fdf0c7ae954ac9dd9e2d",
+      "size": 88,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/ca405d6df053057257e3fdf0c7ae954ac9dd9e2d"
+    },
+    {
+      "path": "packages/renderer/src/index.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "14b7f6bd85a57ab802d229c013c95873217c3324",
+      "size": 9303,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/14b7f6bd85a57ab802d229c013c95873217c3324"
+    },
+    {
+      "path": "packages/renderer/src/splat-loader.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0a45b4ec554c3d669665587b41261e9845dba4cd",
+      "size": 407,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/0a45b4ec554c3d669665587b41261e9845dba4cd"
+    },
+    {
+      "path": "packages/renderer/src/splat-utils.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0aca698b50dab70dd71b0797f98849ca2aef3c12",
+      "size": 377,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/0aca698b50dab70dd71b0797f98849ca2aef3c12"
+    },
+    {
+      "path": "packages/renderer/src/xr.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "aee2750c0b329170c0d2b6d01378de8d77044bc2",
+      "size": 31,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/aee2750c0b329170c0d2b6d01378de8d77044bc2"
+    },
+    {
+      "path": "packages/renderer/tsconfig.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "10b1b2fe20572db599be561aac30db95d23c4d19",
+      "size": 354,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/10b1b2fe20572db599be561aac30db95d23c4d19"
+    },
+    {
+      "path": "packages/splat-transform-native",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "421669311cd4df657da22e515440b7aa60ab9299",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/421669311cd4df657da22e515440b7aa60ab9299"
+    },
+    {
+      "path": "packages/splat-transform-native/source",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "05754556c94db7375825ed6139d6af4a5635f57b",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/05754556c94db7375825ed6139d6af4a5635f57b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/.clang-format",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "af6f52001a1eeb316415766b8acad9324e4088b1",
+      "size": 669,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/af6f52001a1eeb316415766b8acad9324e4088b1"
+    },
+    {
+      "path": "packages/splat-transform-native/source/.clang-tidy",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2ea064a648c67dc64347dc8f8d9d4b978b9c9798",
+      "size": 1132,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/2ea064a648c67dc64347dc8f8d9d4b978b9c9798"
+    },
+    {
+      "path": "packages/splat-transform-native/source/CMakeLists.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d1ce78e26b75f4eea379adb7c2f8d9ce85c6bc28",
+      "size": 16991,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d1ce78e26b75f4eea379adb7c2f8d9ce85c6bc28"
+    },
+    {
+      "path": "packages/splat-transform-native/source/CMakePresets.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "15ee6846e476feb102aa44e45c94c2c8010b4e38",
+      "size": 6401,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/15ee6846e476feb102aa44e45c94c2c8010b4e38"
+    },
+    {
+      "path": "packages/splat-transform-native/source/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8931eae34531e9fd4cb3e055c541d54aa74c83f3",
+      "size": 36038,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/8931eae34531e9fd4cb3e055c541d54aa74c83f3"
+    },
+    {
+      "path": "packages/splat-transform-native/source/cmake",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "aa53e9c70bbac0568a9adb586ea53a47553c06b4",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/aa53e9c70bbac0568a9adb586ea53a47553c06b4"
+    },
+    {
+      "path": "packages/splat-transform-native/source/cmake/check_linux_abi.cmake",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2e953c01e07660b91c19402eab17d2a49068587e",
+      "size": 985,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/2e953c01e07660b91c19402eab17d2a49068587e"
+    },
+    {
+      "path": "packages/splat-transform-native/source/cmake/compile-shaders.cmake",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b1038eeefe9278ebcc4921d739d3097ac96d86d6",
+      "size": 4208,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b1038eeefe9278ebcc4921d739d3097ac96d86d6"
+    },
+    {
+      "path": "packages/splat-transform-native/source/cmake/shader-inputs.cmake",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3cab6fe438ed16056e25ff486bc0b4f4bdbd2691",
+      "size": 2169,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/3cab6fe438ed16056e25ff486bc0b4f4bdbd2691"
+    },
+    {
+      "path": "packages/splat-transform-native/source/cmake/shaders.cmake",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b0b95fc7c622155252079e6f83c5c493143efb6f",
+      "size": 2414,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b0b95fc7c622155252079e6f83c5c493143efb6f"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6f3582f74ef17926a684052fda3a5743670fc38e",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/6f3582f74ef17926a684052fda3a5743670fc38e"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/codec",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "996df21cce3282e2fde983404a7ba7dfc8e71dcc",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/996df21cce3282e2fde983404a7ba7dfc8e71dcc"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/codec/codec.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d691354cbbbb73fa6f463b9a3c2fc80c30060284",
+      "size": 771,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d691354cbbbb73fa6f463b9a3c2fc80c30060284"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/codec/quantization.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9547c50d874d58c4018861d5adb9d31c99585600",
+      "size": 4455,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/9547c50d874d58c4018861d5adb9d31c99585600"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/gpu",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "e1c9ea3b2fc4fb3164b970c854d7d3926b9faa71",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/e1c9ea3b2fc4fb3164b970c854d7d3926b9faa71"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/gpu/compute.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "02b53b0729dcd8267116c49c0d1b49b168e04563",
+      "size": 7737,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/02b53b0729dcd8267116c49c0d1b49b168e04563"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/gpu/context.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "743d56db006585e0f37d80c2c0e7662ca7004e44",
+      "size": 1370,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/743d56db006585e0f37d80c2c0e7662ca7004e44"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/io",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "58a48e02647fe325e4d2fdd2c66461ec869d8145",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/58a48e02647fe325e4d2fdd2c66461ec869d8145"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/io/esz.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9d2fdc0b75572241c46479c669140682573444e9",
+      "size": 596,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/9d2fdc0b75572241c46479c669140682573444e9"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/io/file.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d0445af5a7ab23592a9a5b5442ae298ab9e0c872",
+      "size": 4121,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d0445af5a7ab23592a9a5b5442ae298ab9e0c872"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/io/ksplat.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "30a4f4fc596c9e578463424b4b3499ae815bcbf0",
+      "size": 288,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/30a4f4fc596c9e578463424b4b3499ae815bcbf0"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/io/lcc.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a88a97f68b84433461c28dfd7d718982c3440ddf",
+      "size": 282,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a88a97f68b84433461c28dfd7d718982c3440ddf"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/io/lcc2.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dea9919e6c0546ff4ad5d3cc95e545d9fbf427dd",
+      "size": 284,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/dea9919e6c0546ff4ad5d3cc95e545d9fbf427dd"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/io/ply.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "54b7f60fa18337f823cae40d8fd428bcf3728f08",
+      "size": 477,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/54b7f60fa18337f823cae40d8fd428bcf3728f08"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/io/resource.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "825c59124e5914cf91d2b96e02d4f638e7aa0c8b",
+      "size": 611,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/825c59124e5914cf91d2b96e02d4f638e7aa0c8b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/io/sog.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "783026db94834600cb8cfc82ecf3d5743e22996a",
+      "size": 515,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/783026db94834600cb8cfc82ecf3d5743e22996a"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/io/splat.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c32451e0f12f1f29f45e791d46823ced3028ad43",
+      "size": 477,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/c32451e0f12f1f29f45e791d46823ced3028ad43"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/io/spz.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "177a1b1ec2a9dbc154fe68d8c1626d0c926b32c2",
+      "size": 784,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/177a1b1ec2a9dbc154fe68d8c1626d0c926b32c2"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "40c4b8e8163ceafb9671ad96bb9ca808ac68f4ce",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/40c4b8e8163ceafb9671ad96bb9ca808ac68f4ce"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/context.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "952ccaa1ad7d0016a8a5d129e4dd28f6081392ed",
+      "size": 1349,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/952ccaa1ad7d0016a8a5d129e4dd28f6081392ed"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/runner.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a4032006650f40a9b36aa8d89b0c7b0060c490f6",
+      "size": 207,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a4032006650f40a9b36aa8d89b0c7b0060c490f6"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/task.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ab8fd0713249d08b3519e2f011cfb20b5b653194",
+      "size": 418,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/ab8fd0713249d08b3519e2f011cfb20b5b653194"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/tasks",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "3d843b4d6615c59a7264dd16761d0ef6b19e8e89",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/3d843b4d6615c59a7264dd16761d0ef6b19e8e89"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/tasks/auto_chunk_lod.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "acd5187b9bda2abc74496f2523ec4eab1509be45",
+      "size": 256,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/acd5187b9bda2abc74496f2523ec4eab1509be45"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/tasks/auto_lod.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "818c0fc26ee2cdb37be48a09a584b9a65d72ee66",
+      "size": 251,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/818c0fc26ee2cdb37be48a09a584b9a65d72ee66"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/tasks/extract_lod_level.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0089346f08bce1330fc2dd19153405c668780cee",
+      "size": 259,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/0089346f08bce1330fc2dd19153405c668780cee"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/tasks/flex_lod.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fbd8038e2fd0d01cca4b99785abdd18587c213fc",
+      "size": 251,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/fbd8038e2fd0d01cca4b99785abdd18587c213fc"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/tasks/modify.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9e5c50580b449f5b4b1efbb6832c5ef7c251bde0",
+      "size": 250,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/9e5c50580b449f5b4b1efbb6832c5ef7c251bde0"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/tasks/read.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "354b3eea1c555cf341353a5cea675864fc0b286b",
+      "size": 248,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/354b3eea1c555cf341353a5cea675864fc0b286b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/tasks/replace_append.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fd8b9f47785c885abebfa2c7fb289b6487c53799",
+      "size": 257,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/fd8b9f47785c885abebfa2c7fb289b6487c53799"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/tasks/select.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "26cb4ecf0ce111581ffb04f04770ff469719871a",
+      "size": 250,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/26cb4ecf0ce111581ffb04f04770ff469719871a"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/tasks/skeleton_lod.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ae80dc52fd83a783f8257ea1fdc7a303f113701e",
+      "size": 255,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/ae80dc52fd83a783f8257ea1fdc7a303f113701e"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/tasks/split_splat.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dccb6de130d770686a7d4289ded330dce259da18",
+      "size": 254,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/dccb6de130d770686a7d4289ded330dce259da18"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/tasks/voxel.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0bff34feb0a0fb0076cd2f777c2e41422551d5cc",
+      "size": 331,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/0bff34feb0a0fb0076cd2f777c2e41422551d5cc"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/pipeline/tasks/write.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "24af6af4fef7737291e7fbd61e37d0fd7421f68e",
+      "size": 339,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/24af6af4fef7737291e7fbd61e37d0fd7421f68e"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/spatial",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "5596796f105c09dd091fd0a54a6f189c34f65fc3",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/5596796f105c09dd091fd0a54a6f189c34f65fc3"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/spatial/clustering.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "680dc50ce262fe68e1be439d4290f3609a2a226d",
+      "size": 2229,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/680dc50ce262fe68e1be439d4290f3609a2a226d"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/spatial/features.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "83b64f40faa7a91e525604e7c8e273d1f2d9778c",
+      "size": 1153,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/83b64f40faa7a91e525604e7c8e273d1f2d9778c"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/spatial/sh_rotation.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "46ef9a5b79d191c767f83821c98dbd92cc6fad70",
+      "size": 5226,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/46ef9a5b79d191c767f83821c98dbd92cc6fad70"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/splat",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a67c66b791c95af44b4d90f825391af58f2d9191",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/a67c66b791c95af44b4d90f825391af58f2d9191"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/splat/attribute_view.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "080de414b368b6cc39f9510119f20942b6ec5012",
+      "size": 1097,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/080de414b368b6cc39f9510119f20942b6ec5012"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/splat/splat.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ae7402b5b57981c4e164ea8d78f90db116eb61d9",
+      "size": 4301,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/ae7402b5b57981c4e164ea8d78f90db116eb61d9"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/splat/splat_block.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5d0549b680f368483822811f916b590a69596bfd",
+      "size": 384,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5d0549b680f368483822811f916b590a69596bfd"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/splat/splat_lod.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "61b4c3f7ad470e1001c8c842756dfdb2f777120b",
+      "size": 603,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/61b4c3f7ad470e1001c8c842756dfdb2f777120b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/utility",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "7b906cd08a13b44075f333e4ba28c394c3421e7b",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/7b906cd08a13b44075f333e4ba28c394c3421e7b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/utility/logger.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "adb48533e90c0ace94ae3e263acae6a2589c6d71",
+      "size": 2370,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/adb48533e90c0ace94ae3e263acae6a2589c6d71"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/utility/random.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a95278dbd4ff2b102f4d143bdf4186a015f68c21",
+      "size": 222,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a95278dbd4ff2b102f4d143bdf4186a015f68c21"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/utility/thread_pool.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c15c94fdf66a4c03052aaa233674f6896ebdd146",
+      "size": 5186,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/c15c94fdf66a4c03052aaa233674f6896ebdd146"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/utility/vector_hash.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "95fb6d36183a0aa1e476d8c13bf0ab40098f56b6",
+      "size": 591,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/95fb6d36183a0aa1e476d8c13bf0ab40098f56b6"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/voxel",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "cdddc151e8cd42a9dcccb3ecb4a4f38899375ff4",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/cdddc151e8cd42a9dcccb3ecb4a4f38899375ff4"
+    },
+    {
+      "path": "packages/splat-transform-native/source/include/voxel/voxel.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fbe7e88a554ce0eedddabb481d39d9a31dfe9537",
+      "size": 253,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/fbe7e88a554ce0eedddabb481d39d9a31dfe9537"
+    },
+    {
+      "path": "packages/splat-transform-native/source/package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7a0f01febd69c92b915f637260615a757fb42be8",
+      "size": 518,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/7a0f01febd69c92b915f637260615a757fb42be8"
+    },
+    {
+      "path": "packages/splat-transform-native/source/shaders",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "22a453f0fa1912acffada5b9fec8115edc9bb7bb",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/22a453f0fa1912acffada5b9fec8115edc9bb7bb"
+    },
+    {
+      "path": "packages/splat-transform-native/source/shaders/candidate_count.hlsl",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2cb8d407c8833723ff7fcaea8dddf8eaf771449d",
+      "size": 1310,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/2cb8d407c8833723ff7fcaea8dddf8eaf771449d"
+    },
+    {
+      "path": "packages/splat-transform-native/source/shaders/candidate_scatter.hlsl",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f61f4c581665895d59f61ef8a4ac57b6738c1fa8",
+      "size": 1813,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f61f4c581665895d59f61ef8a4ac57b6738c1fa8"
+    },
+    {
+      "path": "packages/splat-transform-native/source/shaders/candidates.hlsli",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "214951091f6050bd0a13cc9370afe7677a5a8dcd",
+      "size": 1973,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/214951091f6050bd0a13cc9370afe7677a5a8dcd"
+    },
+    {
+      "path": "packages/splat-transform-native/source/shaders/cluster.hlsl",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e5519bf1e9a2bcafcf212ca65693299dd4755378",
+      "size": 2109,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/e5519bf1e9a2bcafcf212ca65693299dd4755378"
+    },
+    {
+      "path": "packages/splat-transform-native/source/shaders/compact.hlsl",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "569be08be43ac1a635ffa7ffe6b9fa0a9aae90cd",
+      "size": 1052,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/569be08be43ac1a635ffa7ffe6b9fa0a9aae90cd"
+    },
+    {
+      "path": "packages/splat-transform-native/source/shaders/dilate.hlsl",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1503ee31ac5774cd6a545d5e25c0af3271524540",
+      "size": 1837,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/1503ee31ac5774cd6a545d5e25c0af3271524540"
+    },
+    {
+      "path": "packages/splat-transform-native/source/shaders/expand.hlsl",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "df2613a3c30cc1a3d444bf24a144499890bf9566",
+      "size": 1049,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/df2613a3c30cc1a3d444bf24a144499890bf9566"
+    },
+    {
+      "path": "packages/splat-transform-native/source/shaders/gaussian.hlsli",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e1785e1e02f8c4d7c63db6f9626f7ac81365f94c",
+      "size": 339,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/e1785e1e02f8c4d7c63db6f9626f7ac81365f94c"
+    },
+    {
+      "path": "packages/splat-transform-native/source/shaders/linear.hlsli",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "537a7fdd6639fca858716b0865741c81a010368b",
+      "size": 181,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/537a7fdd6639fca858716b0865741c81a010368b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/shaders/voxelize.hlsl",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cb5d01f07a8bed7c7c1c1a5a98066648d26cf3fb",
+      "size": 4092,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/cb5d01f07a8bed7c7c1c1a5a98066648d26cf3fb"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c16c19e6e9b10c83596eca6cc1cbe05316de30cf",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/c16c19e6e9b10c83596eca6cc1cbe05316de30cf"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/cli",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "bb96bbfd95f6e56c3d82206ccd3057e6a3f4af07",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/bb96bbfd95f6e56c3d82206ccd3057e6a3f4af07"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/cli/app.manifest",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f2fff698a050e89a8a4692e4fe9734a03bd3da6d",
+      "size": 368,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f2fff698a050e89a8a4692e4fe9734a03bd3da6d"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/cli/main.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "10834d31efa66151c73d71adb6f158889095d32f",
+      "size": 2629,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/10834d31efa66151c73d71adb6f158889095d32f"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/cli/version.h.in",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5966fbaba7011408d7f8859beac35e28ce3b60e4",
+      "size": 136,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5966fbaba7011408d7f8859beac35e28ce3b60e4"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/codec",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f31e7bafc468f2ef390275d4676121c5b1b61e9d",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/f31e7bafc468f2ef390275d4676121c5b1b61e9d"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/codec/compression.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ae4bae042535c2aa8127fae80d9f17f85528d1e5",
+      "size": 12135,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/ae4bae042535c2aa8127fae80d9f17f85528d1e5"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/codec/compression_stream.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5b90ce658b538af09173623758234f099afe6a48",
+      "size": 628,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5b90ce658b538af09173623758234f099afe6a48"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/codec/image.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a6d97071fa8cf8abfca15595c0c27f1d489a126e",
+      "size": 4040,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a6d97071fa8cf8abfca15595c0c27f1d489a126e"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/gpu",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "13b9676f2c71c7ec5bfdef11dad999644b295f7f",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/13b9676f2c71c7ec5bfdef11dad999644b295f7f"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/gpu/backend.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c1c1317a1fb60b8a224f0c52fb97a02a6ac2c948",
+      "size": 4038,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/c1c1317a1fb60b8a224f0c52fb97a02a6ac2c948"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/gpu/compute.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3f2c8395e59f87a575fc451076225f3cd7cf1251",
+      "size": 18475,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/3f2c8395e59f87a575fc451076225f3cd7cf1251"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/gpu/context.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c740e8f053498e6e3fa668d766262304682d0ea3",
+      "size": 1792,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/c740e8f053498e6e3fa668d766262304682d0ea3"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/gpu/vulkan_context.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fe6902fb37ede670930c1b059cadcfb4f33ecfcb",
+      "size": 19709,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/fe6902fb37ede670930c1b059cadcfb4f33ecfcb"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/gpu/vulkan_context.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3677762d28dd0daefc60a6bb90c9fa9d28fe76f5",
+      "size": 2377,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/3677762d28dd0daefc60a6bb90c9fa9d28fe76f5"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "dbf46378adb618f5c10b3a3b38b1904f0eb4eea1",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/dbf46378adb618f5c10b3a3b38b1904f0eb4eea1"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/esz.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9c961127a87a9967da050d19a72d84aa141a5002",
+      "size": 14076,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/9c961127a87a9967da050d19a72d84aa141a5002"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/file.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "379065954cfdbf33df17ac2b53c20fc036402b0a",
+      "size": 4820,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/379065954cfdbf33df17ac2b53c20fc036402b0a"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/file_stream.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "70a3cbaf0e0178fb22cd736ea22726af1e054341",
+      "size": 7185,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/70a3cbaf0e0178fb22cd736ea22726af1e054341"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/file_stream.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e60d77a9a4432ba6acb896e3e724120a3e32e8a3",
+      "size": 939,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/e60d77a9a4432ba6acb896e3e724120a3e32e8a3"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/format.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5176798d1da414ffff49345cdec4681a238e82e2",
+      "size": 4817,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5176798d1da414ffff49345cdec4681a238e82e2"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/ksplat.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fd7ee6ae143dd4cb1dca841e404678406424e637",
+      "size": 5939,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/fd7ee6ae143dd4cb1dca841e404678406424e637"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/lcc.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b12bbc3ace0a7b03f7d7c50a26bf87e3b0252361",
+      "size": 4251,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b12bbc3ace0a7b03f7d7c50a26bf87e3b0252361"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/lcc2.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2cf2d352e8890316e172b6fec498b5b0fec78a35",
+      "size": 3903,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/2cf2d352e8890316e172b6fec498b5b0fec78a35"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/ply.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "898824c7103e9e29539d6601f4f4aed685fedcc0",
+      "size": 16721,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/898824c7103e9e29539d6601f4f4aed685fedcc0"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/resource.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9c686481e13a0e2fd8ea6b54d5c918d203b0d373",
+      "size": 5265,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/9c686481e13a0e2fd8ea6b54d5c918d203b0d373"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/sog.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b36eb3312b5d9c12e2510848784425fa116f1258",
+      "size": 12443,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b36eb3312b5d9c12e2510848784425fa116f1258"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/splat.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "44c551d4bc5bff3c0b6704484463a9f61f951c75",
+      "size": 2243,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/44c551d4bc5bff3c0b6704484463a9f61f951c75"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/spz.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bb57811dbb7aea716561966f5c94eb15ab2085db",
+      "size": 15496,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/bb57811dbb7aea716561966f5c94eb15ab2085db"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/stream_reader.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cd6039b506484e64dab92f54a1b40e7ad9cf1158",
+      "size": 6714,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/cd6039b506484e64dab92f54a1b40e7ad9cf1158"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/stream_reader.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2526f47232d87b3c71c6c2ebd4aac9ac2e892f6e",
+      "size": 2581,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/2526f47232d87b3c71c6c2ebd4aac9ac2e892f6e"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/io/zip_archive.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "73cfead8039faee986fd74d124d75d374e2ec2a3",
+      "size": 2659,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/73cfead8039faee986fd74d124d75d374e2ec2a3"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "04f036b6e2d108d37816da05f9e29bf8c668afa9",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/04f036b6e2d108d37816da05f9e29bf8c668afa9"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/context.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9cafce1ec1c948f9b28d6d606a3764a185f61b1c",
+      "size": 5736,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/9cafce1ec1c948f9b28d6d606a3764a185f61b1c"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/data_support.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "967e4d7cbd0cd82d6967df5ab88a3d2735f21045",
+      "size": 2540,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/967e4d7cbd0cd82d6967df5ab88a3d2735f21045"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/data_support.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f74872a1cf2e6e783921a2de064ed2fc0d18b0a1",
+      "size": 526,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f74872a1cf2e6e783921a2de064ed2fc0d18b0a1"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/lod_support.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "340fead0d818693973b5ec19e843836ab3567e68",
+      "size": 3752,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/340fead0d818693973b5ec19e843836ab3567e68"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/lod_support.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3e3e9dcb8f803a2c6a48f9533fc3a4b43325d9ae",
+      "size": 687,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/3e3e9dcb8f803a2c6a48f9533fc3a4b43325d9ae"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/modify.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a51294c9c172aee66d6d0ac5e5c54c47d7935215",
+      "size": 7836,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a51294c9c172aee66d6d0ac5e5c54c47d7935215"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/runner.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b697bff58a8698370855bea62d1b5b5219aa1294",
+      "size": 2391,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b697bff58a8698370855bea62d1b5b5219aa1294"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/task.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "905656fa36519fe5387933b90258521fb4d3b0dd",
+      "size": 1750,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/905656fa36519fe5387933b90258521fb4d3b0dd"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/tasks",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2b0f5878918bf83fadb54bb97d74e9c21cdd64c9",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/2b0f5878918bf83fadb54bb97d74e9c21cdd64c9"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/tasks/auto_chunk_lod.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ee78a09b666a665fc359bc9075479bc7e222d1d8",
+      "size": 5209,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/ee78a09b666a665fc359bc9075479bc7e222d1d8"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/tasks/auto_lod.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "04b55bcca7d61cb5df4f49cea4d6b270c8b04c9b",
+      "size": 1266,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/04b55bcca7d61cb5df4f49cea4d6b270c8b04c9b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/tasks/extract_lod_level.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cd3325cccc0c82e031850d874d1e4ed8d83b2ec6",
+      "size": 4340,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/cd3325cccc0c82e031850d874d1e4ed8d83b2ec6"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/tasks/flex_lod.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f05d1c6ff20d9ed9b0996d0d42a686dc2f21a7aa",
+      "size": 1708,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f05d1c6ff20d9ed9b0996d0d42a686dc2f21a7aa"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/tasks/modify.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c6e06205089c4c5573e0547aacffb39bef3c9984",
+      "size": 570,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/c6e06205089c4c5573e0547aacffb39bef3c9984"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/tasks/read.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "19d80cf1d18f442d66dd1b502b9364a47fe16c7c",
+      "size": 1270,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/19d80cf1d18f442d66dd1b502b9364a47fe16c7c"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/tasks/replace_append.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1d1a3a0dc2f45dd83d392213f5de262e6c8445f0",
+      "size": 2124,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/1d1a3a0dc2f45dd83d392213f5de262e6c8445f0"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/tasks/select.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5fcebdc5f5ed42e0a2cfaa7469319cf6d4a5a4ae",
+      "size": 1844,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5fcebdc5f5ed42e0a2cfaa7469319cf6d4a5a4ae"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/tasks/skeleton_lod.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a7a3a2f953c5428dfe68089330539833c85e3c0f",
+      "size": 3780,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a7a3a2f953c5428dfe68089330539833c85e3c0f"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/tasks/split_splat.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "20f51d17c3b786d10e39d80c1297df3edb0f74bc",
+      "size": 1258,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/20f51d17c3b786d10e39d80c1297df3edb0f74bc"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/tasks/voxel.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "691e3c114aa28c36bae3566e38a44c86f75aaa66",
+      "size": 769,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/691e3c114aa28c36bae3566e38a44c86f75aaa66"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/pipeline/tasks/write.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a97791e31c5e26da5edecd3d274a8230cba8a6a6",
+      "size": 4614,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a97791e31c5e26da5edecd3d274a8230cba8a6a6"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/spatial",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "edda291800fb3844274d9ab33f2f7e6a6d828b7c",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/edda291800fb3844274d9ab33f2f7e6a6d828b7c"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/spatial/cluster_gpu.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4835dc0779b86fc03494cd11d16fc27afaba31ca",
+      "size": 11434,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/4835dc0779b86fc03494cd11d16fc27afaba31ca"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/spatial/cluster_gpu.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "edd29e8f4566c2a2e9d7980c18aa9f9fd64c44af",
+      "size": 583,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/edd29e8f4566c2a2e9d7980c18aa9f9fd64c44af"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/spatial/cluster_schedule.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f58061fcd60f0a2a38c92ae5bbdc091569998b3f",
+      "size": 1725,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f58061fcd60f0a2a38c92ae5bbdc091569998b3f"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/spatial/clustering.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9d2fe548d2ae88360f0b3398b1ad58d9323c08d3",
+      "size": 8117,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/9d2fe548d2ae88360f0b3398b1ad58d9323c08d3"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/splat",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "5e43563edbef7dbfe91a76e17025a503c0cf5c1f",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/5e43563edbef7dbfe91a76e17025a503c0cf5c1f"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/splat/splat.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d96c248368f439e6282a865ead2165131033f523",
+      "size": 14096,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d96c248368f439e6282a865ead2165131033f523"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/splat/splat_block.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4b4af795c69994e626d65df417fb3177fbbff41a",
+      "size": 8148,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/4b4af795c69994e626d65df417fb3177fbbff41a"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/splat/splat_lod.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cbeba03f30b204ce3d120082e5f0071736e60eed",
+      "size": 14799,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/cbeba03f30b204ce3d120082e5f0071736e60eed"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/utility",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "e1f4942c77548559297e624a39156333626187b2",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/e1f4942c77548559297e624a39156333626187b2"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/utility/logger.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "10d75de2ef6b718fefa43e41738fd0a2372c6979",
+      "size": 3399,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/10d75de2ef6b718fefa43e41738fd0a2372c6979"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/utility/random.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8ccaf99b5e829b391e90978eb73e0d398c4c2240",
+      "size": 223,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/8ccaf99b5e829b391e90978eb73e0d398c4c2240"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/utility/thread_pool.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "05da547953229bfd04a7dae92bad823b859d25cd",
+      "size": 3038,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/05da547953229bfd04a7dae92bad823b859d25cd"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d7e80a1d89f65a2710ee7da8fd42524d79d7ab56",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/d7e80a1d89f65a2710ee7da8fd42524d79d7ab56"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/backend.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "37a444da05153aa80139843c6a1661eace40a5d8",
+      "size": 956,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/37a444da05153aa80139843c6a1661eace40a5d8"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/backend.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d54af96769396374d515d05982eee45adcca1e04",
+      "size": 1028,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d54af96769396374d515d05982eee45adcca1e04"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/backend_cpu.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "92f7065d4442e6ca16202e509a78aa0718693e3b",
+      "size": 11488,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/92f7065d4442e6ca16202e509a78aa0718693e3b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/backend_gpu.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6b0c82f2a80948d7d234b8053783a4963d996a96",
+      "size": 4831,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/6b0c82f2a80948d7d234b8053783a4963d996a96"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/compute.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "99bcc967f6cc72307b1dad640b1ddb788ad1eea7",
+      "size": 22951,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/99bcc967f6cc72307b1dad640b1ddb788ad1eea7"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/compute.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b681bc522cddba801af7983c0cd267542f7f5d02",
+      "size": 1505,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b681bc522cddba801af7983c0cd267542f7f5d02"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/coplanar_merge.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4f5bb212650449592a0ab0e25cf0d2e78eb09bb2",
+      "size": 10250,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/4f5bb212650449592a0ab0e25cf0d2e78eb09bb2"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/gpu_workspace.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "de2ff1d25c4158d2ba15ecf0fec583a03ae819af",
+      "size": 5673,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/de2ff1d25c4158d2ba15ecf0fec583a03ae819af"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/gpu_workspace.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6c02a36256c3db99ac8919a02d83f8ae5b97854c",
+      "size": 1892,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/6c02a36256c3db99ac8919a02d83f8ae5b97854c"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/grid.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5b9ea242b76f61dcb7c7dc621241ab5e863263c0",
+      "size": 13993,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5b9ea242b76f61dcb7c7dc621241ab5e863263c0"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/grid.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d00419469e051509c6ab08de8077b4dc10c73d4b",
+      "size": 2877,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d00419469e051509c6ab08de8077b4dc10c73d4b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/marching_cubes.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "854db5960f6f7782dc5c449d28e79a65c10388f4",
+      "size": 4012,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/854db5960f6f7782dc5c449d28e79a65c10388f4"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/marching_tables.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b30cddb3eaacfa2d4b474a89355e4392fdcab3f8",
+      "size": 16602,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b30cddb3eaacfa2d4b474a89355e4392fdcab3f8"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/mesh.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b87ffc1f9c1443374980a2e1c5d9e07f4ef79c0d",
+      "size": 9715,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b87ffc1f9c1443374980a2e1c5d9e07f4ef79c0d"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/voxel.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "aacfae406c577f8ee812982a9e71da644fb0c45a",
+      "size": 16459,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/aacfae406c577f8ee812982a9e71da644fb0c45a"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/voxelize.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "29cc5b9871b9326bf3efdce2a760026dee01cf46",
+      "size": 13929,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/29cc5b9871b9326bf3efdce2a760026dee01cf46"
+    },
+    {
+      "path": "packages/splat-transform-native/source/src/voxel/voxelize.h",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a9b12eed508d822ba4d269afcf82ade287e9088b",
+      "size": 1131,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a9b12eed508d822ba4d269afcf82ade287e9088b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c8719ec6cd0c5bbdc49623ad48544a11fa7ae8a1",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/c8719ec6cd0c5bbdc49623ad48544a11fa7ae8a1"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/abstraction_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3f493e014e3402ec69936544dc4b182d34985217",
+      "size": 14438,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/3f493e014e3402ec69936544dc4b182d34985217"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/compute_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "03f1d23be43378f63468325c09c297cf18d8b69b",
+      "size": 22242,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/03f1d23be43378f63468325c09c297cf18d8b69b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/core_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f4d1a7d487555165659e39fe4a1c0cda512125a8",
+      "size": 11202,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f4d1a7d487555165659e39fe4a1c0cda512125a8"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/data_task_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e6f6ef199db4bb7f8ddc9546382d2fef4fa5c682",
+      "size": 39325,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/e6f6ef199db4bb7f8ddc9546382d2fef4fa5c682"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/empty.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ebec900501adf8b39e181f53e6e430e45eb839d7",
+      "size": 30,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/ebec900501adf8b39e181f53e6e430e45eb839d7"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/fixtures",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "1442d0ca5487c238a16d6ef9e35c1c39579cc023",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/1442d0ca5487c238a16d6ef9e35c1c39579cc023"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/fixtures/pipeline-v1",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d6fb7b564365a38770f3c13badc5173c5f0d136b",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/d6fb7b564365a38770f3c13badc5173c5f0d136b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/fixtures/pipeline-v1/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4b457eda0d74ee273de15004743bc1121106a1f3",
+      "size": 1541,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/4b457eda0d74ee273de15004743bc1121106a1f3"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/fixtures/pipeline-v1/auto-chunk-business.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9c26c51b084d624055aa0a46a3c4108b4b28dfda",
+      "size": 1148,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/9c26c51b084d624055aa0a46a3c4108b4b28dfda"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/fixtures/pipeline-v1/auto-chunk-defaults.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c36061f5aa4c61e3c26fd259b633710b11a7a6b4",
+      "size": 1062,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/c36061f5aa4c61e3c26fd259b633710b11a7a6b4"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/fixtures/pipeline-v1/auto-lod.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5f83c4786272f1de62e15e20fb6fb3aa4721dca6",
+      "size": 1016,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5f83c4786272f1de62e15e20fb6fb3aa4721dca6"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/fixtures/pipeline-v1/flex-lod.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "10797c3a89ca08cd2cd9ee5fe9d368b2efd8d023",
+      "size": 703,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/10797c3a89ca08cd2cd9ee5fe9d368b2efd8d023"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/fixtures/pipeline-v1/formats.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "23b27939480bc047f7d78d23ca54c5fd457c076b",
+      "size": 2197,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/23b27939480bc047f7d78d23ca54c5fd457c076b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/fixtures/pipeline-v1/gpu",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "38ad392e3833913da9fd0835d0cc4b8848f20058",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/38ad392e3833913da9fd0835d0cc4b8848f20058"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/fixtures/pipeline-v1/gpu/voxel.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f0ff4372dc8f037b165df624626852a31a6d9ffb",
+      "size": 689,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f0ff4372dc8f037b165df624626852a31a6d9ffb"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/fixtures/pipeline-v1/read-modify.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "09bff268a1f50ea45ba442be574325a050ce7243",
+      "size": 1213,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/09bff268a1f50ea45ba442be574325a050ce7243"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/fixtures/pipeline-v1/skeleton-lod.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "93895ea1ebec6aedb2c9c0102b7736ad885b556d",
+      "size": 604,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/93895ea1ebec6aedb2c9c0102b7736ad885b556d"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/fixtures/pipeline-v1/split-splat.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f7026923fb014c538a90c2ac67811065389b36f2",
+      "size": 675,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f7026923fb014c538a90c2ac67811065389b36f2"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/frozen_pipeline_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6986910ede94d1c341e687841fe5f508f9427ce6",
+      "size": 5596,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/6986910ede94d1c341e687841fe5f508f9427ce6"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/geometry_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fe50d68d7ce6caf475a9a10a7204e6f7799ad2d0",
+      "size": 15421,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/fe50d68d7ce6caf475a9a10a7204e6f7799ad2d0"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/gpu_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "90ce7d9fc129859889d449dd895ebab3b68219e4",
+      "size": 31099,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/90ce7d9fc129859889d449dd895ebab3b68219e4"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/logging_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "305473c69979eb2268dc3ddcfe16b0428b52d36b",
+      "size": 4283,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/305473c69979eb2268dc3ddcfe16b0428b52d36b"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/pipeline_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "797f67f340aba334407a5bc3498d3b242a1eb3c8",
+      "size": 11125,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/797f67f340aba334407a5bc3498d3b242a1eb3c8"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/shader_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "09aa8253f933b8e60090673a15ffbafee6674fca",
+      "size": 7974,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/09aa8253f933b8e60090673a15ffbafee6674fca"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/streaming_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cbca6aa61ffee6a0ebe036e01154e26c17c1a4e3",
+      "size": 11304,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/cbca6aa61ffee6a0ebe036e01154e26c17c1a4e3"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/threading_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b6e57fe910efb11024049c6ef0b175b1ad7cbbdf",
+      "size": 11045,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b6e57fe910efb11024049c6ef0b175b1ad7cbbdf"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/voxel_cpu_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7060d2bb6fc40b4ba978f595791ac7257fccd211",
+      "size": 11159,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/7060d2bb6fc40b4ba978f595791ac7257fccd211"
+    },
+    {
+      "path": "packages/splat-transform-native/source/tests/voxel_fallback_tests.cpp",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a6f20a0d9a8d2624b69d16ec9c09bbebe54ef6c0",
+      "size": 8278,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a6f20a0d9a8d2624b69d16ec9c09bbebe54ef6c0"
+    },
+    {
+      "path": "packages/splat-transform-native/source/vcpkg-configuration.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3f71bcd1b7e993f1211af3498b5ccfff164fcb93",
+      "size": 114,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/3f71bcd1b7e993f1211af3498b5ccfff164fcb93"
+    },
+    {
+      "path": "packages/splat-transform-native/source/vcpkg.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f1af11ed54a3153c2dd13e58c8bb59d03dcfa923",
+      "size": 493,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f1af11ed54a3153c2dd13e58c8bb59d03dcfa923"
+    },
+    {
+      "path": "packages/splat-transform-native/splat-transform-darwin-arm64",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "fbf88c60fce63c702a71f7c1368fa2ee4dcc2fa8",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/fbf88c60fce63c702a71f7c1368fa2ee4dcc2fa8"
+    },
+    {
+      "path": "packages/splat-transform-native/splat-transform-darwin-arm64/package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "29fd0f175df8c2e42a29232478a5a44a562520fc",
+      "size": 497,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/29fd0f175df8c2e42a29232478a5a44a562520fc"
+    },
+    {
+      "path": "packages/splat-transform-native/splat-transform-linux-arm64-gnu",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "61dccd269830c448a736ebb76033d92fd804df15",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/61dccd269830c448a736ebb76033d92fd804df15"
+    },
+    {
+      "path": "packages/splat-transform-native/splat-transform-linux-arm64-gnu/package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d1130a87a010b4c7635ba61df686dc1ce53a431a",
+      "size": 534,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d1130a87a010b4c7635ba61df686dc1ce53a431a"
+    },
+    {
+      "path": "packages/splat-transform-native/splat-transform-linux-x64-gnu",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "ce2b19d493e318cb35b6e2e300f20787bb1ad5ac",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/ce2b19d493e318cb35b6e2e300f20787bb1ad5ac"
+    },
+    {
+      "path": "packages/splat-transform-native/splat-transform-linux-x64-gnu/package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "db62ae87d638ec3de059957b82ce1d88ecc59344",
+      "size": 526,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/db62ae87d638ec3de059957b82ce1d88ecc59344"
+    },
+    {
+      "path": "packages/splat-transform-native/splat-transform-win32-arm64-msvc",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "eab641abccf14a650f81f816b4267a1cef2f8532",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/eab641abccf14a650f81f816b4267a1cef2f8532"
+    },
+    {
+      "path": "packages/splat-transform-native/splat-transform-win32-arm64-msvc/package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "38ca4bbb2e608605f646484b485a457706346dee",
+      "size": 512,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/38ca4bbb2e608605f646484b485a457706346dee"
+    },
+    {
+      "path": "packages/splat-transform-native/splat-transform-win32-x64-msvc",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "67c4ad1d6795dfcd21cbabb0487d460d297219e9",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/67c4ad1d6795dfcd21cbabb0487d460d297219e9"
+    },
+    {
+      "path": "packages/splat-transform-native/splat-transform-win32-x64-msvc/package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dd3e6dcf7b606e8958874543580dab725581718a",
+      "size": 504,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/dd3e6dcf7b606e8958874543580dab725581718a"
+    },
+    {
+      "path": "packages/splat-transform",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "548c5c4e49e4756e594d9c72afb5de9161358b0a",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/548c5c4e49e4756e594d9c72afb5de9161358b0a"
+    },
+    {
+      "path": "packages/splat-transform/.gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6c2fdfe5cf8290b7f04156f54bea194d6aff9f88",
+      "size": 10,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/6c2fdfe5cf8290b7f04156f54bea194d6aff9f88"
+    },
+    {
+      "path": "packages/splat-transform/CHANGELOG.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "afb647fbe4961545a3fe7b70431a2f83680902d0",
+      "size": 10756,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/afb647fbe4961545a3fe7b70431a2f83680902d0"
+    },
+    {
+      "path": "packages/splat-transform/LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8d6424f2dc0c8675e9e46ba675a6d8b961f34cab",
+      "size": 1074,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/8d6424f2dc0c8675e9e46ba675a6d8b961f34cab"
+    },
+    {
+      "path": "packages/splat-transform/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "52d6f6344bcf334843703d0ef8441779d47cce2a",
+      "size": 13447,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/52d6f6344bcf334843703d0ef8441779d47cce2a"
+    },
+    {
+      "path": "packages/splat-transform/THIRD_PARTY_LICENSES.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "46c2e0d01321fcbded17b9e17c8e352a20dfd3b0",
+      "size": 110225,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/46c2e0d01321fcbded17b9e17c8e352a20dfd3b0"
+    },
+    {
+      "path": "packages/splat-transform/bin",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "abac1833c16d6522b46d74a3668d982466f26a12",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/abac1833c16d6522b46d74a3668d982466f26a12"
+    },
+    {
+      "path": "packages/splat-transform/bin/cli.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9d588b7cf8b81d1489c0bdb1f74d7e6b2def31ec",
+      "size": 9820,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/9d588b7cf8b81d1489c0bdb1f74d7e6b2def31ec"
+    },
+    {
+      "path": "packages/splat-transform/package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7510afe06447d8002731ab062de02391511ad4a1",
+      "size": 1460,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/7510afe06447d8002731ab062de02391511ad4a1"
+    },
+    {
+      "path": "packages/splat-transform/pipeline.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "028068415dd83f5216541fe4d83f0e348a6128c0",
+      "size": 557,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/028068415dd83f5216541fe4d83f0e348a6128c0"
+    },
+    {
+      "path": "packages/splat-transform/src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "3e6f9c12ea1273664e8d647324811a57f4e9c938",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/3e6f9c12ea1273664e8d647324811a57f4e9c938"
+    },
+    {
+      "path": "packages/splat-transform/src/index.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "08f82b9674bef786390691ac3067cd44507d556a",
+      "size": 1043,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/08f82b9674bef786390691ac3067cd44507d556a"
+    },
+    {
+      "path": "packages/splat-transform/src/pipeline.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c6179f5545974d44e7f3011b7b62c4cd21cb1c7b",
+      "size": 2850,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/c6179f5545974d44e7f3011b7b62c4cd21cb1c7b"
+    },
+    {
+      "path": "packages/splat-transform/src/process.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "88a46398a89e38f1cad12f14d7263b3afe7b82ff",
+      "size": 3694,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/88a46398a89e38f1cad12f14d7263b3afe7b82ff"
+    },
+    {
+      "path": "packages/splat-transform/tsconfig.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5b9f4c3b06efe492d43b3c580e8e26ea99a22659",
+      "size": 472,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5b9f4c3b06efe492d43b3c580e8e26ea99a22659"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3117e275a07929c0b0cc193851ba23ee2a120ccb",
+      "size": 176001,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/3117e275a07929c0b0cc193851ba23ee2a120ccb"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b51ce1259f22c4cee2707836f64de1dd5c70303a",
+      "size": 1326,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b51ce1259f22c4cee2707836f64de1dd5c70303a"
+    },
+    {
+      "path": "scripts",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "73d15d6615927a3234bf100b6d93dab18dfbf42f",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/73d15d6615927a3234bf100b6d93dab18dfbf42f"
+    },
+    {
+      "path": "scripts/build-package.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "580e968dc6ec6eba8eb243e3d5c8b9c1894a5930",
+      "size": 12326,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/580e968dc6ec6eba8eb243e3d5c8b9c1894a5930"
+    },
+    {
+      "path": "scripts/check-content.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0009a9c6691f7244afbb3e417fb35db3c09c6ea5",
+      "size": 14700,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/0009a9c6691f7244afbb3e417fb35db3c09c6ea5"
+    },
+    {
+      "path": "scripts/clean-package.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2561600b9e07ca4a4af7dcd6c838c6bc5a4d098c",
+      "size": 1591,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/2561600b9e07ca4a4af7dcd6c838c6bc5a4d098c"
+    },
+    {
+      "path": "scripts/ensure-submodules.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "53e94be281ad53e3d92ff4719d63cb93229a02c8",
+      "size": 2771,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/53e94be281ad53e3d92ff4719d63cb93229a02c8"
+    },
+    {
+      "path": "scripts/generate-api-docs.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0ab571a82505f592ea2dac3cc799971a0358919b",
+      "size": 26377,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/0ab571a82505f592ea2dac3cc799971a0358919b"
+    },
+    {
+      "path": "scripts/generate-llm-docs.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e02a820fe86fdc3eac27586e62da1c946b9903b5",
+      "size": 21790,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/e02a820fe86fdc3eac27586e62da1c946b9903b5"
+    },
+    {
+      "path": "scripts/package-utils.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6b4b841964e117b134cea8e4674fc474be041b97",
+      "size": 4569,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/6b4b841964e117b134cea8e4674fc474be041b97"
+    },
+    {
+      "path": "scripts/prepare-egs-types.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0c960d4ec101477b31d62b44566e0c6fe06d29aa",
+      "size": 1505,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/0c960d4ec101477b31d62b44566e0c6fe06d29aa"
+    },
+    {
+      "path": "scripts/publish-packages.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fd4129ac74ec60560b9bd1164f5e1b6b47af3ca4",
+      "size": 4630,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/fd4129ac74ec60560b9bd1164f5e1b6b47af3ca4"
+    },
+    {
+      "path": "scripts/read-package-changelog.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d476124fa5cd4b1e916c705d05cd9cb65f18b76a",
+      "size": 2187,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d476124fa5cd4b1e916c705d05cd9cb65f18b76a"
+    },
+    {
+      "path": "scripts/release-config.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "444b851547c7d35606204a6ce27ae43822d2d265",
+      "size": 1167,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/444b851547c7d35606204a6ce27ae43822d2d265"
+    },
+    {
+      "path": "tsconfig.base.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a8cba2ff09522d64a7735edbadda0a5c871c6795",
+      "size": 191,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a8cba2ff09522d64a7735edbadda0a5c871c6795"
+    },
+    {
+      "path": "website",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d03d77a514ab407ded4872ca73d5c459c8714be9",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/d03d77a514ab407ded4872ca73d5c459c8714be9"
+    },
+    {
+      "path": "website/astro.config.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "593eec59e77c4feb56a1e0c757bafcc1bfac8ee3",
+      "size": 14324,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/593eec59e77c4feb56a1e0c757bafcc1bfac8ee3"
+    },
+    {
+      "path": "website/package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4726ffa50747f9ed7d5a79cc490b380644fcfd08",
+      "size": 813,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/4726ffa50747f9ed7d5a79cc490b380644fcfd08"
+    },
+    {
+      "path": "website/public",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "5578ba8bd6c860aaad8dd5c3ce0b2be0dbd7e100",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/5578ba8bd6c860aaad8dd5c3ce0b2be0dbd7e100"
+    },
+    {
+      "path": "website/public/aholo-logo.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0d32236e8f690f39d613af1b116911efccd7ba1f",
+      "size": 7273,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/0d32236e8f690f39d613af1b116911efccd7ba1f"
+    },
+    {
+      "path": "website/public/favicon.ico",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a59a255bb4e42d27415b80dc374a533f91665839",
+      "size": 16958,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a59a255bb4e42d27415b80dc374a533f91665839"
+    },
+    {
+      "path": "website/public/home",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "bcefd42763868a19d2ce3190b5f1bb09b119059b",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/bcefd42763868a19d2ce3190b5f1bb09b119059b"
+    },
+    {
+      "path": "website/public/home/feature-tools.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9568f1be956b118765d6a5c6c69220a4d3b0269f",
+      "size": 9635,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/9568f1be956b118765d6a5c6c69220a4d3b0269f"
+    },
+    {
+      "path": "website/public/icons",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "bba2b973b54056f008d30f1e41830d4e850dac31",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/bba2b973b54056f008d30f1e41830d4e850dac31"
+    },
+    {
+      "path": "website/public/icons/example-edit-code.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "47fccbb85da210a8da34b1e02d770713443a594b",
+      "size": 257,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/47fccbb85da210a8da34b1e02d770713443a594b"
+    },
+    {
+      "path": "website/scripts",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "b5e41bee0ebcafa5f64d3297973335394680a565",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/b5e41bee0ebcafa5f64d3297973335394680a565"
+    },
+    {
+      "path": "website/scripts/clean.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8b36e00aad3389790fb6229501ceb69c81d80649",
+      "size": 1263,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/8b36e00aad3389790fb6229501ceb69c81d80649"
+    },
+    {
+      "path": "website/src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "657cc630fce4b7f4a8c1246a2d9c0cdaa6cb7f3d",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/657cc630fce4b7f4a8c1246a2d9c0cdaa6cb7f3d"
+    },
+    {
+      "path": "website/src/client",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "bc7fc11c7424b2b928f5728ba4a1c5536ee62100",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/bc7fc11c7424b2b928f5728ba4a1c5536ee62100"
+    },
+    {
+      "path": "website/src/client/camera-control.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a2a31c5278faa5244db7449a317ff87a7911d819",
+      "size": 30512,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a2a31c5278faa5244db7449a317ff87a7911d819"
+    },
+    {
+      "path": "website/src/client/docs.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5183cfd050f512917738bb2e33e7b3304519c13f",
+      "size": 3515,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5183cfd050f512917738bb2e33e7b3304519c13f"
+    },
+    {
+      "path": "website/src/client/examples.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "15000ae5e3280d9f7703eea75c1bcbe5ea8ffc61",
+      "size": 8983,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/15000ae5e3280d9f7703eea75c1bcbe5ea8ffc61"
+    },
+    {
+      "path": "website/src/client/home.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "84d3f66ed58e23e499ca716ce2a548e9eb675a39",
+      "size": 7954,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/84d3f66ed58e23e499ca716ce2a548e9eb675a39"
+    },
+    {
+      "path": "website/src/client/interaction-guide.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "120630436025cd6f296f6118c0bb15965ddc4f9f",
+      "size": 3012,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/120630436025cd6f296f6118c0bb15965ddc4f9f"
+    },
+    {
+      "path": "website/src/client/playground.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e2a8e29ac33e666a4550af884503fb342203e1f2",
+      "size": 24808,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/e2a8e29ac33e666a4550af884503fb342203e1f2"
+    },
+    {
+      "path": "website/src/client/render-runtime.d.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "60d000d3c8908aec3eec79b94d3c1a4009cee223",
+      "size": 1665,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/60d000d3c8908aec3eec79b94d3c1a4009cee223"
+    },
+    {
+      "path": "website/src/client/render-runtime.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6924317e62efa311e2228c8d0050a68ca72c0083",
+      "size": 29490,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/6924317e62efa311e2228c8d0050a68ca72c0083"
+    },
+    {
+      "path": "website/src/client/rendering.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "17f8426b007ded0adf3fb7f007de44f7d05f5dc9",
+      "size": 2249,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/17f8426b007ded0adf3fb7f007de44f7d05f5dc9"
+    },
+    {
+      "path": "website/src/client/split-pane.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b2d8cafcae508ce5b87dd3be954bbd55f040a587",
+      "size": 7497,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b2d8cafcae508ce5b87dd3be954bbd55f040a587"
+    },
+    {
+      "path": "website/src/client/viewer.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "34d15600381a83b4ca84b51dd0cb194cefffb52a",
+      "size": 53197,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/34d15600381a83b4ca84b51dd0cb194cefffb52a"
+    },
+    {
+      "path": "website/src/client/workspace-fullscreen.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5aacbec7245d2799261dec63a73d1b0a948b504e",
+      "size": 9431,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5aacbec7245d2799261dec63a73d1b0a948b504e"
+    },
+    {
+      "path": "website/src/components",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "e91135029e92f161ced2594210bbd63d220edd51",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/e91135029e92f161ced2594210bbd63d220edd51"
+    },
+    {
+      "path": "website/src/components/ExamplePreview.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "718037d62558bf53cc9cb661fc9728e46a241da4",
+      "size": 1445,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/718037d62558bf53cc9cb661fc9728e46a241da4"
+    },
+    {
+      "path": "website/src/components/ExampleRail.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fd8c96417b293519ada16a1f089de613d87eb832",
+      "size": 1377,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/fd8c96417b293519ada16a1f089de613d87eb832"
+    },
+    {
+      "path": "website/src/components/InteractionGuide.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "759a28f10aa4e620d5d162d392d7072b79e58891",
+      "size": 7142,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/759a28f10aa4e620d5d162d392d7072b79e58891"
+    },
+    {
+      "path": "website/src/components/PlaygroundShell.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3c0050598dccc1275162a05be6a7bbf514bb9b81",
+      "size": 6441,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/3c0050598dccc1275162a05be6a7bbf514bb9b81"
+    },
+    {
+      "path": "website/src/components/ViewerShell.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d59ba7d771c381bf8f9978e740bb19cfaa5e8fa3",
+      "size": 10094,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d59ba7d771c381bf8f9978e740bb19cfaa5e8fa3"
+    },
+    {
+      "path": "website/src/components/docs",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "54dada366d9e06c9d797747ea588fd19a5e71734",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/54dada366d9e06c9d797747ea588fd19a5e71734"
+    },
+    {
+      "path": "website/src/components/docs/DocPager.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b5d355c8c51bf8c9e9c2afeb5c0b0856384f4cf8",
+      "size": 582,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b5d355c8c51bf8c9e9c2afeb5c0b0856384f4cf8"
+    },
+    {
+      "path": "website/src/components/docs/DocToc.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7e904cc58a9cfdf9e9b19d151d1eb16ef542d446",
+      "size": 611,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/7e904cc58a9cfdf9e9b19d151d1eb16ef542d446"
+    },
+    {
+      "path": "website/src/components/site",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "e03b866344f78a2801a52625ac5b913ae553c9ba",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/e03b866344f78a2801a52625ac5b913ae553c9ba"
+    },
+    {
+      "path": "website/src/components/site/Breadcrumbs.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9be2480c3156d0a723bb958dc7d2807eea294633",
+      "size": 343,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/9be2480c3156d0a723bb958dc7d2807eea294633"
+    },
+    {
+      "path": "website/src/components/site/Header.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f9c2fe038a9514625468a94011d746414b4526ef",
+      "size": 7719,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f9c2fe038a9514625468a94011d746414b4526ef"
+    },
+    {
+      "path": "website/src/components/site/LanguageSwitch.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "44b02e482ee7f1fabf36a1971d58db5128682c9f",
+      "size": 1149,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/44b02e482ee7f1fabf36a1971d58db5128682c9f"
+    },
+    {
+      "path": "website/src/components/site/Sidebar.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f138e1ce0641cd054262881ab1aa2382ee83ecd2",
+      "size": 8336,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f138e1ce0641cd054262881ab1aa2382ee83ecd2"
+    },
+    {
+      "path": "website/src/components/site/ThemeToggle.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "67a77fe959d382038d36dbe31e0ba0766fd55169",
+      "size": 653,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/67a77fe959d382038d36dbe31e0ba0766fd55169"
+    },
+    {
+      "path": "website/src/content.config.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4d3f717c90552b8166221cfa933a245219bb3293",
+      "size": 1955,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/4d3f717c90552b8166221cfa933a245219bb3293"
+    },
+    {
+      "path": "website/src/content",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "3269f6fdec440b9dd30a40a23ec96ba954b368c1",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/3269f6fdec440b9dd30a40a23ec96ba954b368c1"
+    },
+    {
+      "path": "website/src/content/examples",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "532d2acad62a448db9589ad9742084709c6e53d6",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/532d2acad62a448db9589ad9742084709c6e53d6"
+    },
+    {
+      "path": "website/src/content/examples/3d-buffer-geometry.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a9961ac97ca46345f36de1b3e9de28e25987d953",
+      "size": 392,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a9961ac97ca46345f36de1b3e9de28e25987d953"
+    },
+    {
+      "path": "website/src/content/examples/3d-buffer-geometry.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7edf99f7f2e3ea7e9baf1669713b7c2d41f0d828",
+      "size": 2960,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/7edf99f7f2e3ea7e9baf1669713b7c2d41f0d828"
+    },
+    {
+      "path": "website/src/content/examples/3d-point-light.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8fc3150ab0830231af26c0833f5147c9a910a844",
+      "size": 376,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/8fc3150ab0830231af26c0833f5147c9a910a844"
+    },
+    {
+      "path": "website/src/content/examples/3d-point-light.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c8f32a065662537e8df273cc14eb08e09aebda92",
+      "size": 6431,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/c8f32a065662537e8df273cc14eb08e09aebda92"
+    },
+    {
+      "path": "website/src/content/examples/home-interaction.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "041f45afadc99696741e4aaf224d0b59458e3a71",
+      "size": 309,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/041f45afadc99696741e4aaf224d0b59458e3a71"
+    },
+    {
+      "path": "website/src/content/examples/home-interaction.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "416c91fa56a575930ee3f01b9624ef220102cd43",
+      "size": 5296,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/416c91fa56a575930ee3f01b9624ef220102cd43"
+    },
+    {
+      "path": "website/src/content/examples/splatting-basic.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bef96496ee5bc0c2d722a265a31e8fe568bd71ba",
+      "size": 338,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/bef96496ee5bc0c2d722a265a31e8fe568bd71ba"
+    },
+    {
+      "path": "website/src/content/examples/splatting-basic.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ec1905685d476ffc176ecd1a4d77fee5cb615ef6",
+      "size": 5219,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/ec1905685d476ffc176ecd1a4d77fee5cb615ef6"
+    },
+    {
+      "path": "website/src/content/examples/splatting-lod-stream.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e128212f4dc3e350e16f47cd113e7fa602dbe003",
+      "size": 378,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/e128212f4dc3e350e16f47cd113e7fa602dbe003"
+    },
+    {
+      "path": "website/src/content/examples/splatting-lod-stream.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d8bd319fc50bc4fd89a5e6876886084078e13820",
+      "size": 7189,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d8bd319fc50bc4fd89a5e6876886084078e13820"
+    },
+    {
+      "path": "website/src/content/examples/walk-demo.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "76409a8a95fbf23a61c4376728f4a782a46d6333",
+      "size": 402,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/76409a8a95fbf23a61c4376728f4a782a46d6333"
+    },
+    {
+      "path": "website/src/content/examples/walk-demo.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bec7810318cb6a6a866560640684379e4586959b",
+      "size": 85795,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/bec7810318cb6a6a866560640684379e4586959b"
+    },
+    {
+      "path": "website/src/content/examples/webxr-vr.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fcdd4bdc3a63f229449dba87a290101d6bb541bc",
+      "size": 351,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/fcdd4bdc3a63f229449dba87a290101d6bb541bc"
+    },
+    {
+      "path": "website/src/content/examples/webxr-vr.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5e48740d1b439be98b6b683f45d5c0642b92de18",
+      "size": 9322,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5e48740d1b439be98b6b683f45d5c0642b92de18"
+    },
+    {
+      "path": "website/src/content/manual",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "9e283de9829da23f90c60711770e716203b801b9",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/9e283de9829da23f90c60711770e716203b801b9"
+    },
+    {
+      "path": "website/src/content/manual/assets",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "7709968cddb326a6ae820cfdffa7709cf1840a45",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/7709968cddb326a6ae820cfdffa7709cf1840a45"
+    },
+    {
+      "path": "website/src/content/manual/assets/3dgs-preset-config",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "1668bf9c6d069f5f4b76010c6f618ee5033f39c7",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/1668bf9c6d069f5f4b76010c6f618ee5033f39c7"
+    },
+    {
+      "path": "website/src/content/manual/assets/3dgs-preset-config/compressed-ply-quantization.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "032b156915b125e72b5b5ed61df7091d4ff75987",
+      "size": 12324,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/032b156915b125e72b5b5ed61df7091d4ff75987"
+    },
+    {
+      "path": "website/src/content/manual/assets/3dgs-preset-config/normalized-falloff-off.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a21135ba98115c5f8b4a53ecf92d24db7fad89a5",
+      "size": 27541,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a21135ba98115c5f8b4a53ecf92d24db7fad89a5"
+    },
+    {
+      "path": "website/src/content/manual/assets/3dgs-preset-config/normalized-falloff-on.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "54e6f2c3e8b6afc0e0a842e4562401da5cac415d",
+      "size": 26306,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/54e6f2c3e8b6afc0e0a842e4562401da5cac415d"
+    },
+    {
+      "path": "website/src/content/manual/assets/3dgs-preset-config/preset-extreme-performance-0-result.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "516821aa4774b736a3cb0fab4394e57253322141",
+      "size": 2607989,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/516821aa4774b736a3cb0fab4394e57253322141"
+    },
+    {
+      "path": "website/src/content/manual/assets/3dgs-preset-config/preset-extreme-performance-1-result.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ade21b1d86a8f8bcfe943ba34d4059d8b6280f5c",
+      "size": 2583431,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/ade21b1d86a8f8bcfe943ba34d4059d8b6280f5c"
+    },
+    {
+      "path": "website/src/content/manual/assets/3dgs-preset-config/preset-max-quality-result.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "37ca6449676b7ce05062984495c37cf0b308e537",
+      "size": 1840241,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/37ca6449676b7ce05062984495c37cf0b308e537"
+    },
+    {
+      "path": "website/src/content/manual/assets/3dgs-preset-config/preset-performance-first-result.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a9dd29cdf62de4d5aa3aec4c78293f88ff080860",
+      "size": 2656930,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a9dd29cdf62de4d5aa3aec4c78293f88ff080860"
+    },
+    {
+      "path": "website/src/content/manual/assets/3dgs-preset-config/preset-quality-first-result.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bf39930d93986a6d732f2a2ba5a75a712dd94b12",
+      "size": 2618709,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/bf39930d93986a6d732f2a2ba5a75a712dd94b12"
+    },
+    {
+      "path": "website/src/content/manual/assets/basic-concepts",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6ae9a70468134b40a5e8eed9b691b4de2926e3f9",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/6ae9a70468134b40a5e8eed9b691b4de2926e3f9"
+    },
+    {
+      "path": "website/src/content/manual/assets/basic-concepts/geometry-attributes.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3bc2a42d40b048729934c8aa5cd4af3651612797",
+      "size": 20381,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/3bc2a42d40b048729934c8aa5cd4af3651612797"
+    },
+    {
+      "path": "website/src/content/manual/assets/basic-concepts/material-types.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e5d2518452b99e98eaf973ebfb65c5f750ee53cd",
+      "size": 23116,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/e5d2518452b99e98eaf973ebfb65c5f750ee53cd"
+    },
+    {
+      "path": "website/src/content/manual/assets/basic-concepts/object3d-hierarchy.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "29cd95979c971221322665b20ff82d0d90b98b93",
+      "size": 97503,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/29cd95979c971221322665b20ff82d0d90b98b93"
+    },
+    {
+      "path": "website/src/content/manual/assets/basic-concepts/orthographic-camera.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "11ed2813c201d584dc5fa2319982261ec008f284",
+      "size": 34175,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/11ed2813c201d584dc5fa2319982261ec008f284"
+    },
+    {
+      "path": "website/src/content/manual/assets/basic-concepts/perspective-camera.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "39d17b1c5c54d011561ebeee5630661c025430c0",
+      "size": 144889,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/39d17b1c5c54d011561ebeee5630661c025430c0"
+    },
+    {
+      "path": "website/src/content/manual/assets/basic-concepts/render-flow.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "23abd31efe2223ccb6a8e9e536e6d4a14978603b",
+      "size": 44644,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/23abd31efe2223ccb6a8e9e536e6d4a14978603b"
+    },
+    {
+      "path": "website/src/content/manual/assets/basic-concepts/scene-tree.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b56a3025ace4e6b3da5b26fe8dee8320b192cfff",
+      "size": 46369,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b56a3025ace4e6b3da5b26fe8dee8320b192cfff"
+    },
+    {
+      "path": "website/src/content/manual/assets/basic-concepts/viewport.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d4d5f9d99e6a676b946fa83e479d79d9a7e1a4b3",
+      "size": 44538,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d4d5f9d99e6a676b946fa83e479d79d9a7e1a4b3"
+    },
+    {
+      "path": "website/src/content/manual/assets/chunk-lod",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "b1c1d24a195274e35a222354486762f208605d87",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/b1c1d24a195274e35a222354486762f208605d87"
+    },
+    {
+      "path": "website/src/content/manual/assets/chunk-lod/structure.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "be8f37859cfe4aeaf6b971eae015ed5064a711b1",
+      "size": 33484,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/be8f37859cfe4aeaf6b971eae015ed5064a711b1"
+    },
+    {
+      "path": "website/src/content/manual/assets/getting-started",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "75036f47b1574ba131749b468876cb4527ef7e54",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/75036f47b1574ba131749b468876cb4527ef7e54"
+    },
+    {
+      "path": "website/src/content/manual/assets/getting-started/example.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6cff948e99be07cdf07b922ff5958efb52a427b8",
+      "size": 52266,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/6cff948e99be07cdf07b922ff5958efb52a427b8"
+    },
+    {
+      "path": "website/src/content/manual/assets/playground",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "81ecf34e27c55a3a9ab3bc7ffeef0d5f39c37d22",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/81ecf34e27c55a3a9ab3bc7ffeef0d5f39c37d22"
+    },
+    {
+      "path": "website/src/content/manual/assets/playground/playground.en-US.jpeg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a2354216be84393d40500e91b52c2cd2c716bd61",
+      "size": 173151,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a2354216be84393d40500e91b52c2cd2c716bd61"
+    },
+    {
+      "path": "website/src/content/manual/assets/playground/playground.zh-CN.jpeg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d1e4e01d83af09d8a5450c3e7eaa63958604150e",
+      "size": 172986,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d1e4e01d83af09d8a5450c3e7eaa63958604150e"
+    },
+    {
+      "path": "website/src/content/manual/assets/viewer",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a6c6a1ebfb63158c00269fcfc158348aae73da5a",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/a6c6a1ebfb63158c00269fcfc158348aae73da5a"
+    },
+    {
+      "path": "website/src/content/manual/assets/viewer/viewer.en-US.jpeg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3860078230adc23a798e644a5bbe201199fb95c4",
+      "size": 56727,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/3860078230adc23a798e644a5bbe201199fb95c4"
+    },
+    {
+      "path": "website/src/content/manual/assets/viewer/viewer.zh-CN.jpeg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "99f8079331e7ff783519a5b4429c2e21138ab9c8",
+      "size": 54426,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/99f8079331e7ff783519a5b4429c2e21138ab9c8"
+    },
+    {
+      "path": "website/src/content/manual/en-US",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "13221569813a18e37cee31fe6083a5d1bceadf8b",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/13221569813a18e37cee31fe6083a5d1bceadf8b"
+    },
+    {
+      "path": "website/src/content/manual/en-US/3dgs-preset-config.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8449e56a16089dcc90f4a0bbeb5bdb6b51f59fc4",
+      "size": 21053,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/8449e56a16089dcc90f4a0bbeb5bdb6b51f59fc4"
+    },
+    {
+      "path": "website/src/content/manual/en-US/basic-concepts.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3aa00ade1b0e04817b81d8a9a58ca73448ad0319",
+      "size": 7160,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/3aa00ade1b0e04817b81d8a9a58ca73448ad0319"
+    },
+    {
+      "path": "website/src/content/manual/en-US/chunk-lod.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a0b446053f5cd2638b97a55477023bbfb973f64a",
+      "size": 12593,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a0b446053f5cd2638b97a55477023bbfb973f64a"
+    },
+    {
+      "path": "website/src/content/manual/en-US/config.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "95ea4e1c4b0a063e6d6ffb34bb8a7e647196b5f8",
+      "size": 4122,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/95ea4e1c4b0a063e6d6ffb34bb8a7e647196b5f8"
+    },
+    {
+      "path": "website/src/content/manual/en-US/getting-started.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6a161575a4f03264c36990a2503a30d85e8a6c21",
+      "size": 3172,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/6a161575a4f03264c36990a2503a30d85e8a6c21"
+    },
+    {
+      "path": "website/src/content/manual/en-US/physics-collision.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a063d9393fab0b68107c93db66088e7904e9bd61",
+      "size": 9268,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a063d9393fab0b68107c93db66088e7904e9bd61"
+    },
+    {
+      "path": "website/src/content/manual/en-US/playground.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b5895c2ed89acaf4aac4ddbeb054dbec8410653a",
+      "size": 2693,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/b5895c2ed89acaf4aac4ddbeb054dbec8410653a"
+    },
+    {
+      "path": "website/src/content/manual/en-US/splat-transform.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a3a9fa86c6ed8e526896616110fb279396db3da0",
+      "size": 37965,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a3a9fa86c6ed8e526896616110fb279396db3da0"
+    },
+    {
+      "path": "website/src/content/manual/en-US/viewer.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d88754e006e6456cb03720199c43363beb797823",
+      "size": 3597,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d88754e006e6456cb03720199c43363beb797823"
+    },
+    {
+      "path": "website/src/content/manual/zh-CN",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "0aa2c89a809f77b53783d98dcccae6a96c4f8878",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/0aa2c89a809f77b53783d98dcccae6a96c4f8878"
+    },
+    {
+      "path": "website/src/content/manual/zh-CN/3dgs-preset-config.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0f45f49b05ce74ae1d068c01da0952b17ac51d7e",
+      "size": 18834,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/0f45f49b05ce74ae1d068c01da0952b17ac51d7e"
+    },
+    {
+      "path": "website/src/content/manual/zh-CN/basic-concepts.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f5000c1226baa65cb7b35d2543464181df484d22",
+      "size": 6238,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f5000c1226baa65cb7b35d2543464181df484d22"
+    },
+    {
+      "path": "website/src/content/manual/zh-CN/chunk-lod.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7a7a11dba157c29feebb819302269153e8221017",
+      "size": 11425,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/7a7a11dba157c29feebb819302269153e8221017"
+    },
+    {
+      "path": "website/src/content/manual/zh-CN/config.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fbf045427179bce187fbc9e31af248472031d05d",
+      "size": 3723,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/fbf045427179bce187fbc9e31af248472031d05d"
+    },
+    {
+      "path": "website/src/content/manual/zh-CN/getting-started.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9c48bee3f5e21f8845667605aae859b26b89cdf3",
+      "size": 3094,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/9c48bee3f5e21f8845667605aae859b26b89cdf3"
+    },
+    {
+      "path": "website/src/content/manual/zh-CN/physics-collision.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5fc25ea07876bcbbaa0e440d026906d2ba218c70",
+      "size": 8859,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5fc25ea07876bcbbaa0e440d026906d2ba218c70"
+    },
+    {
+      "path": "website/src/content/manual/zh-CN/playground.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "26c40f9fe07aba52940ac3ec2e22256ee585da93",
+      "size": 2688,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/26c40f9fe07aba52940ac3ec2e22256ee585da93"
+    },
+    {
+      "path": "website/src/content/manual/zh-CN/splat-transform.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a1e71e7a324ca2d0d9093630906795188b02c3e7",
+      "size": 34682,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a1e71e7a324ca2d0d9093630906795188b02c3e7"
+    },
+    {
+      "path": "website/src/content/manual/zh-CN/viewer.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4af6a07295fdf6dffec88dc5a35a58760aca4605",
+      "size": 3462,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/4af6a07295fdf6dffec88dc5a35a58760aca4605"
+    },
+    {
+      "path": "website/src/env.d.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "03b186294c33c6365ead09b20a64c49fd865da5f",
+      "size": 209,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/03b186294c33c6365ead09b20a64c49fd865da5f"
+    },
+    {
+      "path": "website/src/i18n",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "1b0edb090582e4b46587130578fe7b897cbc5f2a",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/1b0edb090582e4b46587130578fe7b897cbc5f2a"
+    },
+    {
+      "path": "website/src/i18n/dictionary.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5fbd25bc414f3e9f915a834bb6e0e16b8d65cd4b",
+      "size": 3368,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5fbd25bc414f3e9f915a834bb6e0e16b8d65cd4b"
+    },
+    {
+      "path": "website/src/i18n/locales.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fd36e33b7da8016751f27f494a6c96c66ccb79e3",
+      "size": 492,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/fd36e33b7da8016751f27f494a6c96c66ccb79e3"
+    },
+    {
+      "path": "website/src/i18n/routes.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f7337d95ce794e090d75663524e1adfe8d026db1",
+      "size": 506,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f7337d95ce794e090d75663524e1adfe8d026db1"
+    },
+    {
+      "path": "website/src/layouts",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "4d2d20e06913890db8304774566ecf56c9a430af",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/4d2d20e06913890db8304774566ecf56c9a430af"
+    },
+    {
+      "path": "website/src/layouts/BaseLayout.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d675e6e5979497b30cd0d2a61b4231019d9ff979",
+      "size": 4592,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d675e6e5979497b30cd0d2a61b4231019d9ff979"
+    },
+    {
+      "path": "website/src/layouts/DocsLayout.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "649ce6d656b71fad8e85ff8225b6d9f10da720dd",
+      "size": 2796,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/649ce6d656b71fad8e85ff8225b6d9f10da720dd"
+    },
+    {
+      "path": "website/src/pages",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "21e55d2a0d1077546f470c8df080bf9c9490453c",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/21e55d2a0d1077546f470c8df080bf9c9490453c"
+    },
+    {
+      "path": "website/src/pages/[lang]",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "b71a13652ee0d07edf6cb1a638414b55d9034bc3",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/b71a13652ee0d07edf6cb1a638414b55d9034bc3"
+    },
+    {
+      "path": "website/src/pages/[lang]/api",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "57e775fc0374e2e8fcc9a53077d3908ab0b30c40",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/57e775fc0374e2e8fcc9a53077d3908ab0b30c40"
+    },
+    {
+      "path": "website/src/pages/[lang]/api/[...slug].astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a5c07160abfecc8e0fb369e9bcb9982006ddd2b9",
+      "size": 1992,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/a5c07160abfecc8e0fb369e9bcb9982006ddd2b9"
+    },
+    {
+      "path": "website/src/pages/[lang]/api/index.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c32310ccc43b222816209c7093a603413d72c8e3",
+      "size": 1851,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/c32310ccc43b222816209c7093a603413d72c8e3"
+    },
+    {
+      "path": "website/src/pages/[lang]/examples",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "1586144bb41b6105ab2f620becc5781e7923c89d",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/1586144bb41b6105ab2f620becc5781e7923c89d"
+    },
+    {
+      "path": "website/src/pages/[lang]/examples/[slug].astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f59b294a1917aa3e66623818749ca01540685281",
+      "size": 4672,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f59b294a1917aa3e66623818749ca01540685281"
+    },
+    {
+      "path": "website/src/pages/[lang]/examples/index.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7c9d8343ea98e26b8f80783c09d8f0cc19454dd0",
+      "size": 934,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/7c9d8343ea98e26b8f80783c09d8f0cc19454dd0"
+    },
+    {
+      "path": "website/src/pages/[lang]/index.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e40eca87c84834c89adf2c88c3a19314dec108f6",
+      "size": 13407,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/e40eca87c84834c89adf2c88c3a19314dec108f6"
+    },
+    {
+      "path": "website/src/pages/[lang]/manual",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "12e94af4285947419b592cb48cd6455dcb4fe515",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/12e94af4285947419b592cb48cd6455dcb4fe515"
+    },
+    {
+      "path": "website/src/pages/[lang]/manual/[...slug].astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c5ce2e46c9ac94c6261608f7ba36212e83439dd2",
+      "size": 1881,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/c5ce2e46c9ac94c6261608f7ba36212e83439dd2"
+    },
+    {
+      "path": "website/src/pages/[lang]/manual/index.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "25275431d1986d10ceeade7484685a1ad260472f",
+      "size": 1364,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/25275431d1986d10ceeade7484685a1ad260472f"
+    },
+    {
+      "path": "website/src/pages/[lang]/playground.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5d36ec0e311d8f92a578bfa4e4a74e46f4b1693e",
+      "size": 748,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5d36ec0e311d8f92a578bfa4e4a74e46f4b1693e"
+    },
+    {
+      "path": "website/src/pages/[lang]/viewer.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d965d25cbbe63ac4b680ffa6332c9f6378b3a3f6",
+      "size": 720,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d965d25cbbe63ac4b680ffa6332c9f6378b3a3f6"
+    },
+    {
+      "path": "website/src/pages/index.astro",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "78de7065300eff25f7fd9ad3844ad53bdd71a7f9",
+      "size": 3028,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/78de7065300eff25f7fd9ad3844ad53bdd71a7f9"
+    },
+    {
+      "path": "website/src/styles",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6c81b42f26344d9f98723e7836aaff163cc47260",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/6c81b42f26344d9f98723e7836aaff163cc47260"
+    },
+    {
+      "path": "website/src/styles/docs.css",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "201ba533703e3f2ba69f604d61ae7d4d06ea7ae1",
+      "size": 29381,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/201ba533703e3f2ba69f604d61ae7d4d06ea7ae1"
+    },
+    {
+      "path": "website/src/styles/examples.css",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d4f56198b541d59e856230a8c43e192f77378102",
+      "size": 9058,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/d4f56198b541d59e856230a8c43e192f77378102"
+    },
+    {
+      "path": "website/src/styles/global.css",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "255243ef575f33bea59ad3f935cf124050472e7e",
+      "size": 1938,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/255243ef575f33bea59ad3f935cf124050472e7e"
+    },
+    {
+      "path": "website/src/styles/home.css",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f2ff43c6a4e2d9b45307be21ec57f7fa0b878d04",
+      "size": 24744,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f2ff43c6a4e2d9b45307be21ec57f7fa0b878d04"
+    },
+    {
+      "path": "website/src/styles/playground.css",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0277ed550a9cc4469c692c12ef223af284e43951",
+      "size": 9919,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/0277ed550a9cc4469c692c12ef223af284e43951"
+    },
+    {
+      "path": "website/src/styles/site.css",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "457430e4bd869ba74ab3b07191dc6ff7e18a9869",
+      "size": 12613,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/457430e4bd869ba74ab3b07191dc6ff7e18a9869"
+    },
+    {
+      "path": "website/src/styles/theme.css",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bf25c23ab1600245ed4682492efb11f476878043",
+      "size": 4669,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/bf25c23ab1600245ed4682492efb11f476878043"
+    },
+    {
+      "path": "website/src/styles/viewer.css",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e67d22034d7ab8177c5a2fd6a62a6bd946bcd442",
+      "size": 22366,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/e67d22034d7ab8177c5a2fd6a62a6bd946bcd442"
+    },
+    {
+      "path": "website/src/utils",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "5978e88d8bd300f3a6dde2a3850356f9edbb47e4",
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/trees/5978e88d8bd300f3a6dde2a3850356f9edbb47e4"
+    },
+    {
+      "path": "website/src/utils/api.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5fb05ca2f27d69d2183ccaf5367dfcf380753f98",
+      "size": 3355,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/5fb05ca2f27d69d2183ccaf5367dfcf380753f98"
+    },
+    {
+      "path": "website/src/utils/examples.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "db60bb5a775eb306cd02eb1f5b8e437e596c9019",
+      "size": 1971,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/db60bb5a775eb306cd02eb1f5b8e437e596c9019"
+    },
+    {
+      "path": "website/src/utils/manual-assets.js",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ef87558b9bd8fbab64db45c8515bb0da0445ffba",
+      "size": 1553,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/ef87558b9bd8fbab64db45c8515bb0da0445ffba"
+    },
+    {
+      "path": "website/src/utils/manual.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7808c45ea99cba5a131d73f16e4839890ed9835b",
+      "size": 11623,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/7808c45ea99cba5a131d73f16e4839890ed9835b"
+    },
+    {
+      "path": "website/src/utils/navigation.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fb5f7a49334d7e1d2d6fbf4aa9909acec1d81cd3",
+      "size": 1386,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/fb5f7a49334d7e1d2d6fbf4aa9909acec1d81cd3"
+    },
+    {
+      "path": "website/tsconfig.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f2f09660b79c4fbc1f0ae086134361ff85c83eb2",
+      "size": 161,
+      "url": "https://api.github.com/repos/manycoretech/aholo-viewer/git/blobs/f2f09660b79c4fbc1f0ae086134361ff85c83eb2"
+    }
+  ],
+  "truncated": false
+}

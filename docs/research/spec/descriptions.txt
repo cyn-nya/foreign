@@ -1,0 +1,471 @@
+#################### FULL OPERATION DESCRIPTIONS ####################
+
+==============================================================================
+GET /asset/v1/token   [getUploadToken]
+------------------------------------------------------------------------------
+获取 OUS 上传凭证
+本接口仅返回上传前置凭证；**真实直传发生在 OUS 的 `globalDomain` 上**（与开放平台网关域名不同），与同标签 **「Upload」** 中的 `ousCosSingleUpload`、`ousCosBlockUploadInit`、`ousCosBlockUploadPart`、`ousCosUploadStatus` 衔接。
+
+**推荐流程：**
+1. 调用本接口，取得 `ousToken`、`globalDomain`（示例：`https://ous-cos.kujiale.com`）、`blockSize`。
+2. 若文件大小 **≤ `blockSize`**：调用 `ousCosSingleUpload`；若 **> `blockSize`**：依次调用 `ousCosBlockUploadInit` 与多次 `ousCosBlockUploadPart`。
+3. 轮询 `ousCosUploadStatus`，直到任务成功并取得 `url`。
+4. 将得到的可访问 URL 填入 其他业务接口，比如「创建 3DGS 世界重建任务」的 `resources[].url`。
+
+
+==============================================================================
+POST /ous/api/v2/single/upload   [ousCosSingleUpload]
+------------------------------------------------------------------------------
+OUS 单文件上传（≤ blockSize）
+当文件字节数 **≤** token 接口返回的 `blockSize` 时使用；详情见 `requestBody` 与 `components.schemas.OusCosSingleUploadForm`。
+
+==============================================================================
+POST /ous/api/v2/block/upload/init   [ousCosBlockUploadInit]
+------------------------------------------------------------------------------
+OUS 分片上传 — 初始化
+当文件字节数 **>** `blockSize` 时使用。**常用调用**：`POST`，必填参数放在 **URL Query**（无 request body，无需 `Content-Type: application/json`），例如 `…/ous/api/v2/block/upload/init?md5=…&blocks=…&size=…&name=…`。
+
+==============================================================================
+POST /ous/api/v2/block/upload/part   [ousCosBlockUploadPart]
+------------------------------------------------------------------------------
+OUS 分片上传 — 上传单个分片
+每个分片调用一次；见 `OusCosBlockUploadPartForm`。
+
+==============================================================================
+GET /ous/api/v2/upload/status   [ousCosUploadStatus]
+------------------------------------------------------------------------------
+OUS — 查询上传状态（轮询）
+轮询当前上传任务；`d` 在单文件与分片任务下结构不同（见 response schema 中 `d` 的 oneOf）。请求仅携带 `ous-token-v2`，无 body。建议轮询间隔 ≥200ms、总时长约 5s 量级。
+
+==============================================================================
+POST /world/v1/reconstructions   [createWorld]
+------------------------------------------------------------------------------
+创建 3DGS 世界重建任务
+异步创建一条 3DGS 世界重建任务。受理成功后返回 `WorldAsyncOperation`，仅含 `worldId`，与「查询世界详情」路径 `{worldId}` 一致。**资源格式**：image：.jpg / .jpeg / .png / .webp；video：.mp4 / .mov；insv：.insv。
+**输入规则**：若 `resources` 中含有图片类资源（`type=image` 或省略 `type`），则图片类条数须 **至少 20 条**；仅使用视频时请设 `type=video`，Insta360 全景视频请设 `type=insv`（均不触发「至少 20 张图」限制）。
+
+==============================================================================
+POST /world/v1/generations   [generateWorld]
+------------------------------------------------------------------------------
+创建 3DGS 世界生成任务
+异步创建一条3DGS 世界生成任务（Spatial Gen）。当前 **室内空间** 场景效果更成熟、更稳定，建议优先用于室内。也允许提交 **非室内** 类文案或素材，但非室内生成仍处于 **Beta**，质量与一致性可能明显弱于室内，请按需评估风险。受理成功后返回 `WorldAsyncOperation`（仅含 `worldId`）。支持纯文案、单张图片或图文组合。若 `resources` 中含图片，最多允许 1 张（image：.jpg / .jpeg / .png / .webp。）。
+
+==============================================================================
+GET /world/v1/{worldId}   [getWorldDetail]
+------------------------------------------------------------------------------
+查询世界详情
+根据世界 id 查询详情。重建成功且产出可用时，响应中包含 splat（ply/spz）等重建产物的下载地址；若已完成 LOD 后处理，`assets.splats.urls.lodMetaPath` 将包含 LOD 分块元数据文件的下载地址。AI 生成（Spatial Gen）世界在全景图产出后，`assets.imagery.panoUrl` 返回全景图下载地址。
+
+==============================================================================
+POST /world/v1/list   [getMyWorldList]
+------------------------------------------------------------------------------
+分页查询我的世界列表
+分页查询当前账号下的 3DGS 世界列表。
+
+==============================================================================
+POST /lux3d/v1/generate/multimodal-to-image/task/create   [createMultimodalToImageTask]
+------------------------------------------------------------------------------
+创建多模态单图生成任务
+根据图片、文字提示词或图文组合创建异步单图生成任务，img 和 prompt 至少提供一个。请求成功后返回任务 ID（taskid），可通过任务查询接口获取状态和结果图片 URL。
+
+
+==============================================================================
+POST /lux3d/v1/generate/image-to-four-view/task/create   [createImageToFourViewTask]
+------------------------------------------------------------------------------
+创建多模态四视图任务
+根据图片、文字提示词或图文组合生成物体的四个视角，img 和 prompt 至少提供一个。请求成功后返回任务 ID（taskid），可通过任务查询接口获取状态和结果。成功结果包含四张图片 URL，顺序为 FRONT_THREE_QUARTER、OPPOSITE_THREE_QUARTER、SIDE、BACK。
+
+
+==============================================================================
+POST /lux3d/v1/generate/img-to-3d/task/create   [createImgTo3dTask]
+------------------------------------------------------------------------------
+创建图生 3D 任务
+根据一张或多张图片创建异步 3D 生成任务，可选择 G1 或 G1-Turbo。省略 version 时使用默认版本。请求成功后返回任务 ID（taskid），可通过任务查询接口获取状态和结果。
+
+
+==============================================================================
+POST /lux3d/v1/generate/text-to-3d/task/create   [createTextTo3dTask]
+------------------------------------------------------------------------------
+创建文生 3D 任务
+根据文本和一张可选参考图片创建异步 3D 生成任务，可选择 G1 或 G1-Turbo。省略 version 时使用默认版本。请求成功后返回任务 ID（taskid），可通过任务查询接口获取状态和结果。
+
+
+==============================================================================
+POST /lux3d/v1/generate/material-transfer/task/create   [createMaterialTransferTask]
+------------------------------------------------------------------------------
+创建模型材质重绘任务
+根据材质参考图片和 GLB 模型创建异步材质重绘任务。请求成功后返回任务 ID（taskid），可通过任务查询接口获取状态和结果。
+
+
+==============================================================================
+POST /lux3d/v1/part-split/task/create   [createPartSplitTask]
+------------------------------------------------------------------------------
+创建部件拆分任务
+根据一个可由服务端访问的 GLB 模型 URL 创建异步部件拆分任务。请求成功后返回任务 ID（taskid），可通过任务查询接口获取状态和包含拆分结果的 GLB 文件 URL。
+若当前账号已有同类任务进行中，本次请求不会创建任务，请稍后重试。
+
+
+==============================================================================
+POST /lux3d/v1/multi-format-export/task/create   [createMultiFormatExportTask]
+------------------------------------------------------------------------------
+创建多格式导出任务
+根据 ZIP 或 GLB 模型 URL 创建异步格式导出任务，可选择一个或多个支持的目标格式。请求成功后返回任务 ID（taskid），可通过任务查询接口获取状态和结果。
+
+
+==============================================================================
+POST /lux3d/v1/articulation-animation/task/create   [createArticulationAnimationTask]
+------------------------------------------------------------------------------
+创建模型关节化与动画任务
+根据 GLB 模型 URL 和运动提示词创建异步关节化与动画任务。请求成功后返回任务 ID（taskid），可通过任务查询接口获取状态和结果文件 URL。
+
+
+==============================================================================
+POST /lux3d/v1/animations/rig/task/create   [createHumanoidAutoRigTask]
+------------------------------------------------------------------------------
+创建数字人自动绑骨任务
+根据数字人 GLB 模型创建异步自动绑骨任务。请求成功后返回任务 ID（taskid），可通过任务查询接口获取状态和已绑骨 GLB 文件 URL。
+
+
+==============================================================================
+POST /lux3d/v1/animations/retarget/task/create   [createHumanoidAnimationRetargetTask]
+------------------------------------------------------------------------------
+创建数字人动画重定向任务
+根据已绑骨模型和所选动作创建异步动画重定向任务，支持逐动作输出或合并输出，可选择 GLB 或 FBX 格式。请求成功后返回任务 ID（taskid），可通过任务查询接口获取状态和动作结果。
+
+
+==============================================================================
+GET /lux3d/v1/generate/task/get   [getTask]
+------------------------------------------------------------------------------
+查询生成任务
+根据任务 ID 查询任务状态和结果，仅支持查询当前认证账号创建的任务。结果 URL 有效期为 2 小时。
+
+`c="0"` 表示查询成功，任务是否完成由 `d.status` 判断：0-初始化，1-运行中，3-成功，4-失败，6-已取消。状态为 0 或 1 时继续查询，任务完成后从 `d.outputs` 读取结果；运行中的任务也可能返回部分已生成结果。
+
+不同任务的结果格式如下。表中的 URL 或 JSON 字符串均位于输出项的 `content` 字段。
+
+| 任务类型 | 结果格式 |
+| --- | --- |
+| 多模态单图生成 | 一个结果图片 URL。 |
+| 多模态四视图 | 包含四张图片 URL 的 JSON 数组字符串，顺序为 FRONT_THREE_QUARTER、OPPOSITE_THREE_QUARTER、SIDE、BACK。 |
+| G1 图生 / 文生 3D | 按 ZIP、GLB 顺序返回文件 URL；请求 PLY 时额外返回 PLY。 |
+| G1-Turbo 图生 / 文生 3D | 返回指定格式的文件 URL；未指定格式或传空数组时返回 ZIP。 |
+| 模型材质重绘 | 按 ZIP、GLB、USDZ、OBJ ZIP、FBX ZIP 顺序返回文件 URL。 |
+| 多格式导出 | 按 ZIP、GLB、USDZ、OBJ ZIP、FBX ZIP、STL、3MF 顺序返回文件 URL。 |
+| 部件拆分 | 一个包含拆分结果的 GLB 文件 URL。 |
+| 模型关节化与动画 | `d.outputs[0].content` 为结果文件 URL，文件格式以实际结果为准，不固定为 ZIP。 |
+| 数字人自动绑骨 | 已绑骨 GLB 文件 URL；失败时可能返回包含 `error` 的 JSON 字符串。 |
+| 数字人动画重定向 | 包含 `actions` 的 JSON 字符串，列出各动作的结果 URL 或错误信息。 |
+
+未请求的可选格式可能返回 `NOT_REQUESTED`，该值不是文件 URL。对于 JSON 字符串结果，需要解析 `content` 后再读取其中的字段。
+
+
+==============================================================================
+GET /lux3d/v1/generate/task/list   [listTasks]
+------------------------------------------------------------------------------
+分页查询生成记录
+分页查询当前认证账号创建的任务，可按状态和创建时间筛选。
+
+
+==============================================================================
+POST /rendercloud/v1/jobs   [runRenderCloudOfflineJob]
+------------------------------------------------------------------------------
+提交或轮询 OpenUSD 离线渲染任务
+提交 OpenUSD 离线渲染任务或轮询任务状态。
+
+## 提交模式
+
+当请求中 `operationId` 为空时，提交新任务。需要提供 `requestId` 和
+Base64 编码后的 `usdContent`。出图分辨率从 OpenUSD `RenderSettings.resolution`
+读取，也兼容 Camera 节点上的 `resolution`；宽高必须为正数，且任一边不能超过
+服务端配置上限，默认上限为 4500 像素。
+
+服务端返回 HTTP 202 + `{operationId, done:false}`，`operationId` 即任务 ID。
+
+`requestId` 由调用方生成，用于请求追踪和记录；服务端对同一用户同一 `requestId` 做 1 分钟幂等保护。
+若同一用户在 1 分钟内重复提交相同 `requestId`，接口返回 409 `ALREADY_EXISTS`。
+
+## 轮询模式
+
+当请求中 `operationId` 非空时，轮询该任务状态。轮询仍调用同一个 POST 端点。
+
+- 处理中：`done=false`
+- 完成：`done=true + result.taskId/resultUrl`
+- 失败：`done=true + error`
+
+## 渲染约束
+
+该接口不接收渲染模板类型等服务端参数。服务端会按 OpenUSD 内容和分辨率选择固定离线渲染链路。
+
+## REST 响应状态
+
+| HTTP 状态码 | 场景 | 响应说明 |
+|-----------|------|---------|
+| `202` | 提交模式 | 任务已提交，返回 `operationId` 用于后续轮询 |
+| `200` | 轮询模式 | 返回当前 `Operation` 状态；完成时包含 `resultUrl` |
+| `400` | 参数错误 | 缺少 `requestId`、`usdContent`、OpenUSD 分辨率缺失或非法，Base64 非法，或 OpenUSD 解析失败 |
+| `404` | 资源不存在 | `operationId` 对应任务不存在 |
+| `409` | 重复请求 | 同一用户同一 `requestId` 在 1 分钟内重复提交 |
+| `429` | 请求限流 | 用户维度离线渲染频率超过限制 |
+| `500` | 服务异常 | 任务创建、转换或渲染链路异常 |
+
+
+==============================================================================
+POST /rendercloud/v1/streams   [createRenderCloudRealtimeStream]
+------------------------------------------------------------------------------
+创建或轮询 OpenUSD 实时渲染流
+创建新的实时渲染会话或轮询已有会话状态。
+
+## 提交模式
+
+当请求中 `operationId` 为空时，创建新会话。需要提供 `requestId` 和 `usdContent`。
+
+可选的 `settings.autoEnhanceAI` 用于启用 AI 增强。未传或传 `false` 时不启用。
+
+返回 HTTP 202 + `{operationId, done:false}`。返回的 `operationId` 即 `sessionId`。
+
+## 轮询模式
+
+当请求中 `operationId` 非空时，轮询该会话的状态。轮询间隔建议 2s，超时 120s。
+
+当 `status` 为 `ACTIVE` 时，返回的 `result` 中包含 `host`、`nodeId`、`streamId`、`token` 四个字段，
+用于建立 WebSocket Streaming 连接。
+
+## REST 响应状态
+
+| HTTP 状态码 | 场景 | 响应说明 |
+|-----------|------|---------|
+| `202` | 提交模式 | 会话创建中，返回 `operationId` 用于后续轮询 |
+| `200` | 轮询模式 | 返回当前 `Operation` 状态；处理中为 `done=false`，完成为 `done=true + result`，失败为 `done=true + error` |
+| `400` | 参数错误 | 请求体缺少必要字段或字段无效 |
+| `404` | 资源不存在 | `operationId` 或会话不存在 |
+| `429` | 请求限流 | 请求频率超过限制 |
+| `500` | 服务异常 | 服务端内部错误 |
+
+## WebSocket Streaming 连接协议
+
+### 连接 URL
+
+```
+wss://{host}/streaming/ws/session?nid={encodeURIComponent(nodeId)}&token={encodeURIComponent(token)}
+```
+
+创建 WebSocket 时必须设置 `ws.binaryType = 'blob'`，否则图片无法以 Blob 接收。
+
+### 握手协议
+
+WebSocket `onopen` 触发后立即发送：
+
+```json
+{"type":3,"slaveInit":{"masterStreamingId":"{streamId}","receiveImage":true}}
+```
+
+| 字段 | 值 | 说明 |
+|------|-----|------|
+| type | 固定 `3` | 标识 slave 初始化消息 |
+| slaveInit.masterStreamingId | `{streamId}` | 来自本接口返回的 streamId |
+| slaveInit.receiveImage | 固定 `true` | 接收渲染图片 |
+
+### 服务端消息（Server -> Client）
+
+**类型 A：JSON 状态消息（`typeof event.data === 'string'`）**
+
+消息结构：
+
+```json
+{"code":"0","desc":"初始化成功","streamId":"...","timestamp":0,"queueInfo":{"queueSize":0,"currentQueuePosition":0}}
+```
+
+状态码：
+
+| code | 含义 | 连接状态变更 |
+|------|------|-------------|
+| `"0"` | 初始化成功 | 进入 Success，渲染就绪 |
+| `"1000"` | 节点满载 | 进入 Error |
+| `"1001"` | 初始化失败 | 进入 Error |
+| `"1003"` | Slave 超限 | 进入 SlaveExceeded |
+| `"2001"` | 引擎渲染错误 | 状态不变，仅触发渲染失败回调，连接仍存活 |
+| `"2002"` | 引擎进程错误 | 状态不变，仅触发渲染失败回调，连接仍存活 |
+
+`2001` / `2002` 是渲染级错误，连接仍存活。不修改连接状态。
+
+**类型 B：二进制图片消息（`event.data instanceof Blob`）**
+
+Blob 为 JPEG 格式。使用 `FileReader.readAsDataURL(blob)` 转换为 base64 Data URL 后设置 `<img>` src。
+
+### 连接生命周期
+
+| 状态 | 触发条件 |
+|------|---------|
+| Closed | 未连接 / 已断开 |
+| BeforeConnection | `new WebSocket(url)` 已创建 |
+| Booting | `onopen` 已触发，握手已发送 |
+| Queue | 排队中，服务端推送 |
+| Success | code=`0`，渲染就绪 |
+| Error | code=`1000` / `1001` 等 |
+| Sleep | 长时间无操作休眠 |
+| RenderStart | 渲染开始 |
+| EquityDone | 快速出图完成 |
+| SlaveClosed | 服务端关闭，close code=`4003` |
+| SlaveExceeded | code=`1003` |
+| KESceneFinished | KE 场景完成 |
+
+### 关闭连接
+
+| close code | 来源 | 含义 |
+|-----------|------|------|
+| `4003` | 服务端 | 服务端关闭所有 slave 连接 |
+| 其他 | - | 一般关闭 / 网络异常 |
+
+关闭 WebSocket 后需另行调用 DELETE 接口结束服务端会话。
+
+### 常见陷阱
+
+1. 未设置 `ws.binaryType = 'blob'`：必须设置，否则图片不是 Blob。
+2. `2001` / `2002` 被当成连接断开：这两个状态仅表示渲染失败回调，不改连接状态。
+3. 先 REST 后 WS 关闭：应先 `ws.close()`，再调用 DELETE API。
+4. 图片 Blob 无异常处理：`FileReader` 建议使用 Promise + try/catch。
+5. URI 参数未编码：`nodeId` 和 `token` 需要使用 `encodeURIComponent` 编码。
+
+
+==============================================================================
+POST /rendercloud/v1/streams/{sessionId}:push   [pushRenderCloudRealtimeStreamUpdate]
+------------------------------------------------------------------------------
+推送实时渲染流增量 OpenUSD 内容
+对已建立的实时渲染会话进行增量场景更新。
+
+该接口用于在 WebSocket Streaming 会话就绪后，向服务端推送增量 OpenUSD
+内容。增量内容可分别描述相机、模型、灯光或环境光 Patch；服务端会将其转换为渲染操作并下发到实时渲染链路。具体 USDA 写法见 `RenderCloud OpenUSD 格式说明`。
+
+## 调用要求
+
+- `sessionId` 必须来自 `/rendercloud/v1/streams` 创建成功后的 `operationId`。
+- 会话状态必须为 `ACTIVE`，否则更新会被拒绝。
+- `requestId` 由调用方生成，用于幂等和请求记录。
+- `usdContent` 为 Base64 编码后的增量 OpenUSD 内容。
+
+## REST 响应状态
+
+| HTTP 状态码 | 场景 | 响应说明 |
+|-----------|------|---------|
+| `200` | 更新成功 | 返回会话 ID 和当前会话状态 |
+| `400` | 参数错误 | `requestId` 或 `usdContent` 缺失，或请求体非法 |
+| `404` | 资源不存在 | `sessionId` 对应会话不存在 |
+| `429` | 请求限流 | 用户维度实时渲染请求频率超过限制 |
+| `500` | 服务异常 | 会话非 ACTIVE、转发失败或增量更新被渲染链路拒绝 |
+
+
+==============================================================================
+DELETE /rendercloud/v1/streams/{sessionId}   [closeRenderCloudRealtimeStream]
+------------------------------------------------------------------------------
+关闭实时渲染流
+关闭指定的实时渲染会话并释放服务端资源。
+
+客户端关闭实时渲染时建议先关闭 WebSocket，再调用本接口结束服务端会话。
+服务端会释放该实时渲染会话相关资源。
+
+## REST 响应状态
+
+| HTTP 状态码 | 场景 | 响应说明 |
+|-----------|------|---------|
+| `200` | 关闭完成 | 返回 `closed=true` 表示服务端找到并关闭了会话；`closed=false` 表示会话已不存在或已被清理 |
+| `404` | 资源不存在 | 转发到持有会话的节点时，该节点返回会话不存在 |
+| `429` | 请求限流 | 用户维度实时渲染请求频率超过限制 |
+| `500` | 服务异常 | 转发失败或服务端内部错误 |
+
+
+==============================================================================
+POST /rendercloud/v1/mesh-upload-process/task/create   [createMeshUploadAndProcessTask]
+------------------------------------------------------------------------------
+创建3D解析并入库任务
+创建3D解析并入库任务，用于将原始 3D文件 URL 进行解析处理。
+
+通过 `originMeshUrl` 指定原始 3D 文件 URL，可选字段 `fastUpload` 用于启用快速上传，默认 `false`。
+当 `fastUpload` 为 `true` 且文件为 GLB 格式时，使用快速上传流程；未传或为 `false` 时使用普通上传流程。
+
+## REST 响应状态
+
+| HTTP 状态码 | 场景 | 响应说明 |
+|-----------|------|---------|
+| `200` | 任务创建成功 | 返回任务 ID |
+| `400` | 参数错误 | `originMeshUrl` 缺失或无效 |
+| `500` | 服务异常 | 任务创建或处理异常 |
+
+
+==============================================================================
+GET /rendercloud/v1/mesh-upload-process/task/get   [getRenderCloudInstanceInAholo]
+------------------------------------------------------------------------------
+查询 3D解析并入库 任务状态
+查询指定的 3D解析并入库 任务状态和结果。
+
+该接口用于查询任务执行状态和结果。查询时会剔除一些不应该给用户看的数据，
+并对输出数据进行包装处理。
+任务状态：`0`=初始化，`1`=进行中，`3`=成功，`4`=失败
+
+## 调用要求
+
+- `taskid` 必须来自创建任务接口返回的任务 ID
+
+## REST 响应状态
+
+| HTTP 状态码 | 场景 | 响应说明 |
+|-----------|------|---------|
+| `200` | 查询成功 | 返回任务详情 |
+| `400` | 参数错误 | `taskid` 缺失或无效 |
+| `404` | 任务不存在 | 指定任务 ID 不存在 |
+| `500` | 服务异常 | 查询异常 |
+
+
+==============================================================================
+POST /spatial-understanding/v1/tasks   [createSpatialUnderstandingTask]
+------------------------------------------------------------------------------
+创建空间理解任务
+异步创建一条空间理解任务：从室内点云中识别墙、门、窗与物体 3D bbox。`inputFileUrl` 须为 Asset 上传得到的 `.ply` 文件 URL。点云坐标系为米、右手系、Z-up；未对齐时请传 `transformationMatrix`（列优先，平移在第 4 列）。受理成功即扣减积分，并返回 `taskId`（与「查询任务详情」路径参数一致）。成功后详情中的 `result.resultSslUrl` 为 DSL 文本，需自行下载解析。
+
+==============================================================================
+GET /spatial-understanding/v1/tasks/{taskId}   [getSpatialUnderstandingTaskDetail]
+------------------------------------------------------------------------------
+查询空间理解任务详情
+根据任务 id 查询当前账号下的任务详情。`PENDING` / `RUNNING` 表示尚未完成，请继续轮询。`SUCCEEDED` 时响应包含 `result.resultSslUrl`（DSL 文本，含 Wall / Door / Window / Bbox，需自行下载解析）。`FAILED` / `TIMEOUT` 时响应包含 `errorCode`、`errorMessage`。
+
+==============================================================================
+POST /spatial-understanding/v1/tasks/list   [getMySpatialUnderstandingTaskList]
+------------------------------------------------------------------------------
+分页查询我的空间理解任务列表
+分页查询当前账号下的空间理解任务，支持按状态过滤。`pageNum` 从 1 起（`0` 与 `1` 均视为第一页）；`pageSize` 未传或为 0 时按 20 条计，最大 100。
+
+
+#################### QUOTA / CONCURRENCY / PRICING MENTIONS ####################
+
+### keyword: 并发  (11 hits)
+   ... lockUploadPartForm"}, "encoding": {"file": {"contentType": "application/octet-stream"}}}}, "required": true}, "responses": {"200": {"description": "成功时 `c` 为 `0`，`d` 为 `null`。同文件分片并发建议不超过 2。", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/asset_OusV2BlockPartApiResponse"}}}}}, "security": [{"OusTokenV2": []}], "servers": [{"url": "https://ous-cos.kujiale.com", "descript ...
+   ...  "UNAUTHENTICATED", "details": {"reason": "BIZ_10004", "domain": "api.aholo3d.cn", "message": "Not logged in", "metaData": {"bizCode": "10004"}}}}}}}}, "429": {"description": "全局任务并发或限流（ApiError）", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/world_ApiError"}, "examples": {"taskGlobalRateLimit": {"summary": "全局任务并发达上限", "description": "业务码 11001", "value": {"code": 429 ...
+   ... scription": "全局任务并发或限流（ApiError）", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/world_ApiError"}, "examples": {"taskGlobalRateLimit": {"summary": "全局任务并发达上限", "description": "业务码 11001", "value": {"code": 429, "message": "task global rate limit", "status": "RESOURCE_EXHAUSTED", "details": {"reason": "BIZ_11001", "domain": "api.aholo3d.cn", "message": "task global rate  ...
+   ... d": 1256174}}, "invalidInput": {"summary": "img 和 prompt 均未提供", "value": {"f": null, "c": "-1", "m": "img or prompt is required", "d": null}}, "concurrencyLimit": {"summary": "生成任务并发已达上限", "value": {"f": null, "c": "GENERATION_CONCURRENCY_LIMIT_EXCEEDED", "m": "当前已有进行中的生成任务，请等待完成后再试", "d": null}}}}}}, "401": {"description": "未携带或无效的 Authorization，鉴权失败", "content": {"application/json": {"schema": { ...
+   ... d": 1256173}}, "invalidInput": {"summary": "img 和 prompt 均未提供", "value": {"f": null, "c": "-1", "m": "img or prompt is required", "d": null}}, "concurrencyLimit": {"summary": "生成任务并发已达上限", "value": {"f": null, "c": "GENERATION_CONCURRENCY_LIMIT_EXCEEDED", "m": "当前已有进行中的生成任务，请等待完成后再试", "d": null}}}}}}, "401": {"description": "未携带或无效的 Authorization，鉴权失败", "content": {"application/json": {"schema": { ...
+   ... ents/schemas/lux3d_TaskCreateResponse"}, "examples": {"success": {"summary": "任务创建成功", "value": {"f": null, "c": "0", "m": "", "d": 1256173}}, "concurrencyLimit": {"summary": "生成任务并发已达上限", "value": {"f": null, "c": "GENERATION_CONCURRENCY_LIMIT_EXCEEDED", "m": "当前已有进行中的生成任务，请等待完成后再试", "d": null}}}}}}, "401": {"description": "未携带或无效的 Authorization，鉴权失败", "content": {"application/json": {"schema": { ...
+
+### keyword: 限流  (6 hits)
+   ... NAUTHENTICATED", "details": {"reason": "BIZ_10004", "domain": "api.aholo3d.cn", "message": "Not logged in", "metaData": {"bizCode": "10004"}}}}}}}}, "429": {"description": "全局任务并发或限流（ApiError）", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/world_ApiError"}, "examples": {"taskGlobalRateLimit": {"summary": "全局任务并发达上限", "description": "业务码 11001", "value": {"code": 429, " ...
+   ...  缺少 `requestId`、`usdContent`、OpenUSD 分辨率缺失或非法，Base64 非法，或 OpenUSD 解析失败 | | `404` | 资源不存在 | `operationId` 对应任务不存在 | | `409` | 重复请求 | 同一用户同一 `requestId` 在 1 分钟内重复提交 | | `429` | 请求限流 | 用户维度离线渲染频率超过限制 | | `500` | 服务异常 | 任务创建、转换或渲染链路异常 | ", "operationId": "runRenderCloudOfflineJob", "requestBody": {"description": "离线渲染提交或轮询请求体。提交时传 `requestId`、`usdContent`；轮询时仅传 `operationId`。", "required": true,  ...
+   ...  返回当前 `Operation` 状态；处理中为 `done=false`，完成为 `done=true + result`，失败为 `done=true + error` | | `400` | 参数错误 | 请求体缺少必要字段或字段无效 | | `404` | 资源不存在 | `operationId` 或会话不存在 | | `429` | 请求限流 | 请求频率超过限制 | | `500` | 服务异常 | 服务端内部错误 |  ## WebSocket Streaming 连接协议  ### 连接 URL  ``` wss://{host}/streaming/ws/session?nid={encodeURIComponent(nodeId)}&token={encodeURIComponent(token)} ```  创建 WebSocket 时 ...
+   ...  |-----------|------|---------| | `200` | 更新成功 | 返回会话 ID 和当前会话状态 | | `400` | 参数错误 | `requestId` 或 `usdContent` 缺失，或请求体非法 | | `404` | 资源不存在 | `sessionId` 对应会话不存在 | | `429` | 请求限流 | 用户维度实时渲染请求频率超过限制 | | `500` | 服务异常 | 会话非 ACTIVE、转发失败或增量更新被渲染链路拒绝 | ", "operationId": "pushRenderCloudRealtimeStreamUpdate", "parameters": [{"$ref": "#/components/parameters/rendercloud_SessionId"}], "requestBody":  ...
+   ... 景 | 响应说明 | |-----------|------|---------| | `200` | 关闭完成 | 返回 `closed=true` 表示服务端找到并关闭了会话；`closed=false` 表示会话已不存在或已被清理 | | `404` | 资源不存在 | 转发到持有会话的节点时，该节点返回会话不存在 | | `429` | 请求限流 | 用户维度实时渲染请求频率超过限制 | | `500` | 服务异常 | 转发失败或服务端内部错误 | ", "operationId": "closeRenderCloudRealtimeStream", "parameters": [{"$ref": "#/components/parameters/rendercloud_SessionId"}], "responses": {"200": {"description" ...
+   ... n 60 seconds", "status": "ALREADY_EXISTS", "details": {"reason": "OFFLINE_RENDER_DUPLICATE_REQUEST", "domain": "render"}}}}}}}}, "rendercloud_TooManyRequests": {"description": "请求被限流。", "content": {"application/+json": {"schema": {"$ref": "#/components/schemas/rendercloud_ApiError"}, "examples": {"rateLimited": {"summary": "请求频率超限", "description": "用户维度请求频率超过当前接口限制。", "value": {"code": 429, "messa ...
+
+### keyword: credit  (4 hits)
+   ... metaData": {"bizCode": "10001"}}}}, "insufficientCredits": {"summary": "积分不足以完成任务", "description": "业务码 11003；若当前环境创建接口未扣积分则可能不出现", "value": {"code": 400, "message": "insufficient credits to complete task", "status": "FAILED_PRECONDITION", "details": {"reason": "BIZ_11003", "domain": "api.aholo3d.cn", "message": "insufficient credits to complete task", "metaData": {"bizCode": "11003"}}}}, "taskMat ...
+   ... : 400, "message": "insufficient credits to complete task", "status": "FAILED_PRECONDITION", "details": {"reason": "BIZ_11003", "domain": "api.aholo3d.cn", "message": "insufficient credits to complete task", "metaData": {"bizCode": "11003"}}}}, "taskMattingError": {"summary": "任务域其它错误（示例）", "description": "业务码 11004，与本创建链路未必出现", "value": {"code": 400, "message": "matting error", "status": "FAILED_P ...
+   ... meric array", "metaData": {"bizCode": "13002"}}}}, "insufficientCredits": {"summary": "积分不足以完成任务", "description": "业务码 24002，积分不足", "value": {"code": 400, "message": "insufficient credits", "status": "FAILED_PRECONDITION", "details": {"reason": "BIZ_24002", "domain": "api.aholo3d.cn", "message": "insufficient credits", "metaData": {"bizCode": "24002"}}}}}}}}, "401": {"description": "未携带或无效的 Author ...
+   ...  "value": {"code": 400, "message": "insufficient credits", "status": "FAILED_PRECONDITION", "details": {"reason": "BIZ_24002", "domain": "api.aholo3d.cn", "message": "insufficient credits", "metaData": {"bizCode": "24002"}}}}}}}}, "401": {"description": "未携带或无效的 Authorization", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/spatialunderstanding_ApiError"}, "examples": {" ...
+
+### keyword: 积分  (7 hits)
+   ... as/world_WorldAsyncOperation"}, "examples": {"success": {"summary": "创建受理成功", "description": "success", "value": {"worldId": "A1b2C3d4E5"}}}}}}, "400": {"description": "参数/请求体校验失败、积分不足等（ApiError，`details.metaData.bizCode` 为原业务码）", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/world_ApiError"}, "examples": {"paramsInvalid": {"summary": "参数/请求体校验失败", "description": "业务码 1 ...
+   ... ", "details": {"reason": "BIZ_10001", "domain": "api.aholo3d.cn", "message": "Invalid request parameters", "metaData": {"bizCode": "10001"}}}}, "insufficientCredits": {"summary": "积分不足以完成任务", "description": "业务码 11003；若当前环境创建接口未扣积分则可能不出现", "value": {"code": 400, "message": "insufficient credits to complete task", "status": "FAILED_PRECONDITION", "details": {"reason": "BIZ_11003", "domain": "api.ah ...
+   ... api.aholo3d.cn", "message": "Invalid request parameters", "metaData": {"bizCode": "10001"}}}}, "insufficientCredits": {"summary": "积分不足以完成任务", "description": "业务码 11003；若当前环境创建接口未扣积分则可能不出现", "value": {"code": 400, "message": "insufficient credits to complete task", "status": "FAILED_PRECONDITION", "details": {"reason": "BIZ_11003", "domain": "api.aholo3d.cn", "message": "insufficient credits to co ...
+   ... : "创建空间理解任务", "description": "异步创建一条空间理解任务：从室内点云中识别墙、门、窗与物体 3D bbox。`inputFileUrl` 须为 Asset 上传得到的 `.ply` 文件 URL。点云坐标系为米、右手系、Z-up；未对齐时请传 `transformationMatrix`（列优先，平移在第 4 列）。受理成功即扣减积分，并返回 `taskId`（与「查询任务详情」路径参数一致）。成功后详情中的 `result.resultSslUrl` 为 DSL 文本，需自行下载解析。", "operationId": "createSpatialUnderstandingTask", "requestBody": {"description": "创建任务请求体。`inputFileUrl` 必填，须为 Asset 上传得到的室内 `.ply` URL；`t ...
+   ... ncOperation"}, "examples": {"success": {"summary": "创建受理成功", "description": "success", "value": {"taskId": "A1b2C3d4E5"}}}}}}, "400": {"description": "参数校验失败、点云文件 URL 无效、变换矩阵格式非法、或积分不足（`details.metaData.bizCode` 为业务码）", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/spatialunderstanding_ApiError"}, "examples": {"paramsInvalid": {"summary": "请求体校验失败（如 inputFileUrl 为空）", " ...
+   ... 3002", "domain": "api.aholo3d.cn", "message": "invalid transformation matrix, expect a 4x4 numeric array", "metaData": {"bizCode": "13002"}}}}, "insufficientCredits": {"summary": "积分不足以完成任务", "description": "业务码 24002，积分不足", "value": {"code": 400, "message": "insufficient credits", "status": "FAILED_PRECONDITION", "details": {"reason": "BIZ_24002", "domain": "api.aholo3d.cn", "message": "insuffici ...
+
+### keyword: rate limit  (2 hits)
+   ... f": "#/components/schemas/world_ApiError"}, "examples": {"taskGlobalRateLimit": {"summary": "全局任务并发达上限", "description": "业务码 11001", "value": {"code": 429, "message": "task global rate limit", "status": "RESOURCE_EXHAUSTED", "details": {"reason": "BIZ_11001", "domain": "api.aholo3d.cn", "message": "task global rate limit", "metaData": {"bizCode": "11001"}}}}}}}}}, "security": [{"AuthorizationHeade ...
+   ...  "value": {"code": 429, "message": "task global rate limit", "status": "RESOURCE_EXHAUSTED", "details": {"reason": "BIZ_11001", "domain": "api.aholo3d.cn", "message": "task global rate limit", "metaData": {"bizCode": "11001"}}}}}}}}}, "security": [{"AuthorizationHeader": []}], "x-scalar-order": 10, "x-codeSamples": [{"lang": "TypeScript", "label": "Aholo SDK（TypeScript）", "source": "import { creat ...

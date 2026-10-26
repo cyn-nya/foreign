@@ -1,0 +1,381 @@
+export {
+    type Viewer,
+    type Viewport,
+    type IViewerContext,
+    createViewerContext,
+    Object3D,
+    Scene3D,
+    Camera as Camera3D,
+    PerspectiveCamera,
+    OrthographicCamera,
+    type Light,
+    AmbientLight,
+    DirectionalLight,
+    PointLight,
+    SpotLight,
+    BufferAttribute,
+    InstancedBufferAttribute,
+    BufferGeometry,
+    FatLineBufferGeometry,
+    type Material,
+    PointsMaterial,
+    LineBasicMaterial as LineMaterial,
+    FatLineMaterial,
+    Splat,
+    SplatModifier,
+    Mesh,
+    Sprite,
+    Points,
+    Line,
+    LineSegments,
+    FatLineSegments,
+    InstanceMesh,
+    WebGLDrawMode as DrawMode,
+    WebGLTextureWrap as SamplerWrap,
+    WebGLTextureFilter as SamplerFilter,
+    Side,
+    DepthModes,
+    Blending,
+    WebGLBlendingEquation as BlendingEquation,
+    WebGLBlendingDst as BlendingFactor,
+    WebGLStencilOp as StencilOp,
+    WebGLStencilFunc as StencilFunc,
+    Layers,
+    type Intersection,
+    Raycaster,
+    TypeAssert,
+    DrawableRenderMode,
+    ToneMapping,
+    FilterTarget,
+    SplatState,
+    BackgroundMode,
+    SourceTexture,
+    TextureDimension,
+    TextureViewDimension,
+    TextureFormat,
+
+    // Math
+    Box3,
+    Color,
+    type ReadonlyColor,
+    Euler,
+    Frustum,
+    Matrix3,
+    type ReadonlyMatrix3,
+    Matrix4,
+    type ReadonlyMatrix4,
+    Plane,
+    Quaternion,
+    Ray,
+    Sphere,
+    Vector2,
+    type ReadonlyVector2,
+    Vector3,
+    type ReadonlyVector3,
+    Vector4,
+    type ReadonlyVector4,
+} from '@qunhe/egs';
+
+export { IntersectContainment, BVH, type BVHNode, type BVHSource } from '@qunhe/egs-lib';
+export { downloadTexture, type LoaderOptions } from '@qunhe/egs-texture-loader';
+
+import * as Events from './events.js';
+import * as Animation from './animation.js';
+import * as SplatLoader from './splat-loader.js';
+import * as DracoLoader from './draco-loader.js';
+import * as GLTFLoader from './gltf-loader.js';
+import * as SplatUtils from './splat-utils.js';
+export * as XR from './xr.js';
+
+import {
+    Application,
+    BackgroundMode,
+    type EngineInitializeConfig,
+    Viewer,
+    type Viewport,
+    Texture,
+    ToneMapping,
+    Vector3,
+    Color,
+    Vector4,
+    setViewerConfig as originSetViewerConfig,
+    MeshBasicMaterial as BaseMeshBasicMaterial,
+    MeshPhongMaterial as BaseMeshPhongMaterial,
+    SpriteMaterial as BaseSpriteMaterial,
+    type SourceTexture,
+    __INTERNAL__,
+} from '@qunhe/egs';
+
+import InstancedBufferGeometry = __INTERNAL__.InstancedBufferGeometry;
+import CompressedSplat = __INTERNAL__.CompressedSplat;
+import SuperCompressedSplat = __INTERNAL__.SuperCompressedSplat;
+import SogSplat = __INTERNAL__.SogSplat;
+
+export const MeshBasicMaterial: typeof BaseMeshBasicMaterial<SourceTexture> = BaseMeshBasicMaterial;
+export const MeshPhongMaterial: typeof BaseMeshPhongMaterial<SourceTexture> = BaseMeshPhongMaterial;
+export const SpriteMaterial: typeof BaseSpriteMaterial<SourceTexture> = BaseSpriteMaterial;
+
+export interface IBasicBackgroundConfig {
+    color?: Color;
+    alpha?: number;
+    texture?: Texture | null;
+}
+
+export interface IEnvMapBackgroundConfig {
+    texture?: Texture;
+    luma?: number;
+    verticalRotation?: number;
+    horizonRotation?: number;
+    reverseVertical?: boolean;
+    reverseHorizon?: boolean;
+}
+
+export interface IGradientBackgroundConfig {
+    skyColor?: Color;
+    groundColor?: Color;
+}
+
+export interface ISkyBackgroundConfig {
+    enablePreSkyMap?: boolean;
+    luminance?: number;
+    turbidity?: number;
+    rayleigh?: number;
+    mieCoefficient?: number;
+    mieDirectionalG?: number;
+}
+
+export interface IBackgroundPluginConfig {
+    /**
+     * @default `true`
+     */
+    enabled?: boolean;
+    /**
+     * up for background rendering, will effect ground and background
+     * @default `Vector3(0.0, 0.0, 1.0)`
+     */
+    up?: Vector3;
+    ground?: {
+        /**
+         * enable ground grid
+         * @default `true`
+         */
+        enabled?: boolean;
+        /**
+         * default ground grid size
+         * @default `1000000`
+         */
+        gridSize?: number;
+        /**
+         * grid A gap
+         * @default `500`
+         */
+        gridGapSizeA?: number;
+        /**
+         * grid A color
+         * @default `Color(1.0, 1.0, 1.0)`
+         */
+        colorA?: Color;
+        /**
+         * grid A line width
+         * @default `1`
+         */
+        lineWidthA?: number;
+        /**
+         * grid B gap
+         * @default `5000`
+         */
+        gridGapSizeB?: number;
+        /**
+         * grid B color
+         * @default `Color(1.0, 1.0, 1.0)`
+         */
+        colorB?: Color;
+        /**
+         * grid B line width
+         * @default `1`
+         */
+        lineWidthB?: number;
+        /**
+         * enable ground color shading, by default will only render noise for ground.
+         * @default `false`
+         */
+        isGroundColorEnabled?: boolean;
+        /**
+         * ground color
+         * @default `Color(0.7, 0.7, 0.7)`
+         */
+        groundColor?: Color;
+    };
+    background?: {
+        /**
+         * @default `BackgroundMode.BasicBackground`
+         */
+        active?: BackgroundMode;
+        /**
+         * basic color and texture
+         * active by `BackgroundMode.BasicBackground`
+         */
+        basic?: IBasicBackgroundConfig;
+        /**
+         * sphere envmap
+         * active by `BackgroundMode.EnvMapBackground`
+         */
+        envmap?: IEnvMapBackgroundConfig;
+        /**
+         * sphere gradient
+         * active by `BackgroundMode.GradientBackground`
+         */
+        gradient?: IGradientBackgroundConfig;
+        /**
+         * sky box
+         * active by `BackgroundMode.SkyBackground`
+         */
+        sky?: ISkyBackgroundConfig;
+    };
+}
+
+export interface ICompositePluginConfig {
+    enabled?: boolean;
+    multiSamplingEnabled?: boolean;
+    staticFrameCacheEnabled?: boolean;
+}
+
+export interface ISplattingPluginConfig {
+    enabled?: boolean;
+    /**
+     * gaussian pack
+     */
+    pack?: {
+        highPrecisionEnabled?: boolean;
+        precalculateEnabled?: boolean;
+        cameraRelativeEnabled?: boolean;
+        cameraRelativeUpdateDistanceThreshold?: number;
+    };
+    /**
+     * gaussian raster
+     */
+    raster?: {
+        mode?: __INTERNAL__.SplattingRenderMode;
+        preBlurAmount?: number;
+        blurAmount?: number;
+        focalAdjustment?: number;
+        maxStdDev?: number;
+        maxPixelRadius?: number;
+        detailCullingThreshold?: number;
+        normalizedFalloff?: boolean;
+        selectedColor?: Vector4;
+    };
+    /**
+     * gaussian sorting
+     */
+    sort?: {
+        highPrecisionEnabled?: boolean;
+        minIntervalMs?: number;
+        sortSplatDistance?: number;
+        sortSplatCoorient?: number;
+        sortCameraDistance?: number;
+        sortCameraCoorient?: number;
+        depthBias?: number;
+    };
+    /**
+     * Offscreen composition and tone mapping before output.
+     */
+    composite?: {
+        /**
+         * Enable offscreen composition and tone mapping.
+         * @default `false`
+         */
+        enabled?: boolean;
+        /**
+         * Use a 16-bit floating-point intermediate color buffer.
+         * @default `false`
+         */
+        highPrecisionEnabled?: boolean;
+        /** @default `ToneMapping.Linear` */
+        toneMapping?: ToneMapping;
+        /** @default `1` */
+        exposure?: number;
+    };
+    /**
+     * gaussian center highlight
+     */
+    highlightKernel?: {
+        enabled?: boolean;
+        size?: number;
+        color?: number;
+    };
+}
+
+export interface ITaaPluginConfig {
+    /**
+     * enabled static TAA
+     * @default `true`
+     */
+    enabled?: boolean;
+}
+
+export interface IPipelineConfig {
+    /**
+     * background and ground
+     */
+    Background?: IBackgroundPluginConfig;
+    /**
+     * output Composite, used to optimize multi viewport rendering
+     */
+    Composite?: ICompositePluginConfig;
+    /**
+     * gaussian splatting
+     */
+    Splatting?: ISplattingPluginConfig;
+    /**
+     * static TAA
+     */
+    TAA?: ITaaPluginConfig;
+}
+
+export interface IViewerConfig {
+    /**
+     * pixel ratio used for rendering
+     * @default `1.0`
+     * @remarks
+     * default the renderer will use physical pixel in rendering.
+     * if `devicePixelRatio` is large on some device, will cause performance issue, could set it to `1 / devicePixelRatio`
+     */
+    pixelRatio?: number;
+    /**
+     * render pipeline config
+     */
+    pipeline?: IPipelineConfig;
+}
+
+export function createViewer(name: string, container: HTMLElement, config: EngineInitializeConfig) {
+    return Application.getInstance().createViewer(name, container, config);
+}
+
+export function setViewerConfig(ctx: Viewer | Viewport, config: IViewerConfig) {
+    const viewerConfig: __INTERNAL__.IViewerConfig = {};
+    if (config.pixelRatio) {
+        viewerConfig.canvas = {
+            renderPixelRatio: config.pixelRatio,
+        };
+    }
+    if (config.pipeline) {
+        viewerConfig.effects = {
+            __INTERNAL__: config.pipeline,
+        };
+    }
+    originSetViewerConfig(viewerConfig, ctx.config);
+}
+
+export {
+    InstancedBufferGeometry,
+    CompressedSplat,
+    SuperCompressedSplat,
+    SogSplat,
+    Events,
+    Animation,
+    SplatLoader,
+    DracoLoader,
+    GLTFLoader,
+    SplatUtils,
+};

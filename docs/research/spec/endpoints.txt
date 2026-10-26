@@ -1,0 +1,770 @@
+
+######## POST /world/v1/reconstructions ########
+summary: 创建 3DGS 世界重建任务
+operationId: createWorld
+security: [{"AuthorizationHeader": []}]
+params: [
+ {
+  "name": "x-source",
+  "in": "header",
+  "required": false,
+  "schema": {
+   "type": "string"
+  }
+ }
+]
+requestBody application/json -> {"$ref": "#/components/schemas/world_CreateWorldRequest"}
+response 200 application/json -> {"$ref": "#/components/schemas/world_WorldAsyncOperation"}
+response 400 application/json -> {"$ref": "#/components/schemas/world_ApiError"}
+response 401 application/json -> {"$ref": "#/components/schemas/world_ApiError"}
+response 429 application/json -> {"$ref": "#/components/schemas/world_ApiError"}
+
+######## POST /world/v1/generations ########
+summary: 创建 3DGS 世界生成任务
+operationId: generateWorld
+security: [{"AuthorizationHeader": []}]
+params: [
+ {
+  "name": "x-source",
+  "in": "header",
+  "required": false,
+  "schema": {
+   "type": "string"
+  }
+ }
+]
+requestBody application/json -> {"$ref": "#/components/schemas/world_GenerateWorldRequest"}
+response 200 application/json -> {"$ref": "#/components/schemas/world_WorldAsyncOperation"}
+response 400 application/json -> {"$ref": "#/components/schemas/world_ApiError"}
+response 401 application/json -> {"$ref": "#/components/schemas/world_ApiError"}
+
+######## GET /world/v1/{worldId} ########
+summary: 查询世界详情
+operationId: getWorldDetail
+security: [{"AuthorizationHeader": []}]
+params: [
+ {
+  "name": "worldId",
+  "in": "path",
+  "description": "世界 id（与创建接口成功响应 `WorldAsyncOperation.worldId` 一致）",
+  "required": true,
+  "schema": {
+   "type": "string"
+  },
+  "example": "A1b2C3d4E5"
+ }
+]
+response 200 application/json -> {"$ref": "#/components/schemas/world_WorldDetail"}
+response 400 application/json -> {"$ref": "#/components/schemas/world_ApiError"}
+response 401 application/json -> {"$ref": "#/components/schemas/world_ApiError"}
+response 403 application/json -> {"$ref": "#/components/schemas/world_ApiError"}
+response 404 application/json -> {"$ref": "#/components/schemas/world_ApiError"}
+
+######## GET /lux3d/v1/generate/task/get ########
+summary: 查询生成任务
+operationId: getTask
+security: [{"AuthorizationHeader": []}]
+params: [
+ {
+  "name": "taskid",
+  "in": "query",
+  "description": "任务ID",
+  "required": true,
+  "schema": {
+   "type": "integer",
+   "format": "int64"
+  },
+  "example": 1389513
+ }
+]
+response 200 application/json -> {"$ref": "#/components/schemas/lux3d_TaskQueryResponse"}
+response 401 application/json -> {"$ref": "#/components/schemas/lux3d_TaskQueryResponse"}
+response 500 application/json -> {"$ref": "#/components/schemas/lux3d_TaskQueryResponse"}
+
+######## POST /lux3d/v1/generate/img-to-3d/task/create ########
+summary: 创建图生 3D 任务
+operationId: createImgTo3dTask
+security: [{"AuthorizationHeader": []}]
+params: null
+requestBody application/json -> {"$ref": "#/components/schemas/lux3d_ImgTo3dRequest"}
+response 200 application/json -> {"$ref": "#/components/schemas/lux3d_TaskCreateResponse"}
+response 401 application/json -> {"$ref": "#/components/schemas/lux3d_TaskCreateResponse"}
+response 500 application/json -> {"$ref": "#/components/schemas/lux3d_TaskCreateResponse"}
+
+######## POST /lux3d/v1/generate/text-to-3d/task/create ########
+summary: 创建文生 3D 任务
+operationId: createTextTo3dTask
+security: [{"AuthorizationHeader": []}]
+params: null
+requestBody application/json -> {"$ref": "#/components/schemas/lux3d_TextTo3dRequest"}
+response 200 application/json -> {"$ref": "#/components/schemas/lux3d_TaskCreateResponse"}
+response 401 application/json -> {"$ref": "#/components/schemas/lux3d_TaskCreateResponse"}
+response 500 application/json -> {"$ref": "#/components/schemas/lux3d_TaskCreateResponse"}
+
+######## POST /spatial-understanding/v1/tasks ########
+summary: 创建空间理解任务
+operationId: createSpatialUnderstandingTask
+security: [{"AuthorizationHeader": []}]
+params: null
+requestBody application/json -> {"$ref": "#/components/schemas/spatialunderstanding_CreateSpatialUnderstandingTaskRequest"}
+response 200 application/json -> {"$ref": "#/components/schemas/spatialunderstanding_SpatialUnderstandingTaskAsyncOperation"}
+response 400 application/json -> {"$ref": "#/components/schemas/spatialunderstanding_ApiError"}
+response 401 application/json -> {"$ref": "#/components/schemas/spatialunderstanding_ApiError"}
+
+######## GET /spatial-understanding/v1/tasks/{taskId} ########
+summary: 查询空间理解任务详情
+operationId: getSpatialUnderstandingTaskDetail
+security: [{"AuthorizationHeader": []}]
+params: [
+ {
+  "name": "taskId",
+  "in": "path",
+  "description": "任务 id（与创建接口成功响应 `taskId` 一致）",
+  "required": true,
+  "schema": {
+   "minLength": 1,
+   "type": "string"
+  },
+  "example": "A1b2C3d4E5"
+ }
+]
+response 200 application/json -> {"$ref": "#/components/schemas/spatialunderstanding_SpatialUnderstandingTask"}
+response 401 application/json -> {"$ref": "#/components/schemas/spatialunderstanding_ApiError"}
+response 404 application/json -> {"$ref": "#/components/schemas/spatialunderstanding_ApiError"}
+
+######## GET /asset/v1/token ########
+summary: 获取 OUS 上传凭证
+operationId: getUploadToken
+security: [{"AuthorizationHeader": []}]
+params: null
+response 200 application/json -> {"$ref": "#/components/schemas/asset_UploadTokenOuterOpen"}
+response 400 application/json -> {"$ref": "#/components/schemas/asset_ApiError"}
+response 401 application/json -> {"$ref": "#/components/schemas/asset_ApiError"}
+
+===== SCHEMA: asset_ApiError =====
+{
+ "required": [
+  "code",
+  "details",
+  "message",
+  "status"
+ ],
+ "type": "object",
+ "properties": {
+  "code": {
+   "type": "integer",
+   "description": "HTTP状态码",
+   "format": "int32",
+   "example": 403
+  },
+  "message": {
+   "type": "string",
+   "description": "面向开发者的错误消息（英文），用户可见的本地化消息请使用localizedMessage字段",
+   "example": "Permission denied to access this resource"
+  },
+  "status": {
+   "$ref": "#/components/schemas/asset_Code"
+  },
+  "details": {
+   "$ref": "#/components/schemas/asset_ErrorDetails"
+  },
+  "localizedMessage": {
+   "$ref": "#/components/schemas/asset_LocalizedMessage"
+  },
+  "help": {
+   "$ref": "#/components/schemas/asset_Help"
+  }
+ },
+ "description": "API错误响应对象，包含完整的错误信息、状态码和帮助信息"
+}
+
+===== SCHEMA: asset_UploadTokenOuterOpen =====
+{
+ "type": "object",
+ "properties": {
+  "ousToken": {
+   "type": "string",
+   "description": "上传 token。后续对 OUS 域名的上传/分片等请求需在 HTTP Header 中携带：`ous-token-v2: <token>`",
+   "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  },
+  "globalDomain": {
+   "type": "string",
+   "description": "OUS 全局域名（不含路径）。后续上传、分片等 HTTP 请求发往该主机",
+   "example": "https://ous-cos.kujiale.com"
+  },
+  "blockSize": {
+   "type": "integer",
+   "description": "分片阈值（字节）。文件大于该值时需按文档进行分片上传",
+   "format": "int64",
+   "example": 1048576
+  }
+ },
+ "description": "OUS 上传凭证：获取后用于在 `globalDomain`（如 `https://ous-cos.kujiale.com`）上直传，请求头携带 `ous-token-v2`；完整步骤见同一份 OpenAPI 中「Upload」标签下的 `ousCos*` 操作。"
+}
+
+===== SCHEMA: lux3d_ImgTo3dRequest =====
+{
+ "type": "object",
+ "properties": {
+  "img": {
+   "minLength": 1,
+   "pattern": ".*\\S.*",
+   "type": "string",
+   "description": "单张图片 URL，G1 和 G1-Turbo 均支持。img 与 imgs 必须且只能提供一个，图片 URL 不能为空白。如需上传本地文件，请先调用 [Asset 文件上传接口](https://labs.aholo3d.cn/api-docs/api-reference#tag/asset)，再将返回的 URL 填入此字段。",
+   "example": "https://qhstaticssl.kujiale.com/image/jpeg/1784775590613/image_to_3d_model.jpg"
+  },
+  "imgs": {
+   "type": "array",
+   "minItems": 1,
+   "maxItems": 32,
+   "items": {
+    "type": "string",
+    "minLength": 1,
+    "pattern": ".*\\S.*"
+   },
+   "description": "G1 / G1-Turbo 的 1-32 张图片 URL。保留输入顺序，第一张图作为主要参考；与 img 互斥。使用 imgs 时必须显式传入 version=G1 或 version=G1-Turbo。如需上传本地文件，请先调用 [Asset 文件上传接口](https://labs.aholo3d.cn/api-docs/api-reference#tag/asset)，再将返回的 URL 填入此字段。",
+   "example": [
+    "https://qhstaticssl.kujiale.com/image/png/1784775590866/multiview_input_1.png",
+    "https://qhstaticssl.kujiale.com/image/png/1784775591151/multiview_input_2.png"
+   ]
+  },
+  "version": {
+   "type": "string",
+   "description": "生成版本，支持 G1 和 G1-Turbo。省略时使用默认版本；建议显式传入。",
+   "enum": [
+    "G1",
+    "G1-Turbo"
+   ],
+   "example": "G1"
+  },
+  "faceCount": {
+   "type": "integer",
+   "description": "目标 Mesh 面数，取值范围为 10000-300000，默认 300000；PLY 输出不受此参数影响。",
+   "minimum": 10000,
+   "maximum": 300000,
+   "example": 300000
+  },
+  "outputFormat": {
+   "type": "array",
+   "uniqueItems": true,
+   "items": {
+    "type": "string",
+    "enum": [
+     "zip",
+     "glb",
+     "ply"
+    ]
+   },
+   "description": "请求的输出格式。G1 固定返回 ZIP 和 GLB，请求包含 ply 时额外返回 PLY；G1-Turbo 返回指定格式，省略或传空数组时返回 ZIP。",
+   "example": [
+    "zip",
+    "glb"
+   ]
+  },
+  "enablePbr": {
+   "type": "boolean",
+   "description": "仅对 G1-Turbo 包含 Mesh 的请求生效：true 或省略时生成 PBR Mesh，false 生成白模；不决定输出格式。G1 及仅请求 PLY 时忽略。",
+   "default": true
+  },
+  "aiPredictSize": {
+   "type": "boolean",
+   "description": "省略或 true 会启用 AI 尺寸预测与缩放，false 关闭。"
+  }
+ },
+ "description": "图生 3D 请求体，支持 G1 和 G1-Turbo，可使用 img 单图或 imgs 多图；img 与 imgs 必须且只能提供一个。使用 imgs 时必须显式传入 version=G1 或 version=G1-Turbo。"
+}
+
+===== SCHEMA: lux3d_TaskCreateResponse =====
+{
+ "type": "object",
+ "properties": {
+  "f": {
+   "type": "object",
+   "description": "失败信息；成功时为 null。",
+   "nullable": true,
+   "additionalProperties": true
+  },
+  "d": {
+   "type": "integer",
+   "description": "返回 taskid",
+   "format": "int64",
+   "example": 1256173,
+   "nullable": true
+  },
+  "m": {
+   "type": "string",
+   "description": "提示信息；成功时为空字符串 \"\"。",
+   "nullable": true
+  },
+  "c": {
+   "type": "string",
+   "description": "状态码；成功时为 \"0\"，普通参数错误时为 \"-1\"，部分业务错误使用专用错误码。",
+   "nullable": true
+  }
+ },
+ "description": "任务创建响应体。"
+}
+
+===== SCHEMA: lux3d_TaskQueryResponse =====
+{
+ "type": "object",
+ "properties": {
+  "f": {
+   "type": "object",
+   "description": "失败信息；成功时为 null。",
+   "nullable": true,
+   "additionalProperties": true
+  },
+  "d": {
+   "$ref": "#/components/schemas/lux3d_TaskQueryData"
+  },
+  "m": {
+   "type": "string",
+   "description": "提示信息；成功时为空字符串 \"\"。",
+   "nullable": true
+  },
+  "c": {
+   "type": "string",
+   "description": "状态码；成功时为 \"0\"，普通参数错误时为 \"-1\"。",
+   "nullable": true
+  }
+ },
+ "description": "任务查询响应体。"
+}
+
+===== SCHEMA: lux3d_TextTo3dRequest =====
+{
+ "required": [
+  "prompt"
+ ],
+ "type": "object",
+ "properties": {
+  "prompt": {
+   "minLength": 1,
+   "pattern": ".*\\S.*",
+   "type": "string",
+   "description": "文本提示词",
+   "example": "生成一个高质量的3D木椅模型"
+  },
+  "style": {
+   "type": "string",
+   "description": "生成风格，默认 photorealistic。",
+   "enum": [
+    "photorealistic",
+    "cartoon",
+    "anime",
+    "hand_painted",
+    "cyberpunk",
+    "fantasy",
+    "glass"
+   ],
+   "default": "photorealistic",
+   "example": "photorealistic"
+  },
+  "img": {
+   "type": "string",
+   "description": "可选的参考图片 URL。如需上传本地文件，请先调用 [Asset 文件上传接口](https://labs.aholo3d.cn/api-docs/api-reference#tag/asset)，再将返回的 URL 填入此字段。",
+   "example": "https://qhstaticssl.kujiale.com/image/jpeg/1784775590613/image_to_3d_model.jpg"
+  },
+  "version": {
+   "type": "string",
+   "description": "生成版本，支持 G1 和 G1-Turbo。省略时使用默认版本；建议显式传入。",
+   "enum": [
+    "G1",
+    "G1-Turbo"
+   ],
+   "example": "G1"
+  },
+  "faceCount": {
+   "type": "integer",
+   "description": "目标 Mesh 面数，取值范围为 10000-300000，默认 300000；PLY 输出不受此参数影响。",
+   "minimum": 10000,
+   "maximum": 300000,
+   "example": 300000
+  },
+  "outputFormat": {
+   "type": "array",
+   "uniqueItems": true,
+   "items": {
+    "type": "string",
+    "enum": [
+     "zip",
+     "glb",
+     "ply"
+    ]
+   },
+   "description": "请求的输出格式。G1 固定返回 ZIP 和 GLB，请求包含 ply 时额外返回 PLY；G1-Turbo 返回指定格式，省略或传空数组时返回 ZIP。",
+   "example": [
+    "zip",
+    "glb"
+   ]
+  },
+  "enablePbr": {
+   "type": "boolean",
+   "description": "仅对 G1-Turbo 包含 Mesh 的请求生效：true 或省略时生成 PBR Mesh，false 生成白模；不决定输出格式。G1 及仅请求 PLY 时忽略。",
+   "default": true
+  },
+  "aiPredictSize": {
+   "type": "boolean",
+   "description": "省略或 true 会启用 AI 尺寸预测与缩放，false 关闭。"
+  }
+ },
+ "description": "文生 3D 请求体，支持 G1 和 G1-Turbo，可选提供一张 img 参考图。"
+}
+
+===== SCHEMA: spatialunderstanding_ApiError =====
+{
+ "required": [
+  "code",
+  "details",
+  "message",
+  "status"
+ ],
+ "type": "object",
+ "properties": {
+  "code": {
+   "type": "integer",
+   "description": "HTTP状态码",
+   "format": "int32",
+   "example": 403
+  },
+  "message": {
+   "type": "string",
+   "description": "面向开发者的错误消息（英文），用户可见的本地化消息请使用localizedMessage字段",
+   "example": "Permission denied to access this resource"
+  },
+  "status": {
+   "$ref": "#/components/schemas/spatialunderstanding_Code"
+  },
+  "details": {
+   "$ref": "#/components/schemas/spatialunderstanding_ErrorDetails"
+  },
+  "localizedMessage": {
+   "$ref": "#/components/schemas/spatialunderstanding_LocalizedMessage"
+  },
+  "help": {
+   "$ref": "#/components/schemas/spatialunderstanding_Help"
+  }
+ },
+ "description": "API错误响应对象，包含完整的错误信息、状态码和帮助信息"
+}
+
+===== SCHEMA: spatialunderstanding_CreateSpatialUnderstandingTaskRequest =====
+{
+ "required": [
+  "inputFileUrl"
+ ],
+ "type": "object",
+ "properties": {
+  "inputFileUrl": {
+   "minLength": 1,
+   "type": "string",
+   "description": "点云文件 URL，仅支持 `.ply`，面向室内场景。点云应使用米为单位的右手坐标系，并完成空间对齐（[ScanNet Alignment](https://github.com/ScanNet/ScanNet/tree/master/Alignment)）：使 Z 轴朝上、地面与 X-Y 平面平行，同时尽量使主要墙体在水平面上的走向与 X 轴或 Y 轴平行。若输入点云未满足上述要求，请传入 `transformationMatrix`。本地文件请先调用 [Asset 文件上传接口](https://labs.aholo3d.cn/api-docs/api-reference#tag/asset)，再将返回的 URL 填入此字段。不支持外部 URL。",
+   "example": "https://holo-cos.aholo3d.cn/resource/openapi/xxx.ply"
+  },
+  "transformationMatrix": {
+   "type": "array",
+   "description": "可选。用于将输入点云转换至上述对齐坐标系的 4×4 齐次变换矩阵（4 行 4 列数字），使 Z 轴朝上、地面与 X-Y 平面平行，并尽量使主要墙体在水平面上的走向与 X 轴或 Y 轴平行。不传表示输入点云已完成对齐，不做变换。约定：列向量乘法 `p' = T p`；平移在第 4 列；右手系；Z-up（[ScanNet Alignment](https://github.com/ScanNet/ScanNet/tree/master/Alignment)）；单位米。\n\n分块示意：左上 `R` 为 3×3 旋转，右侧 `t` 为平移，底行固定为 `[0, 0, 0, 1]`。\n\n```\nT = [ R(3×3)  t(3×1) ]\n    [ 0(1×3)  1      ]\n```\n\n对应请求体下标：\n\n```\n[\n  [ r00, r01, r02, tx ],\n  [ r10, r11, r12, ty ],\n  [ r20, r21, r22, tz ],\n  [   0,   0,   0,  1 ]\n]\n```",
+   "example": [
+    [
+     0.9337461173020494,
+     0.3579360116324523,
+     0,
+     1.871216953359744
+    ],
+    [
+     -0.3579360116324523,
+     0.9337461173020494,
+     0,
+     -0.2091883674268249
+    ],
+    [
+     0,
+     0,
+     0.9999999999999999,
+     1.2121098756790158
+    ],
+    [
+     0,
+     0,
+     0,
+     1
+    ]
+   ],
+   "items": {
+    "type": "array",
+    "description": "可选。用于将输入点云转换至上述对齐坐标系的 4×4 齐次变换矩阵（4 行 4 列数字），使 Z 轴朝上、地面与 X-Y 平面平行，并尽量使主要墙体在水平面上的走向与 X 轴或 Y 轴平行。不传表示输入点云已完成对齐，不做变换。约定：列向量乘法 `p' = T p`；平移在第 4 列；右手系；Z-up（[ScanNet Alignment](https://github.com/ScanNet/ScanNet/tree/master/Alignment)）；单位米。\n\n分块示意：左上 `R` 为 3×3 旋转，右侧 `t` 为平移，底行固定为 `[0, 0, 0, 1]`。\n\n```\nT = [ R(3×3)  t(3×1) ]\n    [ 0(1×3)  1      ]\n```\n\n对应请求体下标：\n\n```\n[\n  [ r00, r01, r02, tx ],\n  [ r10, r11, r12, ty ],\n  [ r20, r21, r22, tz ],\n  [   0,   0,   0,  1 ]\n]\n```",
+    "example": [
+     [
+      0.9337461173020494,
+      0.3579360116324523,
+      0,
+      1.871216953359744
+     ],
+     [
+      -0.3579360116324523,
+      0.9337461173020494,
+      0,
+      -0.2091883674268249
+     ],
+     [
+      0,
+      0,
+      0.9999999999999999,
+      1.2121098756790158
+     ],
+     [
+      0,
+      0,
+      0,
+      1
+     ]
+    ],
+    "items": {
+     "type": "number",
+     "description": "可选。用于将输入点云转换至上述对齐坐标系的 4×4 齐次变换矩阵（4 行 4 列数字），使 Z 轴朝上、地面与 X-Y 平面平行，并尽量使主要墙体在水平面上的走向与 X 轴或 Y 轴平行。不传表示输入点云已完成对齐，不做变换。约定：列向量乘法 `p' = T p`；平移在第 4 列；右手系；Z-up（[ScanNet Alignment](https://github.com/ScanNet/ScanNet/tree/master/Alignment)）；单位米。\n\n分块示意：左上 `R` 为 3×3 旋转，右侧 `t` 为平移，底行固定为 `[0, 0, 0, 1]`。\n\n```\nT = [ R(3×3)  t(3×1) ]\n    [ 0(1×3)  1      ]\n```\n\n对应请求体下标：\n\n```\n[\n  [ r00, r01, r02, tx ],\n  [ r10, r11, r12, ty ],\n  [ r20, r21, r22, tz ],\n  [   0,   0,   0,  1 ]\n]\n```",
+     "format": "double"
+    }
+   }
+  }
+ },
+ "description": "创建空间理解任务请求体。面向室内点云；坐标系为米、右手系、Z-up。"
+}
+
+===== SCHEMA: spatialunderstanding_SpatialUnderstandingTask =====
+{
+ "type": "object",
+ "properties": {
+  "taskId": {
+   "type": "string",
+   "description": "任务 id，与创建接口返回值一致。",
+   "example": "A1b2C3d4E5"
+  },
+  "status": {
+   "$ref": "#/components/schemas/spatialunderstanding_SpatialUnderstandingTaskStatus"
+  },
+  "modelVersion": {
+   "type": "string",
+   "description": "本次任务实际使用的模型版本。创建时不可指定，由服务端使用当前默认版本。",
+   "example": "spatiallm-pointcloud-1.2-20260910"
+  },
+  "result": {
+   "$ref": "#/components/schemas/spatialunderstanding_SpatialUnderstandingTaskResult"
+  },
+  "errorCode": {
+   "type": "string",
+   "description": "失败分类码；仅 `FAILED` 或 `TIMEOUT` 时返回。`MODEL_SUBMIT_FAILED`：任务提交失败；`MODEL_TASK_FAILED`：任务执行失败；`RESULT_TRANSFER_FAILED`：结果写入失败；`TIMEOUT`：超时。",
+   "example": "MODEL_TASK_FAILED"
+  },
+  "errorMessage": {
+   "type": "string",
+   "description": "失败详情；仅 `FAILED` 或 `TIMEOUT` 时返回。",
+   "example": "task failed"
+  },
+  "createTime": {
+   "type": "integer",
+   "description": "创建时间，Unix 毫秒。",
+   "format": "int64"
+  },
+  "updateTime": {
+   "type": "integer",
+   "description": "最后更新时间，Unix 毫秒。",
+   "format": "int64"
+  }
+ },
+ "description": "空间理解任务详情。成功时含 `result`，失败或超时时含 `errorCode`、`errorMessage`。"
+}
+
+===== SCHEMA: spatialunderstanding_SpatialUnderstandingTaskAsyncOperation =====
+{
+ "required": [
+  "taskId"
+ ],
+ "type": "object",
+ "properties": {
+  "taskId": {
+   "type": "string",
+   "description": "任务 id。填入 `GET /spatial-understanding/v1/tasks/{taskId}` 即可轮询状态与结果。",
+   "example": "A1b2C3d4E5"
+  }
+ },
+ "description": "创建任务受理结果，含 `taskId`。用该 id 查询详情直至任务完成。"
+}
+
+===== SCHEMA: world_ApiError =====
+{
+ "required": [
+  "code",
+  "details",
+  "message",
+  "status"
+ ],
+ "type": "object",
+ "properties": {
+  "code": {
+   "type": "integer",
+   "description": "HTTP状态码",
+   "format": "int32",
+   "example": 403
+  },
+  "message": {
+   "type": "string",
+   "description": "面向开发者的错误消息（英文），用户可见的本地化消息请使用localizedMessage字段",
+   "example": "Permission denied to access this resource"
+  },
+  "status": {
+   "$ref": "#/components/schemas/world_Code"
+  },
+  "details": {
+   "$ref": "#/components/schemas/world_ErrorDetails"
+  },
+  "localizedMessage": {
+   "$ref": "#/components/schemas/world_LocalizedMessage"
+  },
+  "help": {
+   "$ref": "#/components/schemas/world_Help"
+  }
+ },
+ "description": "API错误响应对象，包含完整的错误信息、状态码和帮助信息"
+}
+
+===== SCHEMA: world_CreateWorldRequest =====
+{
+ "required": [
+  "resources",
+  "scene",
+  "taskQuality"
+ ],
+ "type": "object",
+ "properties": {
+  "name": {
+   "type": "string",
+   "description": "世界展示名称",
+   "example": "客厅重建"
+  },
+  "cover": {
+   "type": "string",
+   "description": "封面图 URL；可选",
+   "example": "https://cdn.example.com/cover/custom-cover.jpg"
+  },
+  "resources": {
+   "minItems": 1,
+   "type": "array",
+   "description": "输入资源列表，至少 1 条。格式见 CreateWorldRequest 说明（image：.jpg / .jpeg / .png / .webp；video：.mp4 / .mov；insv：.insv。）。含图片时须至少 20 条图片类（`type=image` 或省略 type）；纯视频请显式 `type=video`；Insta360 全景视频请显式 `type=insv`。",
+   "items": {
+    "$ref": "#/components/schemas/world_WorldResourceItem"
+   }
+  },
+  "useMask": {
+   "type": "boolean",
+   "description": "是否对上传资源进行抠图。`true` 开启；省略或 `false` 不抠图。",
+   "example": false
+  },
+  "taskQuality": {
+   "$ref": "#/components/schemas/world_WorldOpenApiTaskQuality"
+  },
+  "scene": {
+   "$ref": "#/components/schemas/world_WorldOpenApiProjectScene"
+  }
+ },
+ "description": "创建 3DGS 世界重建任务的请求体。`scene` 仅支持 model 与 space；`taskQuality` 含义见 `WorldOpenApiTaskQuality`（low 极速预览 / normal 标准 / high 专业）。\n**资源格式**：image：.jpg / .jpeg / .png / .webp；video：.mp4 / .mov；insv：.insv。\n**资源条数**：若 `resources` 中出现图片类资源（`type=image` 或省略 `type`，后者按图片计），则图片类至少 **20 条**；若仅使用视频或 Insta360 全景视频，请为每条资源设置 `type=video` 或 `type=insv`（不触发「至少 20 张图」规则）。"
+}
+
+===== SCHEMA: world_GenerateWorldRequest =====
+{
+ "type": "object",
+ "properties": {
+  "name": {
+   "type": "string",
+   "description": "项目 / 世界展示名称",
+   "example": "客厅生成"
+  },
+  "cover": {
+   "type": "string",
+   "description": "封面图 URL；可选。",
+   "example": "https://cdn.example.com/cover/gen-cover.jpg"
+  },
+  "resources": {
+   "type": "array",
+   "description": "输入资源列表；与 prompt 至少满足其一。仅支持图片，至多 1 条；未传 type 时按图片处理。image：.jpg / .jpeg / .png / .webp。",
+   "items": {
+    "$ref": "#/components/schemas/world_GenerateWorldResourceItem"
+   }
+  },
+  "prompt": {
+   "type": "string",
+   "description": "文本提示词；可与 resources 同时提供。",
+   "example": "现代简约风格，阳光充足的客厅"
+  }
+ },
+ "description": "创建 3DGS「生成世界」任务的请求体；支持纯文案、单张图片或图文组合。室内场景效果更成熟；非室内为 Beta（详见同路径 POST 说明）。\n至少需提供非空 prompt 或至少一条图片资源（至多 1 张）；image：.jpg / .jpeg / .png / .webp。"
+}
+
+===== SCHEMA: world_WorldAsyncOperation =====
+{
+ "required": [
+  "worldId"
+ ],
+ "type": "object",
+ "properties": {
+  "worldId": {
+   "type": "string",
+   "description": "世界 id；填入 `GET /world/v1/{worldId}` 的路径参数即可轮询任务状态与产出。",
+   "example": "A1b2C3d4E5"
+  }
+ },
+ "description": "异步创建受理结果：封装 `worldId`，供调用方作为资源 id 请求详情直至终态。"
+}
+
+===== SCHEMA: world_WorldDetail =====
+{
+ "required": [
+  "worldId"
+ ],
+ "type": "object",
+ "properties": {
+  "worldId": {
+   "type": "string",
+   "description": "世界唯一标识；开放「创建世界」接口在 `WorldAsyncOperation.worldId` 字段中返回与本字段相同的值。",
+   "example": "A1b2C3d4E5"
+  },
+  "name": {
+   "type": "string",
+   "description": "世界名称",
+   "example": "客厅重建"
+  },
+  "cover": {
+   "type": "string",
+   "description": "封面图 URL。",
+   "example": "https://cdn.example.com/cover/world-001.jpg"
+  },
+  "scene": {
+   "$ref": "#/components/schemas/world_WorldOpenApiProjectScene"
+  },
+  "createTime": {
+   "type": "integer",
+   "description": "创建时间，Unix 毫秒时间戳。",
+   "format": "int64",
+   "example": 1699339916000
+  },
+  "updateTime": {
+   "type": "integer",
+   "description": "最近修改时间，Unix 毫秒时间戳。",
+   "format": "int64",
+   "example": 1699340120000
+  },
+  "status": {
+   "$ref": "#/components/schemas/world_WorldOpenApiTaskStatus"
+  },
+  "progress": {
+   "type": "number",
+   "description": "重建任务进度 [0.0, 1.0]。",
+   "format": "float",
+   "example": 0.65
+  },
+  "assets": {
+   "$ref": "#/components/schemas/world_WorldAssetBundle"
+  }
+ },
+ "description": "世界信息。`worldId` 为业务侧世界唯一标识；`scene`/`status` 等为约定字符串；`createTime` / `updateTime` 为 Unix 毫秒时间戳（与 1.6.2-2-1 时间字段约定一致）。详情接口在产出可用时，可能返回 splat 等下载地址；AI 生成世界另在 `assets.imagery.panoUrl` 返回全景图。"
+}
