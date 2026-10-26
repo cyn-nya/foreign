@@ -1,6 +1,8 @@
 node_modules/
 dist/
 artifacts/
+# downloaded-once sample data (Aholo's open-source bucket) — fetched, not redistributed
+.cache/
 .DS_Store
 *.local
 .env
