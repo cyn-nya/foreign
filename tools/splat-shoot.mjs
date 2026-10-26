@@ -94,6 +94,9 @@ const browser = await chromium.launch({
     '--use-angle=swiftshader',
     '--use-gl=angle',
     '--disable-gpu-sandbox',
+    // Headless has no gesture to give, and the drone is verified by measuring
+    // the audio graph rather than by listening, so it has to be allowed to run.
+    '--autoplay-policy=no-user-gesture-required',
   ],
 });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
@@ -306,6 +309,157 @@ try {
     '?autostart=1&floor=3 opens straight into a live third floor',
     auto.state === 'playing' && auto.floor === 3 && auto.anomalies >= 1,
     `state=${auto.state} floor=${auto.floor} placed=${auto.placed} anomaly=${auto.anomalies} marks=${auto.marks}`,
+  );
+
+  // --- it watches you --------------------------------------------------------
+  // The whole mechanic is one number: the gap between where a watcher is looking
+  // and where the player is. It has to stay at zero as the player moves, and it
+  // has to be the watchers only — otherwise "everything rotates" would pass.
+  const watching = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(2, 7, false, ['stare']);
+    const list = s.watchers();
+    if (list.length === 0) return { count: 0 };
+    const target = { x: list[0].x, z: list[0].z };
+
+    // The pair has to differ in *bearing*, not merely in distance. Two anchors
+    // on the same side of the object share a correct yaw, so sampling those two
+    // would assert that a working tracker is broken — which is exactly what the
+    // first version of this check did.
+    const bearing = (a) => Math.atan2(a.eye.x - target.x, a.eye.z - target.z);
+    const candidates = s
+      .anchors()
+      .map((a) => ({ ...a, d: Math.hypot(a.eye.x - target.x, a.eye.z - target.z), b: bearing(a) }))
+      // standing inside the object is degenerate: the direction is undefined
+      .filter((a) => a.d > 1.2 && a.d < 9);
+
+    let pair = null;
+    let widest = 0;
+    for (let i = 0; i < candidates.length; i++) {
+      for (let j = i + 1; j < candidates.length; j++) {
+        let delta = candidates[i].b - candidates[j].b;
+        while (delta > Math.PI) delta -= Math.PI * 2;
+        while (delta < -Math.PI) delta += Math.PI * 2;
+        if (Math.abs(delta) > widest) {
+          widest = Math.abs(delta);
+          pair = [candidates[i], candidates[j]];
+        }
+      }
+    }
+    if (!pair) return { count: list.length, pair: false };
+
+    const sample = (place) => {
+      s.teleport(place.eye.x, place.eye.y, place.eye.z, 0, 0);
+      const w = s.watchers()[0];
+      return { yaw: w.yaw, error: w.yawError, from: place.id, d: place.d, b: place.b };
+    };
+
+    const atNear = sample(pair[0]);
+    const atFar = sample(pair[1]);
+    // Breathing: the frame loop has been running, so the object should not be
+    // sitting exactly at its resting height.
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    const breathing = s.watchers()[0];
+    return { count: list.length, pair: true, atNear, atFar, bearingGap: widest, y: breathing.y, baseY: breathing.baseY, elapsed: breathing.elapsed };
+  });
+
+  check(
+    'a stare anomaly tracks the player from where it is placed',
+    watching.count >= 1 && Math.abs(watching.atNear?.error ?? 9) < 0.02,
+    `watchers=${watching.count} yawError=${watching.atNear?.error?.toFixed?.(5)} ` +
+      `at ${watching.atNear?.from} (${watching.atNear?.d?.toFixed?.(1)} m)`,
+  );
+  check(
+    'and keeps tracking from a second place at a different bearing',
+    watching.pair === true &&
+      Math.abs(watching.atFar?.error ?? 9) < 0.02 &&
+      Math.abs((watching.atFar?.yaw ?? 0) - (watching.atNear?.yaw ?? 0)) > 0.2,
+    `bearing gap ${watching.bearingGap?.toFixed?.(2)} rad: ` +
+      `yaw ${watching.atNear?.yaw?.toFixed?.(3)} @ ${watching.atNear?.from} → ` +
+      `${watching.atFar?.yaw?.toFixed?.(3)} @ ${watching.atFar?.from}, ` +
+      `error ${watching.atFar?.error?.toFixed?.(5)}`,
+  );
+  check(
+    'it hovers rather than hanging perfectly still',
+    watching.elapsed > 0 && Math.abs((watching.y ?? 0) - (watching.baseY ?? 0)) > 0.002,
+    `y=${watching.y?.toFixed?.(4)} base=${watching.baseY?.toFixed?.(4)} elapsed=${watching.elapsed?.toFixed?.(2)}s`,
+  );
+
+  // The control. If this ever turns, the check above proves nothing.
+  const grounded = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(2, 7, false, ['intrude']);
+    return { watchers: s.watchers().length, placed: s.placed };
+  });
+  check(
+    'a grounded object does not turn — the behaviour is the stare kind only',
+    grounded.watchers === 0 && grounded.placed >= 1,
+    `placed=${grounded.placed} watchers=${grounded.watchers}`,
+  );
+
+  const watcherBytes = await shoot(page, '05-watcher.png');
+  console.log(`    05-watcher.png ${Math.round(watcherBytes / 1024)} KB`);
+
+  // --- the drone responds to distance ---------------------------------------
+  // Measured from the analyser, not from the fact that a node exists. A drone
+  // wired to a constant gain would pass "is it making sound" and fail this.
+  const sound = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(6, 3);
+    const started = s.audioStart();
+    const list = s.placements();
+    if (list.length === 0) return { started, placements: 0 };
+    const target = list[0];
+    const anchors = s.anchors().map((a) => ({
+      ...a,
+      d: Math.hypot(a.eye.x - target.x, a.eye.z - target.z),
+    }));
+    // `nearest` is the anomaly's own anchor, so the closest legal standing spot
+    // is still a metre or so away — that is what a real approach looks like.
+    const sorted = anchors.slice().sort((a, b) => a.d - b.d);
+    const near = sorted[0];
+    const far = sorted[sorted.length - 1];
+
+    const settle = async () => {
+      // let the gain ramp and the analyser fill
+      await new Promise((r) => setTimeout(r, 420));
+    };
+
+    s.teleport(near.eye.x, near.eye.y, near.eye.z, 0, 0);
+    await settle();
+    const atNear = { audio: s.audio(), proximity: s.proximity() };
+
+    s.teleport(far.eye.x, far.eye.y, far.eye.z, 0, 0);
+    await settle();
+    const atFar = { audio: s.audio(), proximity: s.proximity() };
+
+    return {
+      started,
+      placements: list.length,
+      atNear,
+      atFar,
+      nearDistance: near.d,
+      farDistance: far.d,
+    };
+  });
+
+  check(
+    'audio starts and actually produces signal',
+    sound.started === true && sound.atNear?.audio?.state === 'running',
+    `ensure=${sound.started} state=${sound.atNear?.audio?.state} rms=${sound.atNear?.audio?.rms?.toFixed?.(5)}`,
+  );
+  check(
+    'the drone tightens as the player approaches an anomaly',
+    (sound.atNear?.proximity?.tension ?? 0) > (sound.atFar?.proximity?.tension ?? 1) &&
+      (sound.atNear?.audio?.gain ?? 0) > (sound.atFar?.audio?.gain ?? 1),
+    `tension ${sound.atFar?.proximity?.tension?.toFixed?.(3)} @ ${sound.farDistance?.toFixed?.(1)} m ` +
+      `→ ${sound.atNear?.proximity?.tension?.toFixed?.(3)} @ ${sound.nearDistance?.toFixed?.(1)} m; ` +
+      `gain ${sound.atFar?.audio?.gain?.toFixed?.(3)} → ${sound.atNear?.audio?.gain?.toFixed?.(3)}`,
+  );
+  check(
+    'and the difference is audible, not merely a number',
+    (sound.atNear?.audio?.rms ?? 0) > (sound.atFar?.audio?.rms ?? 1),
+    `rms ${sound.atFar?.audio?.rms?.toFixed?.(5)} far → ${sound.atNear?.audio?.rms?.toFixed?.(5)} near`,
   );
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | ') || 'clean');

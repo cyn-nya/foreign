@@ -41,6 +41,18 @@ export interface PlacedAnomaly {
   node: Object3D;
   /** The slot the player marks. Twin copies all share their anchor's id. */
   slotId: string;
+  /**
+   * Whether this one tracks the player.
+   *
+   * Chosen by kind, not by asset, because the behaviour *is* the anomaly: a
+   * statue that follows you is wrong in a way no amount of looking at it
+   * resolves, and it is wrong without any comparison to the room.
+   */
+  watches: boolean;
+  /** Resting height, so the breathing animation has something to return to. */
+  baseY: number;
+  /** Per-instance bob offset, derived on first update from the placement. */
+  phase?: number;
 }
 
 export interface AssetReport {
@@ -115,7 +127,13 @@ export class SplatRoom {
       for (let i = 0; i < copies; i++) {
         const node = await this.instantiate(buffer, anomaly, anchor, i, copies);
         this.scene.add(node as never);
-        created.push({ anomaly, node, slotId: anchor.id });
+        created.push({
+          anomaly,
+          node,
+          slotId: anchor.id,
+          watches: anomaly.kind === 'stare',
+          baseY: node.position.y,
+        });
       }
     }
 
@@ -164,8 +182,49 @@ export class SplatRoom {
       item.node.parent?.remove(item.node);
     }
     this.placed = [];
+    this.clock = 0;
   }
 
+  /**
+   * Animate the room: the ones that watch, and the ones that breathe.
+   *
+   * Called every frame with the player's eye. A watcher whose rotation is only
+   * set when it is placed would be a static prop that happens to point at the
+   * door — the whole point is that it is still following you when you turn
+   * around, so this has to run continuously rather than once.
+   */
+  update(dt: number, player: { x: number; y: number; z: number }): void {
+    this.clock += dt;
+    for (const item of this.placed) {
+      if (!item.watches) continue;
+
+      // Face the player. Same convention buildStare used when it aimed the prop
+      // at the way in: +z of the prop turns toward (dx, dz).
+      const dx = player.x - item.node.position.x;
+      const dz = player.z - item.node.position.z;
+      item.node.rotation.set(0, Math.atan2(dx, dz), 0, 'YXZ');
+
+      // A slow rise and fall, so it reads as hovering rather than as a model
+      // glued to the air. Small on purpose: a big bob looks like a bounce.
+      let phase = item.phase;
+      if (phase === undefined) {
+        // Deliberately not random-per-frame: each watcher drifts on its own
+        // offset so a room with two of them does not pulse in lockstep.
+        phase = item.phase = (item.baseY * 37.1 + item.node.position.x * 11.7) % (Math.PI * 2);
+      }
+      item.node.position.set(
+        item.node.position.x,
+        item.baseY + Math.sin(this.clock * 1.15 + phase) * 0.028,
+        item.node.position.z,
+      );
+    }
+  }
+
+  /** Seconds of animation applied so far — lets a harness prove update() ran. */
+  private clock = 0;
+  get elapsed(): number {
+    return this.clock;
+  }
   /**
    * What is under the crosshair, as a slot id, or null.
    *

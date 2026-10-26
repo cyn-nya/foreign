@@ -13,11 +13,13 @@
 
 import { FOREIGN_ASSETS } from '../game/catalog.ts';
 import { MAX_MISTAKES, formatClock, generateFloor, hitScore, judgeMark } from '../game/rules.ts';
-import type { FloorPlan } from '../game/types.ts';
+import type { AnomalyKind, FloorPlan } from '../game/types.ts';
 import { SplatPlayer } from './SplatPlayer.ts';
 import { SplatRoom } from './SplatRoom.ts';
+import { GameAudio, type AudioReport } from './audio.ts';
 import { ROOM_ANCHORS, ROOM_FLOOR_OPTIONS } from './roomAnchors.ts';
 import { ROOM_SPAWN, SplatScene } from './SplatScene.ts';
+import { EYE_HEIGHT, HOVER_HEIGHT } from '../viewer/voxel.ts';
 
 /** Every asset a floor could ever ask for. */
 const ASSET_KEYS = FOREIGN_ASSETS.map((asset) => asset.key);
@@ -49,7 +51,7 @@ interface SplatDebug {
   anomalyCount: number;
   /** How many objects are actually in the room this floor. */
   placed: number;
-  anchors: number;
+  anchorCount: number;
   assets: { loaded: number; missing: string[] };
   player: {
     x: number;
@@ -69,15 +71,28 @@ interface SplatDebug {
   renderOnce: () => void;
   walk: (seconds: number, code?: string) => { from: [number, number, number]; to: [number, number, number] };
   /** Start a floor without needing a pointer lock, which headless has no way to give. */
-  start: (floor?: number, seed?: number, lock?: boolean) => Promise<void>;
+  start: (floor?: number, seed?: number, lock?: boolean, kinds?: AnomalyKind[]) => Promise<void>;
   /** Mark whatever the crosshair is on — the same path a click takes. */
   mark: () => MarkReport;
   /** Aim the camera at one of the placed objects. Returns its slot id. */
   aimAt: (index: number) => string | null;
+  /**
+   * The watchers, with where each is looking and where it should be looking.
+   * `yawError` is the whole mechanic in one number: it must stay at zero as the
+   * player moves.
+   */
+  watchers: () => { slotId: string; x: number; z: number; yaw: number; expectedYaw: number; yawError: number; y: number; baseY: number; elapsed: number }[];
+  /** The anchors, with a ready-to-use eye position, so a harness can stand somewhere. */
+  anchors: () => { id: string; floor: { x: number; y: number; z: number }; eye: { x: number; y: number; z: number } }[];
   /** Where each placed object is, in the room and on screen. */
   placements: () => { slotId: string; kind: string; assetKey?: string; x: number; y: number; z: number; onScreen: boolean }[];
   /** Advance the clock by hand so a floor can be finished without waiting. */
   tick: (seconds: number) => void;
+  /** Start audio. A gesture starts it in a real browser; a harness has to ask. */
+  audioStart: () => boolean;
+  audio: () => AudioReport;
+  /** The proximity the drone is running at, and the distance behind it. */
+  proximity: () => { tension: number; nearest: number | null };
   log: string[];
 }
 
@@ -109,7 +124,7 @@ const debug: SplatDebug = {
   timeLeft: 0,
   anomalyCount: 0,
   placed: 0,
-  anchors: ROOM_ANCHORS.length,
+  anchorCount: ROOM_ANCHORS.length,
   assets: { loaded: 0, missing: [] },
   player: { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, speed: 0, locked: false },
   frames: 0,
@@ -120,9 +135,14 @@ const debug: SplatDebug = {
   setAutoRender: () => undefined,
   renderOnce: () => undefined,
   walk: () => ({ from: [0, 0, 0], to: [0, 0, 0] }),
+  audioStart: () => false,
+  audio: () => ({ state: 'none', gain: 0, rms: 0, tension: 0 }),
+  proximity: () => ({ tension: 0, nearest: null }),
   start: async () => undefined,
   mark: () => ({ result: 'miss', slotId: null, found: 0, marksLeft: MAX_MISTAKES, state: 'menu' }),
   aimAt: () => null,
+  watchers: () => [],
+  anchors: () => [],
   placements: () => [],
   tick: () => undefined,
   log: [],
@@ -206,6 +226,7 @@ async function main(): Promise<void> {
   });
   const room = new SplatRoom(scene.viewer.getScene());
   const player = new SplatPlayer(view);
+  const audio = new GameAudio();
   player.spawnAt(ROOM_SPAWN);
 
   debug.stage = 'splat';
@@ -271,13 +292,14 @@ async function main(): Promise<void> {
   layout();
   window.addEventListener('resize', layout);
 
-  async function startFloor(floor = 1, seed?: number, lock = false): Promise<void> {
+  async function startFloor(floor = 1, seed?: number, lock = false, kinds?: AnomalyKind[]): Promise<void> {
     debug.floor = floor;
     debug.found = [];
     debug.marksLeft = MAX_MISTAKES;
     // A fixed seed keeps a floor reproducible from the URL; otherwise the floor
     // number itself seeds it, so floor 3 is always floor 3.
-    plan = generateFloor(floor, seed ?? floor * 7919, ROOM_FLOOR_OPTIONS);
+    const options = kinds ? { ...ROOM_FLOOR_OPTIONS, kinds } : ROOM_FLOOR_OPTIONS;
+    plan = generateFloor(floor, seed ?? floor * 7919, options);
     debug.anomalyCount = plan.anomalies.length;
     debug.timeLeft = plan.duration;
     debug.state = 'playing';
@@ -290,6 +312,10 @@ async function main(): Promise<void> {
     overlay.classList.add('hidden');
     overlay.innerHTML = '';
     hud.classList.remove('hidden');
+    // A gesture has usually just happened (the start button); on an autostart
+    // link there has not been one, so the context may stay suspended until the
+    // player clicks. Either way the game is playable.
+    audio.ensure();
     // Each floor starts back at the way in, as the procedural game does — the
     // fiction is descending, and it also stops a lucky end-of-floor position
     // from trivialising the next one.
@@ -335,14 +361,17 @@ async function main(): Promise<void> {
     if (outcome.result === 'hit' && outcome.anomaly) {
       debug.found.push(outcome.anomaly.id);
       debug.score += hitScore(debug.timeLeft, plan.duration);
+      audio.sting('hit');
       toast(outcome.anomaly.label, 'good');
     } else if (outcome.result === 'repeat') {
+      audio.sting('repeat');
       toast('这个你已经标记过了', 'info');
     } else {
       // A miss costs time *and* a mark: without the time cost, guessing at
       // random is free, and the game becomes a clicking exercise.
       debug.marksLeft -= 1;
       debug.timeLeft = Math.max(0, debug.timeLeft - 8);
+      audio.sting('miss');
       toast(slotId ? '这个属于这个房间' : '那里什么都没有', 'bad');
     }
 
@@ -370,6 +399,30 @@ async function main(): Promise<void> {
     else player.requestLock();
   });
 
+  /**
+   * How close the nearest anomaly is, as 0..1.
+   *
+   * The drone is the only channel that tells the player they are getting warm
+   * without telling them where the thing is, which is the difference between a
+   * search and a waypoint marker.
+   */
+  const AUDIO_RANGE = 6.0;
+  function proximity(): { tension: number; nearest: number | null } {
+    const eye = player.cameraState();
+    let nearest: number | null = null;
+    for (const item of room.placements) {
+      const d = Math.hypot(item.node.position.x - eye.x, item.node.position.z - eye.z);
+      if (nearest === null || d < nearest) nearest = d;
+    }
+    if (nearest === null) return { tension: 0, nearest: null };
+    const tension = Math.max(0, Math.min(1, 1 - nearest / AUDIO_RANGE));
+    return { tension, nearest };
+  }
+
+  debug.audioStart = () => audio.ensure();
+  debug.audio = () => audio.read();
+  debug.proximity = () => proximity();
+
   debug.setKey = (code, down) => player.setKey(code, down);
   debug.respawn = () => player.respawn();
   debug.setCollision = (enabled) => player.setCollision(enabled ? scene.collision : null);
@@ -396,6 +449,9 @@ async function main(): Promise<void> {
   };
 
   debug.renderOnce = () => {
+    // Re-aim the watchers as part of producing a frame, so a single rendered
+    // frame is always self-consistent rather than one frame stale.
+    room.update(0, player.cameraState());
     scene.applyPose(player.cameraState());
     scene.render();
   };
@@ -424,6 +480,37 @@ async function main(): Promise<void> {
     debug.renderOnce();
     return target.slotId;
   };
+
+  debug.watchers = () =>
+    room.placements
+      .filter((item) => item.watches)
+      .map((item) => {
+        const eye = player.cameraState();
+        const dx = eye.x - item.node.position.x;
+        const dz = eye.z - item.node.position.z;
+        const expectedYaw = Math.atan2(dx, dz);
+        let error = item.node.rotation.y - expectedYaw;
+        while (error > Math.PI) error -= Math.PI * 2;
+        while (error < -Math.PI) error += Math.PI * 2;
+        return {
+          slotId: item.slotId,
+          x: item.node.position.x,
+          z: item.node.position.z,
+          yaw: item.node.rotation.y,
+          expectedYaw,
+          yawError: error,
+          y: item.node.position.y,
+          baseY: item.baseY,
+          elapsed: room.elapsed,
+        };
+      });
+
+  debug.anchors = () =>
+    ROOM_ANCHORS.map((anchor) => ({
+      id: anchor.id,
+      floor: { x: anchor.pos.x, y: anchor.pos.y, z: anchor.pos.z },
+      eye: { x: anchor.pos.x, y: anchor.pos.y + EYE_HEIGHT + HOVER_HEIGHT, z: anchor.pos.z },
+    }));
 
   debug.placements = () =>
     room.placements.map((item) => {
@@ -455,6 +542,13 @@ async function main(): Promise<void> {
     const dt = Math.min(0.05, (now - previous) / 1000);
     previous = now;
     player.update(dt);
+    // The room animates against the player's eye: what watches you has to be
+    // updated before the frame is drawn, or it lags a frame behind.
+    room.update(dt, player.cameraState());
+    if (debug.state === 'playing') {
+      const near = proximity();
+      audio.setTension(near.tension);
+    }
     scene.applyPose(player.cameraState());
     if (autoRender) scene.render();
 
