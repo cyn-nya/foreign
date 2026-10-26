@@ -116,6 +116,9 @@ interface SplatDebug {
   autoplay: () => GameState;
   setCulling: (patch: Record<string, boolean>) => void;
   culling: () => Record<string, boolean>;
+  setSplatVisible: (visible: boolean) => void;
+  splatVisible: () => boolean;
+  lookBy: (dx: number, dy: number) => void;
 
   anchors: () => { id: string; floor: { x: number; y: number; z: number }; eye: { x: number; y: number; z: number } }[];
   /** Where each placed object is, in the room and on screen. */
@@ -187,6 +190,9 @@ const debug: SplatDebug = {
   autoplay: () => 'menu',
   setCulling: () => undefined,
   culling: () => ({}),
+  setSplatVisible: () => undefined,
+  splatVisible: () => false,
+  lookBy: () => undefined,
 
   anchors: () => [],
   placements: () => [],
@@ -748,6 +754,13 @@ async function main(): Promise<void> {
   /** Measure the room without a floor in the way, for the performance work. */
   debug.setCulling = (patch) => scene.setCulling(patch);
   debug.culling = () => scene.culling;
+  debug.setSplatVisible = (visible) => scene.setSplatVisible(visible);
+  debug.splatVisible = () => scene.splatVisible;
+  /** Move the camera without the collision walker, to separate move from idle. */
+  debug.lookBy = (dx, dy) => {
+    player.look(dx, dy);
+    debug.renderOnce();
+  };
 
 
   debug.anchors = () =>

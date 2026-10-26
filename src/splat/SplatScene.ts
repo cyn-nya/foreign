@@ -240,6 +240,24 @@ export class SplatScene {
     this.collision = await loadVoxelCollision(metaUrl, binUrl, signal);
   }
 
+  /**
+   * Hide or show the scan, without removing it.
+   *
+   * This is the diagnostic that answers "what is actually costing the frame":
+   * with the splats hidden the rest of the game (walker, HUD, the placed GLB
+   * anomalies, the audio graph, the frame loop) runs unchanged, so the gap
+   * between the two frame rates is the scan's share and nothing else. Guessing
+   * at the bottleneck from reading code produced three wrong answers in a row.
+   */
+  setSplatVisible(visible: boolean): void {
+    if (!this.splat) return;
+    (this.splat as { visible?: boolean }).visible = visible;
+  }
+
+  get splatVisible(): boolean {
+    return Boolean((this.splat as { visible?: boolean } | null)?.visible);
+  }
+
   /** Point the render camera at a walker pose. */
   applyPose(pose: { x: number; y: number; z: number; yaw: number; pitch: number }): void {
     this.camera.up.set(0, 1, 0);
