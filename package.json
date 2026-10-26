@@ -25,7 +25,8 @@
     "deploy:check": "node tools/check-deploy.mjs",
     "deploy:check:live": "node tools/check-deploy.mjs --url https://cyn-nya.github.io/foreign/",
     "deploy": "node tools/deploy-ghpages.mjs",
-    "verify": "npm run typecheck && npm run voxel:check && npm run test && npm run build && npm run splat:check && npm run splat:shoot && npm run shoot && npm run deploy:check"
+    "assets:check": "node tools/check-assets.mjs",
+    "verify": "npm run typecheck && npm run voxel:check && npm run test && npm run assets:check && npm run build && npm run splat:check && npm run splat:shoot && npm run shoot && npm run deploy:check"
   },
   "dependencies": {
     "@manycore/aholo-viewer": "^1.11.0",

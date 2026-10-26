@@ -21,12 +21,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { LUX3D_SOURCE, classifyAssets, lux3dKeys } from './asset-provenance.mjs';
 import { AholoClient, AholoError } from '../src/aholo/client.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 const OUT_DIR = path.join(root, 'public', 'assets', 'foreign');
 const CATALOGUE = path.join(root, 'data', 'foreign-assets.json');
+const MANIFEST = path.join(OUT_DIR, 'manifest.json');
 
 /* ---------------------------------------------------------------- args --- */
 
@@ -98,11 +100,22 @@ async function main() {
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const target = (key) => path.join(OUT_DIR, `${key}.glb`);
-  const already = assets.filter((a) => fs.existsSync(target(a.key)));
-  const todo = args.force ? assets : assets.filter((a) => !fs.existsSync(target(a.key)));
+  const { already, todo, standIns } = classifyAssets({
+    assets,
+    target,
+    manifestPath: MANIFEST,
+    force: Boolean(args.force),
+  });
 
   console.log(`Catalogue: ${assets.length} asset(s) · already generated: ${already.length} · to do: ${todo.length}`);
   for (const a of already) console.log(`  skip  ${a.key.padEnd(12)} ${a.name}`);
+  if (standIns.length) {
+    console.log(
+      `
+  ${standIns.length} file(s) currently hold procedural placeholders — ` +
+        'they will be replaced, not skipped.',
+    );
+  }
 
   if (args.dryRun) {
     console.log('\n--dry-run, plan only:\n');
@@ -115,7 +128,10 @@ async function main() {
 
   if (todo.length === 0) {
     console.log('\nNothing to do. Use --force to regenerate.');
-    writeManifest(catalogue.assets.filter((a) => fs.existsSync(target(a.key))));
+    // Deliberately no manifest rewrite here. Reaching this branch means the
+    // catalogue is already recorded as Lux3D output, so there is nothing to add;
+    // rewriting it from `already` would drop provenance for every asset excluded
+    // by `--only` and quietly turn real assets back into "unknown, regenerate".
     return;
   }
 
@@ -185,13 +201,19 @@ async function main() {
 
   await Promise.all(workers);
 
-  const generated = catalogue.assets.filter((a) => fs.existsSync(target(a.key)));
-  writeManifest(generated);
+  // What actually came from Lux3D: the tasks that succeeded, plus anything an
+  // earlier run produced. Not `fs.existsSync` — a failed generation leaves the
+  // placeholder sitting at that path, and recording it here would mark it as
+  // done and skip it forever.
+  const produced = new Set(results.filter((r) => r.ok).map((r) => r.key));
+  const previously = lux3dKeys(MANIFEST);
+  const generated = catalogue.assets.filter((a) => produced.has(a.key) || previously.has(a.key));
+  if (generated.length) writeManifest(generated);
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${'='.repeat(64)}`);
   console.log(`generated ${results.filter((r) => r.ok).length}/${todo.length} · failed ${failed.length}`);
-  console.log(`${generated.length}/${catalogue.assets.length} assets present in public/assets/foreign/`);
+  console.log(`${generated.length}/${catalogue.assets.length} asset(s) now come from Lux3D (the rest are placeholders)`);
   if (generated.length) {
     console.log('\nRestart the dev server, or reload the page — the game picks up');
     console.log('any .glb it finds and falls back to placeholder geometry for the rest.');
@@ -204,12 +226,13 @@ async function main() {
 
 function writeManifest(assets) {
   const manifest = {
+    source: LUX3D_SOURCE,
     generatedWith: 'Aholo Lux3D text-to-3D (G1)',
     endpoint: 'https://api.aholo3d.cn/lux3d/v1/generate/text-to-3d/task/create',
     generatedAt: new Date().toISOString(),
     assets: assets.map((a) => ({ key: a.key, name: a.name, prompt: a.prompt, height: a.height })),
   };
-  fs.writeFileSync(path.join(OUT_DIR, 'manifest.json'), JSON.stringify(manifest, null, 2));
+  fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2));
 }
 
 main().catch((error) => {
