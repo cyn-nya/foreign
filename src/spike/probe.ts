@@ -22,15 +22,22 @@
 
 import {
   BackgroundMode,
+  Box3,
   Color,
+  GLTFLoader,
   PerspectiveCamera,
+  Raycaster,
   SplatLoader,
   SplatUtils,
+  Vector2,
   Vector3,
   createViewer,
+  downloadTexture,
   setViewerConfig,
   type Viewer,
 } from '@manycore/aholo-viewer';
+
+const { loadGLTF } = GLTFLoader;
 
 const GS = 'https://holo-cos.aholo3d.cn/aholo-opensource/gs_file';
 
@@ -95,6 +102,17 @@ interface ProbeState {
   /** Whether the internal culling switches were reachable and disabled. */
   cullingDisabled: boolean;
   parseOptions: { shDegree: number; pack: string } | null;
+  /**
+   * A .glb loaded into the same scene as the splat. This is how the game will
+   * place both its placeholder props and the Aholo Lux3D assets, so the probe
+   * has to prove the loader and the picking work together.
+   */
+  glb: {
+    url: string;
+    size: [number, number, number];
+    min: [number, number, number];
+    max: [number, number, number];
+  } | null;
   notes: string[];
 }
 
@@ -111,6 +129,7 @@ const state: ProbeState = {
   drawCalls: null,
   cullingDisabled: false,
   parseOptions: null,
+  glb: null,
   notes: [],
 };
 (window as unknown as { __probe: ProbeState }).__probe = state;
@@ -259,8 +278,25 @@ async function main(): Promise<void> {
   // decode time can be told apart — a 63 MB scan is slow for either reason and
   // they need completely different fixes.
   const downloadStarted = performance.now();
-  const response = await fetch(spec.url);
-  if (!response.ok) throw new Error(`splat URL failed: HTTP ${response.status}`);
+  // Retry: this is a 63 MB fetch from a CDN and a single transient reset would
+  // otherwise fail the whole acceptance run for no real reason.
+  let response: Response | null = null;
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const candidate = await fetch(spec.url);
+      if (candidate.ok) {
+        response = candidate;
+        break;
+      }
+      lastError = new Error(`HTTP ${candidate.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+    say(`! download attempt ${attempt} failed (${lastError instanceof Error ? lastError.message : lastError})`);
+    await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
+  }
+  if (!response) throw new Error(`splat URL failed: ${lastError instanceof Error ? lastError.message : lastError}`);
   const bytes = new Uint8Array(await response.arrayBuffer());
   state.downloadMs = Math.round(performance.now() - downloadStarted);
   state.bytes = bytes.byteLength;
@@ -298,8 +334,92 @@ async function main(): Promise<void> {
   }
 
   state.stage = 'done';
+
+  /**
+   * Optionally load a .glb into the same scene as the splat and prove it can be
+   * picked by a centre-screen ray. That pair — load a prop, then raycast it — is
+   * the whole interaction model of the game, so it gets proven here rather than
+   * discovered halfway through the port.
+   *
+   * The object is placed a fixed distance straight ahead of the starting pose,
+   * with its base on the floor, and the camera is then aimed at its centre, so
+   * the pick is deterministic instead of depending on the prop's proportions.
+   */
+  const glbUrl = params.get('glb');
+  let pickable: { scene: unknown } | null = null;
+  if (glbUrl) {
+    state.stage = 'glb';
+    say(`loading ${glbUrl} …`);
+    const glbResponse = await fetch(glbUrl);
+    if (!glbResponse.ok) throw new Error(`GLB ${glbUrl} -> HTTP ${glbResponse.status}`);
+    const parsed = await loadGLTF(await glbResponse.arrayBuffer(), { textureLoader: downloadTexture });
+    const object = parsed.scene;
+    pickable = { scene: object as unknown };
+
+    const dist = Number(params.get('glbDist') ?? 2.5);
+    const baseY = Number(params.get('glbY') ?? -0.425);
+    const fwdX = -Math.sin(spec.pose.yaw);
+    const fwdZ = -Math.cos(spec.pose.yaw);
+    object.position.set(spec.pose.x + fwdX * dist, baseY, spec.pose.z + fwdZ * dist);
+    viewer.getScene().add(object);
+    viewer.render();
+    await viewer.waitForRenderOver(600);
+
+    const box = new Box3().setFromObject(object);
+    const size = new Vector3();
+    box.getSize(size);
+    state.glb = {
+      url: glbUrl,
+      size: [size.x, size.y, size.z],
+      min: [box.min.x, box.min.y, box.min.z],
+      max: [box.max.x, box.max.y, box.max.z],
+    };
+    say(
+      `✓ glb placed at (${object.position.x.toFixed(2)}, ${baseY}, ${object.position.z.toFixed(2)}), ` +
+        `size ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)}`,
+      'ok',
+    );
+
+    // Aim at the object's centre so the centre-screen ray has something to hit.
+    const cx = (box.min.x + box.max.x) / 2;
+    const cy = (box.min.y + box.max.y) / 2;
+    const cz = (box.min.z + box.max.z) / 2;
+    const dx = cx - spec.pose.x;
+    const dz = cz - spec.pose.z;
+    const dy = cy - spec.pose.y;
+    const horizontal = Math.hypot(dx, dz);
+    if (horizontal < 1e-6) throw new Error('glb ended up on top of the camera');
+    camera.position.set(spec.pose.x, spec.pose.y, spec.pose.z);
+    camera.rotation.set(Math.atan2(dy, horizontal), Math.atan2(-dx, -dz), 0, 'YXZ');
+    viewer.render();
+    await viewer.waitForRenderOver(600);
+    say(`✓ aimed at the glb centre (${cx.toFixed(2)}, ${cy.toFixed(2)}, ${cz.toFixed(2)})`, 'ok');
+    // Back to 'done': the stage name is a failure diagnostic, and
+    // state.glb already records that this part ran.
+    state.stage = 'done';
+  }
+
   state.ready = true;
   say(`✓ rendered — ${state.notes.length} steps`, 'ok');
+
+  /**
+   * Cast a ray from the camera through a screen point and report what it hits.
+   * Screen centre by default; the game marks whatever this returns.
+   */
+  (window as unknown as {
+    __pick: (nx?: number, ny?: number) => { count: number; first: { distance: number } | null };
+  }).__pick = (nx = 0, ny = 0) => {
+    if (!pickable) return { count: 0, first: null };
+    const raycaster = new Raycaster();
+    raycaster.setFromCamera(new Vector2(nx, ny), camera, viewer.getSize().height);
+    const hits: unknown[] = [];
+    raycaster.intersectObjects([pickable.scene as never], true, hits as never);
+    const first = hits[0] as { distance?: number } | undefined;
+    return {
+      count: hits.length,
+      first: first && typeof first.distance === 'number' ? { distance: first.distance } : null,
+    };
+  };
 
   /**
    * Control experiment: pull the splat back out and re-render from the same

@@ -138,6 +138,11 @@ function restoreSplat() {
   return typeof window.__restoreSplat === 'function' ? window.__restoreSplat() : false;
 }
 
+/** Cast a ray through a screen point and report what it hits. */
+function pick({ nx, ny }) {
+  return typeof window.__pick === 'function' ? window.__pick(nx, ny) : null;
+}
+
 const args = process.argv.slice(2);
 const argValue = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : null);
 const onlyScene = argValue('--scene');
@@ -147,9 +152,13 @@ const noSweep = args.includes('--no-sweep');
 const parseQuery = [
   argValue('--sh') ? `sh=${argValue('--sh')}` : null,
   argValue('--pack') ? `pack=${argValue('--pack')}` : null,
+  argValue('--glb') ? `glb=${encodeURIComponent(argValue('--glb'))}` : null,
+  argValue('--glb-dist') ? `glbDist=${argValue('--glb-dist')}` : null,
 ]
   .filter(Boolean)
   .join('&');
+/** When set, the run also proves a .glb loads and can be picked by a ray. */
+const glbUrl = argValue('--glb');
 
 // Each entry is a pose to photograph once the scene has loaded.
 const VIEWS = {
@@ -306,6 +315,52 @@ async function main() {
           sceneReport.coverage.map((c) => `${c.name}:${c.rich}`).join(' '),
       });
       if (best.rich < YAWS - 1) failures++;
+    }
+
+    // --- .glb loading and picking -------------------------------------------
+    // Loading a prop and raycasting it is the game's entire interaction model.
+    if (scene === 'room' && glbUrl) {
+      const glb = probe.glb;
+      const size = glb?.size ?? [0, 0, 0];
+      const hasExtent = size.every((v) => v > 0.01);
+      report.checks.push({
+        name: 'room: the .glb loads into the splat scene with real extent',
+        ok: Boolean(glb) && hasExtent,
+        detail: glb
+          ? `${glb.url} size ${size.map((v) => v.toFixed(2)).join(' x ')}`
+          : 'no glb state published',
+      });
+      if (!(glb && hasExtent)) failures++;
+
+      const aimed = await page.evaluate(pick, { nx: 0, ny: 0 });
+      // The object sits glbDist ahead of the camera, so a centre-screen hit
+      // should land just before that; allow a generous band for its own depth.
+      const expected = Number(argValue('--glb-dist') ?? 2.5);
+      const hit = aimed?.first ?? null;
+      report.checks.push({
+        name: 'room: a centre-screen ray picks the .glb',
+        ok: Boolean(hit) && hit.distance > expected * 0.5 && hit.distance < expected * 1.6,
+        detail: hit
+          ? `${aimed.count} hit(s), nearest ${hit.distance.toFixed(2)} m from a camera ${expected} m away`
+          : `no hit (count ${aimed?.count ?? 'n/a'})`,
+      });
+      if (!hit || hit.distance <= expected * 0.5 || hit.distance >= expected * 1.6) failures++;
+
+      // Control: a corner ray must miss, or "picking works" would be meaningless.
+      const corner = await page.evaluate(pick, { nx: 0.96, ny: 0.96 });
+      report.checks.push({
+        name: 'room: a corner ray misses the .glb',
+        ok: (corner?.count ?? -1) === 0,
+        detail: `count ${corner?.count ?? 'n/a'}`,
+      });
+      if ((corner?.count ?? -1) !== 0) failures++;
+
+      const shot = await page.screenshot({ type: 'png' });
+      fs.writeFileSync(path.join(outDir, `${scene}-glb.png`), shot);
+      const stats = await measureScreenshot(scratch, shot);
+      console.log(
+        `    glb-pick                   mean=${String(stats.mean).padStart(5)} edge=${stats.edge} colors=${stats.exactColors} (${Math.round(shot.length / 1024)} KB)`,
+      );
     }
 
     // A reconstructed scan is not a full 360° environment: some directions have
