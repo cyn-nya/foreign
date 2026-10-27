@@ -1382,6 +1382,49 @@ try {
       `gnome is >0 -> ${briefing.intruderIsGenerated}, face is >0 -> ${briefing.worstIsGenerated}`,
   );
 
+  /* ------------------------------------------------- menu diagnostics ----- */
+
+  // The single most useful diagnostic in the project, and the only one a player is likely
+  // to read: this harness draws with SwiftShader, so a build that detects software
+  // rendering has to say so on the menu. A build that does not is one where the player
+  // concludes the game is broken, which is what happened.
+  //
+  // One-directional on purpose. Proving the warning stays *off* on a real GPU would need a
+  // real GPU, which is exactly the machine this cannot run on -- so what is asserted is the
+  // half that can be: when the renderer is software, the menu says so, and names it.
+  const menu = await page.evaluate(async () => {
+    const s = window.__splat;
+    // Probed before and after, because the answer changing between the two is itself the
+    // finding: the guard inside `showMenu` and the accessor the check reads must agree.
+    const softwareBefore = s.softwareRenderer();
+    const state = s.toMenu();
+    await new Promise((r) => setTimeout(r, 250));
+    const panel = document.querySelector('.panel');
+    const text = panel?.textContent ?? '';
+    const renderer = s.rendererName() ?? '';
+    return {
+      state,
+      renderer,
+      softwareBefore,
+      software: s.softwareRenderer(),
+      hasWarning: text.includes('软件渲染'),
+      namesRenderer: renderer !== '' && text.includes(renderer),
+      panels: document.querySelectorAll('.panel').length,
+      text: text.replace(/\s+/g, ' ').slice(0, 400),
+    };
+  });
+  check(
+    'the menu names software rendering as the reason it is slow',
+    menu.state === 'menu' && menu.software && menu.hasWarning,
+    `state=${menu.state} software=${menu.software} (before=${menu.softwareBefore}) ` +
+      `warned=${menu.hasWarning} panels=${menu.panels} renderer=${menu.renderer}`,
+  );
+  check(
+    'and the warning names the actual renderer, so it can be acted on',
+    menu.namesRenderer,
+    `renderer "${menu.renderer}" missing from menu text: ${menu.text}`,
+  );
+
   /* ---------------------------------------------------------- pause ------- */
 
   // Esc is the browser's key, not ours: it exits the pointer lock and does not reliably

@@ -138,6 +138,12 @@ interface SplatDebug {
   assetWeirdness: (key: string) => number | null;
   /** The horror role a model was generated for, or null. */
   assetHorrorTag: (key: string) => string | null;
+  /** The WebGL adapter the browser reports, or null. */
+  rendererName: () => string | null;
+  /** True when that adapter is a CPU rasteriser. */
+  softwareRenderer: () => boolean;
+  /** Show the main menu again, and report the state it left the game in. */
+  toMenu: () => string;
   /**
    * What the frame-rate counter is actually looking at.
    *
@@ -285,6 +291,9 @@ const debug: SplatDebug = {
   aimAtBystander: () => null,
   assetWeirdness: () => null,
   assetHorrorTag: () => null,
+  rendererName: () => null,
+  softwareRenderer: () => false,
+  toMenu: () => 'menu',
   perfWindow: () => ({ samples: 0, spanMs: 0, intervals: 0, historyMs: 0 }),
   briefing: () => '',
   quality: () => ({ level: 0, ratio: 1, auto: false, changes: 0 }),
@@ -456,19 +465,51 @@ function briefingHtml(): string {
       按 <strong>F3</strong> 看帧率。</span>`;
 }
 
+/**
+ * What to tell a player whose browser is drawing this on the CPU.
+ *
+ * The F3 overlay already reports the adapter, but a player who is watching a slideshow has
+ * no reason to press F3 -- they conclude the game is broken, and they are right about the
+ * experience while being wrong about the cause. So the single most useful diagnostic in the
+ * project is put where the complaint is actually formed: the menu, before they start.
+ *
+ * It says what is wrong, that it is not their computer, and what to try. It does not say
+ * the game is fine, because at that frame rate it is not.
+ */
+function softwareRenderWarning(): string {
+  if (!isSoftwareRenderer()) return '';
+  return (
+    `<p class="progress-note warn">⚠ 浏览器正在用 CPU 软件渲染（${rendererReport() ?? '未知'}），` +
+    `不是你的显卡 —— 这是这次卡顿的原因。</p>` +
+    `<p class="progress-note dim">可尝试：在浏览器设置里开启「使用硬件加速」，` +
+    `确认显卡驱动正常，或换 Chrome / Edge 打开。按 F3 可看到渲染器名称。</p>`
+  );
+}
+
+/**
+ * The last menu shown, so it can be shown again.
+ *
+ * Module-level rather than a `let` inside `main()`: the `?autostart=1` path reaches debug
+ * hooks before `main()` has finished running, and anything declared further down is in its
+ * temporal dead zone at that moment. `showMenu` fills this in on its first call, so the
+ * only value it can ever hold is one that has already been rendered once.
+ */
+let reopenMenu: (() => void) | null = null;
+
 function showMenu(assetLine: string, onStart: () => void): void {
   debug.state = 'menu';
+  reopenMenu = () => showMenu(assetLine, onStart);
   panel(`
     <h1 class="title">FOREIGN<span class="sub">异物</span></h1>
     <p class="tagline">${briefingHtml()}</p>
     <div class="actions">
       <button id="start-btn" class="primary">进入现场</button>
     </div>
+    ${softwareRenderWarning()}
     <p class="progress-note dim">点击后锁定鼠标 · WASD 移动 · 左键标记 · Esc 释放</p>
     <p class="progress-note dim">${assetLine}</p>
   `);
   document.getElementById('start-btn')?.addEventListener('click', onStart);
-
 }
 
 /**
@@ -620,6 +661,8 @@ function togglePerf(): void {
  * page, which is how "your machine should be fast enough" turns into a guess.
  */
 let rendererName: string | null | undefined;
+/** The untruncated adapter string. See `isSoftwareRenderer`. */
+let rendererFull: string | null = null;
 
 function webglRenderer(): string | null {
   if (rendererName !== undefined) return rendererName;
@@ -634,19 +677,57 @@ function webglRenderer(): string | null {
     const raw = ext
       ? (gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) as string)
       : (gl.getParameter(gl.RENDERER) as string);
-    // Keep it short: some drivers append a paragraph of version numbers, and the
-    // overlay is one line.
-    rendererName = String(raw ?? '').split(/[(),]/)[0]!.trim().slice(0, 46) || null;
+    const full = String(raw ?? '');
+    // An empty answer is not an answer, and must not be cached as one.
+    //
+    // The first probe of a page can come back empty -- a context that is not ready, or an
+    // extension that is not yet exposed -- and caching that made `isSoftwareRenderer`
+    // answer false for the rest of the session. The acceptance run caught it as
+    // `software=false (before=false)` at the moment the menu was drawn, and then true
+    // immediately after: the warning was being skipped on the one call that displays it.
+    // Leaving `rendererName` unset means the next call probes again.
+    if (full === '') {
+      rendererName = undefined;
+      return null;
+    }
+    rendererFull = full;
+    // Keep the *display* short: some drivers append a paragraph of version numbers, and
+    // the overlay is one line.
+    //
+    // Truncation is for display only, and getting that wrong made this diagnostic lie.
+    // Chromium reports `ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) ...))`,
+    // so splitting on the first `(` leaves the string `ANGLE` -- which contains no hint
+    // that the frame is being drawn on the CPU, and `isSoftwareRenderer` then answers
+    // false on exactly the machine the warning exists for. The full string is kept
+    // separately, and is what the test reads.
+    rendererName = full.split(/[(),]/)[0]!.trim().slice(0, 46) || null;
   } catch {
     rendererName = null;
+    rendererFull = null;
   }
   return rendererName;
 }
 
 /** True when the adapter name says the frame is being drawn on the CPU. */
 function isSoftwareRenderer(): boolean {
-  const name = (webglRenderer() ?? '').toLowerCase();
-  return /swiftshader|llvmpipe|software|basic render|microsoft basic/.test(name);
+  // The full string, not the display name. See `webglRenderer` for what the shortened one
+  // loses, and why this is not simply a longer slice: the identifying word sits inside
+  // parentheses, after the vendor, so any prefix cut is the wrong cut.
+  //
+  // `||` rather than `??`: an empty string is a failed probe, and falling through to probe
+  // again is the whole point of not caching one.
+  const name = (rendererFull || webglRenderer() || '').toLowerCase();
+  return /swiftshader|llvmpipe|software rasterizer|softwarerasterizer|basic render|microsoft basic/.test(
+    name,
+  );
+}
+
+/** The adapter name for a report, untruncated when the display name would mislead. */
+function rendererReport(): string | null {
+  // Software rendering is the case that has to survive, so the long string is preferred
+  // when the short one would hide it.
+  if (isSoftwareRenderer()) return rendererFull ?? rendererName ?? null;
+  return rendererName ?? null;
 }
 
 function paintPerf(): void {
@@ -671,7 +752,7 @@ function paintPerf(): void {
     // game: without it, a software rasteriser and a dead GPU look identical from
     // inside the page, and every other number here is then being read as a
     // measurement of the game when it is a measurement of the fallback.
-    `\n${rendererName ?? '未知渲染器'}${isSoftwareRenderer() ? '  ⚠ 软件渲染（未用显卡）' : ''}`;
+    `\n${rendererReport() ?? '未知渲染器'}${isSoftwareRenderer() ? '  ⚠ 软件渲染（未用显卡）' : ''}`;
   const tone = fps === null ? '' : fps < 15 ? 'bad' : fps < 30 ? 'warn' : '';
   el.perf.className = `perf${tone ? ` ${tone}` : ''}`;
 }
@@ -1162,15 +1243,26 @@ async function main(): Promise<void> {
   const HINT_AFTER_S = 90;
   let hintGiven = false;
 
+  // Registered before the branch, not inside it.
+  //
+  // `showMenu` sets `reopenMenu`, so registering it only on the menu path leaves every
+  // `?autostart=1` link -- every demo link, and the acceptance harness -- with a null
+  // `reopenMenu`, and `debug.toMenu()` then does nothing at all. The call is identical to
+  // the one in the branch below and runs at the same point in the boot, so it carries the
+  // same TDZ safety: `assetLine` is already initialised and `startFloor` is a function
+  // declaration.
+  reopenMenu = () =>
+    showMenu(assetLine, () => {
+      void startFloor(1, undefined, true);
+    });
+
   if (params.get('autostart') === '1') {
     await startFloor(
       Number.isFinite(requestedFloor) && requestedFloor > 0 ? requestedFloor : 1,
       Number.isFinite(requestedSeed) ? requestedSeed : undefined,
     );
   } else {
-    showMenu(assetLine, () => {
-      void startFloor(1, undefined, true);
-    });
+    reopenMenu();
   }
 
   // The viewer owns its canvas, so cabling the layout is on us.
@@ -1666,6 +1758,15 @@ async function main(): Promise<void> {
   // models reach the right kinds without hard-coding the catalogue into the harness.
   debug.assetHorrorTag = (key) =>
     FOREIGN_ASSETS.find((asset) => asset.key === key)?.horrorTag ?? null;
+
+  // What the page believes it is drawing with. Reported rather than recomputed by the
+  // check, so the check is asserting that the *build* knows, not that the harness does.
+  debug.rendererName = () => rendererReport();
+  debug.softwareRenderer = () => isSoftwareRenderer();
+  debug.toMenu = () => {
+    reopenMenu?.();
+    return debug.state;
+  };
 
   // The same summary the HUD uses, reported rather than recomputed. When these
   // were two implementations they disagreed with each other about a stalled loop.

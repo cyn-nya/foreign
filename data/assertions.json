@@ -1,5 +1,5 @@
 {
-  "total": 291,
+  "total": 293,
   "steps": [
     {
       "step": "voxel:check",
@@ -24,7 +24,7 @@
     {
       "step": "splat:shoot",
       "label": "真实房间验收",
-      "count": 76
+      "count": 78
     },
     {
       "step": "shoot",

@@ -243,6 +243,19 @@ button.ghost:hover { color: var(--fg); border-color: var(--fg); }
 }
 .progress-note.dim { color: rgba(139, 152, 168, 0.6); }
 .progress-note.bad { color: var(--warn); }
+/* The software-rendering warning on the menu. `--gold` rather than `--warn`: nothing is
+   broken and nothing can be fixed from inside the game, so it must read as advice rather
+   than as an error the player is expected to clear. Boxed, because it is the one line on
+   this panel that explains a problem instead of describing the game. */
+.progress-note.warn {
+  color: var(--gold);
+  border: 1px solid rgba(252, 204, 102, 0.28);
+  background: rgba(252, 204, 102, 0.06);
+  border-radius: 3px;
+  padding: 10px 14px;
+  margin-top: 18px;
+  line-height: 1.9;
+}
 
 /* Live frame rate. Hidden until F3, because a number in the corner of a horror
    game is not atmosphere — but it has to be readable the moment it is asked for,
