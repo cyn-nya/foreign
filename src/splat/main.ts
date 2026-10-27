@@ -29,6 +29,7 @@ import type { AnomalyKind, FloorPlan } from '../game/types.ts';
 import { SplatPlayer } from './SplatPlayer.ts';
 import { SplatRoom } from './SplatRoom.ts';
 import { GameAudio, type AudioReport } from './audio.ts';
+import { advanceSteps, initialSteps } from './steps.ts';
 import { ROOM_ANCHORS, ROOM_FLOOR_OPTIONS } from './roomAnchors.ts';
 import { Box3, Vector3, type Object3D } from '@manycore/aholo-viewer';
 import { ROOM_SPAWN, SplatScene } from './SplatScene.ts';
@@ -45,6 +46,7 @@ import {
   chargeWindowForFloor,
   chargeChanceForFloor,
   chargeModelsForFloor,
+  musicLevelForFloor,
 } from './horror.ts';
 import { summariseFrames } from './framerate.ts';
 import {
@@ -140,6 +142,12 @@ interface SplatDebug {
   assetHorrorTag: (key: string) => string | null;
   /** The WebGL adapter the browser reports, or null. */
   rendererName: () => string | null;
+  /** How many footsteps have been taken. */
+  stepCount: () => number;
+  /** Spend `dt` of game time with no movement, and report the step count. */
+  idle: (dt: number) => number;
+  /** The stride accumulator, for a check that walking is what drives it. */
+  stepState: () => { pending: number; since: number; count: number };
   /** True when that adapter is a CPU rasteriser. */
   softwareRenderer: () => boolean;
   /** Show the main menu again, and report the state it left the game in. */
@@ -283,7 +291,10 @@ const debug: SplatDebug = {
   walk: () => ({ from: [0, 0, 0], to: [0, 0, 0] }),
   look: () => undefined,
   audioStart: () => false,
-  audio: () => ({ state: 'none', gain: 0, rms: 0, tension: 0 }),
+  audio: () => ({ state: 'none', gain: 0, rms: 0, tension: 0, steps: 0, voices: 0 }),
+  stepCount: () => 0,
+  idle: () => 0,
+  stepState: () => ({ pending: 0, since: 0, count: 0 }),
   proximity: () => ({ tension: 0, nearest: null }),
   start: async () => undefined,
   mark: () => ({ result: 'miss', slotId: null, found: 0, marksLeft: MAX_MISTAKES, state: 'menu' }),
@@ -1226,6 +1237,36 @@ async function main(): Promise<void> {
   let plan: FloorPlan | null = null;
 
   /**
+   * How far the player has walked since the last footstep, and where that was.
+   *
+   * Declared here with `plan` and for the same reason: `?autostart=1` reaches boot code
+   * synchronously, and a `let` further down is still in its temporal dead zone at that
+   * moment. A footstep is a distance rather than a timer, so a paused or stationary player
+   * makes no sound -- see `advanceSteps` for the failure a timer produces.
+   */
+  let steps = initialSteps();
+  let lastStepPos: { x: number; z: number } | null = null;
+
+  /**
+   * Fold this frame's movement into the stride accumulator, and click if a foot landed.
+   *
+   * `null` means "no known previous position", which is set after a respawn or a teleport:
+   * without it the first frame after a floor change would measure the whole distance from
+   * the old room to the new one and fire a burst of steps.
+   */
+  function advanceFootsteps(dt: number): void {
+    const pose = player.cameraState();
+    const previous = lastStepPos;
+    lastStepPos = { x: pose.x, z: pose.z };
+    // Only while playing. A paused game must not keep clicking, and the menu has no feet.
+    if (!previous || debug.state !== 'playing') return;
+    const moved = Math.hypot(pose.x - previous.x, pose.z - previous.z);
+    const advanced = advanceSteps(steps, moved, dt);
+    steps = advanced.state;
+    if (advanced.stepped) audio.footstep();
+  }
+
+  /**
    * Findability hint state.
    *
    * Declared here for the same reason as `plan` above, and it is not a coincidence that
@@ -1396,10 +1437,18 @@ async function main(): Promise<void> {
     // link there has not been one, so the context may stay suspended until the
     // player clicks. Either way the game is playable.
     audio.ensure();
+    // The bed deepens with the descent, on the same clock as the other escalations. Set here
+    // rather than in the frame loop because it is a property of the floor, not of the
+    // moment: re-issuing it every frame would only re-anchor the same ramp.
+    audio.setMusic(musicLevelForFloor(floor));
     // Each floor starts back at the way in, as the procedural game does — the
     // fiction is descending, and it also stops a lucky end-of-floor position
     // from trivialising the next one.
     player.respawn();
+    // The walk from the old room to this one is not movement, so the accumulator forgets
+    // where it was rather than measuring the jump as a stride.
+    lastStepPos = null;
+    steps = initialSteps();
     applyFloorHorror(floor);
     debug.renderOnce();
     syncHud();
@@ -1631,6 +1680,8 @@ async function main(): Promise<void> {
   }
 
   debug.audioStart = () => audio.ensure();
+  debug.stepCount = () => audio.stepCount;
+  debug.stepState = () => ({ ...steps });
   debug.audio = () => audio.read();
   debug.proximity = () => proximity();
 
@@ -1649,7 +1700,12 @@ async function main(): Promise<void> {
     const from: [number, number, number] = [player.x, player.y, player.z];
     player.setKey(code, true);
     const step = 1 / 60;
-    for (let elapsed = 0; elapsed < seconds; elapsed += step) player.update(step);
+    for (let elapsed = 0; elapsed < seconds; elapsed += step) {
+      player.update(step);
+      // The same advance the frame loop runs, so a check driven through `walk` is measuring
+      // the real path and not a second implementation of it.
+      advanceFootsteps(step);
+    }
     player.setKey(code, false);
     debug.renderOnce();
     return { from, to: [player.x, player.y, player.z] };
@@ -1665,6 +1721,19 @@ async function main(): Promise<void> {
     const before = debug.timeLeft;
     advanceRunClock(dt);
     return { state: debug.state, before, after: debug.timeLeft };
+  };
+
+  /**
+   * Spend `dt` of game time without the player moving.
+   *
+   * The other half of the footstep contract, and the half a timer gets wrong: a player
+   * standing still in the dark must make no sound however long they stand there. Driving it
+   * through the same `advanceFootsteps` the frame loop uses, so this cannot pass on a build
+   * whose real path differs.
+   */
+  debug.idle = (dt: number) => {
+    advanceFootsteps(dt);
+    return audio.stepCount;
   };
 
   debug.tick = (seconds) => {
@@ -2010,6 +2079,7 @@ async function main(): Promise<void> {
     // Frozen while paused, because the keyboard is not: the pointer lock is gone but
     // WASD still arrives, and a pause the player can walk around inside is not a pause.
     if (debug.state !== 'paused') player.update(dt);
+    advanceFootsteps(dt);
     // The room animates against the player's eye: what watches you has to be
     // updated before the frame is drawn, or it lags a frame behind.
     room.update(dt, player.cameraState());

@@ -1002,6 +1002,72 @@ try {
       `louder near (per-pair ${sound.spread} — reported, not gated)`,
   );
 
+  /* ------------------------------------------------------- footsteps ------ */
+
+  // A footstep is a distance, not a timer, and the half of that worth gating is the half a
+  // timer gets wrong: a player standing still must make no sound. Both halves are checked
+  // against the same counter, so a build that simply plays footsteps continuously fails the
+  // second while passing the first.
+  const walking = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(2, 909, false);
+    s.audioStart();
+    await new Promise((r) => setTimeout(r, 300));
+
+    const before = s.audio().steps;
+    // Standing still: game time passes, the player does not move. Driven through the same
+    // advance the frame loop calls, so a timer-based step cannot pass this.
+    for (let i = 0; i < 6; i++) s.idle(0.4);
+    const afterStanding = s.audio().steps;
+
+    // Then actually cross the room, through the same collision-resolved movement the
+    // keyboard drives. `walk` takes seconds and shares the footstep implementation.
+    const moved = [];
+    for (let i = 0; i < 6; i++) {
+      const from = s.walk(0.45);
+      moved.push(Math.hypot(from.to[0] - from.from[0], from.to[2] - from.from[2]));
+    }
+    const afterWalking = s.audio().steps;
+    return {
+      before,
+      afterStanding,
+      afterWalking,
+      state: s.state,
+      walked: moved.reduce((a, b) => a + b, 0),
+    };
+  });
+  check(
+    'walking across the room is heard as footsteps',
+    walking.afterWalking > walking.afterStanding,
+    `steps ${walking.before} → ${walking.afterStanding} (standing) → ${walking.afterWalking} ` +
+      `(after walking ${walking.walked.toFixed(1)} m)`,
+  );
+  check(
+    'and standing still in the dark makes no sound at all',
+    walking.afterStanding === walking.before,
+    `steps went ${walking.before} → ${walking.afterStanding} while the player did not move`,
+  );
+
+  // The musical bed. Asserted on the graph rather than on a level, because in a headless
+  // browser there is no output device: what can be established is that the notes exist and
+  // that a deeper floor asks for more of them than a shallow one.
+  const bed = await page.evaluate(async () => {
+    const s = window.__splat;
+    s.audioStart();
+    await s.start(1, 404, false);
+    await new Promise((r) => setTimeout(r, 400));
+    const shallow = s.audio().voices;
+    await s.start(8, 404, false);
+    await new Promise((r) => setTimeout(r, 400));
+    const deep = s.audio().voices;
+    return { shallow, deep };
+  });
+  check(
+    'the musical bed gains a voice as the run goes deeper',
+    bed.deep > bed.shallow && bed.shallow > 0,
+    `floor 1: ${bed.shallow} notes, floor 8: ${bed.deep} notes`,
+  );
+
   // --- the two kinds only the reconstructed room can express -----------------
   const shapes = await page.evaluate(async () => {
     const s = window.__splat;

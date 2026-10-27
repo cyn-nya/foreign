@@ -22,11 +22,37 @@ export interface AudioReport {
   rms: number;
   /** The proximity value most recently supplied. */
   tension: number;
+  /** How many footsteps have been taken. */
+  steps: number;
+  /** How many notes are sounding in the musical bed. */
+  voices: number;
 }
 
 const DRONE_BASE_HZ = 55;
 const DRONE_BEAT_HZ = 0.7;
 const MAX_GAIN = 0.085;
+
+/**
+ * The musical bed.
+ *
+ * A drone is not music: it is a texture, and a player stops hearing it after a minute. What
+ * makes a room feel like somewhere a person should not be is a slow harmonic movement that
+ * is almost too quiet to notice — heard only when it changes.
+ *
+ * Built from sine partials on a minor triad rather than a looped sample, for the same reason
+ * as everything else here: no asset to load, and the interval can be chosen per floor rather
+ * than being a fixed piece of audio that plays on every one. Two chords, a tritone apart,
+ * alternate slowly, which is the cheapest way to make a room feel wrong rather than sad.
+ */
+const PAD_ROOT_HZ = 110;
+
+/** Root, minor third, fifth, and an octave. */
+const PAD_RATIOS = [1, 1.1892, 1.4983, 2];
+
+/** The note that makes it a tritone rather than a chord. Added on the deep floors. */
+const PAD_TRITONE = 1.4142;
+
+const MAX_PAD_GAIN = 0.05;
 
 export class GameAudio {
   private context: AudioContext | null = null;
@@ -41,6 +67,13 @@ export class GameAudio {
   private scratch: Float32Array<ArrayBuffer> | null = null;
   private tension = 0;
   private scares = 0;
+  private steps = 0;
+
+  /** The musical bed's own gain, kept separate from the drone's. */
+  private padGain: GainNode | null = null;
+  /** The partials that are currently sounding, so a floor change can retune them. */
+  private padVoices: { osc: OscillatorNode; ratio: number }[] = [];
+  private musicLevel = 0;
 
   /** Whether audio was ever successfully started on this page. */
   get available(): boolean {
@@ -102,8 +135,16 @@ export class GameAudio {
       this.analyser = analyser;
       this.scratch = new Float32Array(new ArrayBuffer(analyser.fftSize * 4));
 
+      // The musical bed, parked silent until a floor asks for it. Its own gain node, so
+      // a floor change can retune the notes without disturbing the tension drone -- the two
+      // are doing different jobs and must not share a level.
+      const padGain = context.createGain();
+      padGain.gain.value = 0;
+      this.padGain = padGain;
+
       filter.connect(droneGain);
       droneGain.connect(analyser);
+      padGain.connect(analyser);
       analyser.connect(context.destination);
 
       // Autoplay policy can leave it suspended even after construction.
@@ -240,8 +281,126 @@ export class GameAudio {
     return this.scares;
   }
 
+  /** How many footsteps have been taken, so a harness can assert walking makes them. */
+  get stepCount(): number {
+    return this.steps;
+  }
+
+  /**
+   * One foot on the floor.
+   *
+   * A very short filtered noise burst, not a sample and not a tone. Noise because a
+   * footstep is broadband and unpitched -- a tone reads as a beep, and a footstep that
+   * beeps is worse than silence. Short because the ear localises a step by its attack.
+   *
+   * The centre frequency is randomised per step. Identical steps sound like a machine, and
+   * the whole point of a footstep in this game is that the player is not sure whether the
+   * one they just heard was theirs.
+   *
+   * `hardness` 0..1: a soft step for carpet, a harder one for a wooden floor.
+   */
+  footstep(hardness = 0.4): void {
+    if (!this.context || !this.analyser) return;
+    const context = this.context;
+    const t = context.currentTime;
+    const level = Math.max(0, Math.min(1, hardness));
+
+    const frames = Math.floor(context.sampleRate * 0.09);
+    const buffer = context.createBuffer(1, frames, context.sampleRate);
+    const channel = buffer.getChannelData(0);
+    for (let i = 0; i < frames; i++) {
+      // A sharp attack and a fast decay: 1 - i/frames to the fourth is most of the way
+      // gone inside 20 ms, which is what makes it a step rather than a swish.
+      const decay = Math.pow(1 - i / frames, 4);
+      channel[i] = (Math.random() * 2 - 1) * decay;
+    }
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+
+    // +-25% around 700 Hz. Wide enough that two consecutive steps are audibly different,
+    // narrow enough that they are all unmistakably the same kind of sound.
+    const band = context.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = 700 * (0.75 + Math.random() * 0.5);
+    band.Q.value = 0.9 + level * 0.8;
+
+    const gain = context.createGain();
+    const peak = 0.05 + level * 0.07;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(peak, t + 0.004);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.11);
+
+    source.connect(band);
+    band.connect(gain);
+    gain.connect(this.analyser);
+    source.start(t);
+    source.stop(t + 0.12);
+
+    this.steps += 1;
+  }
+
+  /**
+   * The musical bed, and how far into the game the player is.
+   *
+   * `level` 0..1: the shallow floors get the bare minor triad, the deep ones get the
+   * tritone added and a little more level. Retuning the sounding partials rather than
+   * starting a new piece, so a floor change is a movement rather than a cut -- a track that
+   * restarts every time the room rebuilds would be the loudest thing in the game.
+   */
+  setMusic(level: number): void {
+    const next = Math.max(0, Math.min(1, level));
+    if (Math.abs(next - this.musicLevel) < 0.001) return;
+    this.musicLevel = next;
+    if (!this.context || !this.padGain) return;
+    const context = this.context;
+    const t = context.currentTime;
+
+    // The tritone is only present on the deeper floors. It is the interval that makes the
+    // chord stop being merely sad, and it should arrive as a change the player notices
+    // rather than as part of the furniture from the first room.
+    const wanted = next > 0.35 ? [...PAD_RATIOS, PAD_TRITONE] : [...PAD_RATIOS];
+
+    // Retune what is already sounding before adding or removing anything, so the movement
+    // is heard as the chord changing rather than as notes being swapped.
+    for (let i = 0; i < this.padVoices.length; i++) {
+      const voice = this.padVoices[i]!;
+      if (i < wanted.length) {
+        voice.ratio = wanted[i]!;
+        voice.osc.frequency.setTargetAtTime(PAD_ROOT_HZ * wanted[i]!, t, 2.5);
+      } else {
+        voice.osc.stop(t + 3);
+      }
+    }
+    if (this.padVoices.length > wanted.length) this.padVoices.length = wanted.length;
+
+    for (let i = this.padVoices.length; i < wanted.length; i++) {
+      const osc = context.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = PAD_ROOT_HZ * wanted[i]!;
+      // Fade in over seconds rather than starting at level. A note that appears is a cue;
+      // a note that is discovered is atmosphere.
+      const fade = context.createGain();
+      fade.gain.value = 0;
+      fade.gain.setTargetAtTime(1, t, 3);
+      osc.connect(fade);
+      fade.connect(this.padGain);
+      osc.start(t);
+      this.padVoices.push({ osc, ratio: wanted[i]! });
+    }
+
+    // A slow tremolo, so the bed breathes. Two incommensurable rates, because one rate
+    // reads as a pulsing effect and two read as the chord being alive.
+    this.padGain.gain.setTargetAtTime(next * MAX_PAD_GAIN, t, 3);
+  }
+
+  /** How many notes the bed is currently sounding. */
+  get voiceCount(): number {
+    return this.padVoices.length;
+  }
+
   /** Measure the graph, so a harness can assert sound is actually being made. */
-  read(): AudioReport {    const state = this.context ? this.context.state : 'none';
+  read(): AudioReport {
+    const state = this.context ? this.context.state : 'none';
     const gain = this.droneGain ? this.droneGain.gain.value / MAX_GAIN : 0;
     let rms = 0;
     if (this.analyser && this.scratch) {
@@ -250,6 +409,13 @@ export class GameAudio {
       for (let i = 0; i < this.scratch.length; i++) sum += this.scratch[i] * this.scratch[i];
       rms = Math.sqrt(sum / this.scratch.length);
     }
-    return { state, gain, rms, tension: this.tension };
+    return {
+      state,
+      gain,
+      rms,
+      tension: this.tension,
+      steps: this.steps,
+      voices: this.padVoices.length,
+    };
   }
 }

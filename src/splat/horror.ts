@@ -12,6 +12,8 @@
  */
 
 /** Floors past this are as dark as the game ever gets. */
+import { FINAL_FLOOR } from '../game/rules.ts';
+
 export const MAX_DARKNESS_FLOOR = 8;
 export const MAX_DARKNESS = 0.86;
 export const MIN_DARKNESS = 0.18;
@@ -139,6 +141,20 @@ export function chargeWindowForFloor(floor: number): number {
 export function chargeChanceForFloor(floor: number): number {
   if (floor < CHARGE_FIRST_FLOOR) return 0;
   return Math.min(0.6, 0.33 + (floor - CHARGE_FIRST_FLOOR) * 0.05);
+}
+
+/**
+ * How far into the game a floor is, for the musical bed.
+ *
+ * `0` on floor one, `1` on the last floor. The bed adds a tritone and a little level at
+ * `0.35` (see `setMusic`), which lands around floor four -- the same floor the ghosts
+ * arrive on and the same floor the charges start. Three separate escalations sharing one
+ * threshold is deliberate: they are the same statement, that the room has stopped pretending,
+ * and staggering them would only make the middle floors feel unfinished.
+ */
+export function musicLevelForFloor(floor: number): number {
+  const span = Math.max(1, FINAL_FLOOR - 1);
+  return Math.max(0, Math.min(1, (floor - 1) / span));
 }
 
 /**
