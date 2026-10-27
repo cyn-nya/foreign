@@ -211,7 +211,25 @@ export interface ForeignAsset {
   weirdness: 0 | 1 | 2 | 3;
   /** True for the household props built by tools/build-mundane.py. */
   mundane?: boolean;
+  /**
+   * Which horror role this model was generated for.
+   *
+   * Present only on the horror set. The anomalies are placed by `weirdness`, which says
+   * *that* something is wrong; this says which kind of wrong it is, and it is what lets a
+   * charge pick something that reads as coming at you rather than a hanging ghost.
+   */
+  horrorTag?: HorrorTag;
 }
+
+/**
+ * The horror set's roles.
+ *
+ *   charge    built to move: gaunt, low, wrong-limbed. What the game sends at the player.
+ *   ghost     built to hang: sheets, long hair, something suspended and still.
+ *   doppel    built to pass: dressed people who are almost right.
+ *   intruder  built as objects that should not be objects: doors, mirrors, holes.
+ */
+export type HorrorTag = 'charge' | 'ghost' | 'doppel' | 'intruder';
 
 /**
  * Authored in data/foreign-assets.json because two consumers need the exact
@@ -221,5 +239,16 @@ export interface ForeignAsset {
 export const FOREIGN_ASSETS: ForeignAsset[] = catalogue.assets as ForeignAsset[];
 
 export const ASSETS_BY_KEY = new Map(FOREIGN_ASSETS.map((a) => [a.key, a]));
+
+/**
+ * The models generated for one horror role.
+ *
+ * Empty when a role has no models yet, which callers must survive: the room falls back to
+ * the screen-space scare rather than spawning nothing. A missing model should make the
+ * effect plainer, never make the mechanic silently stop working.
+ */
+export function assetsWithHorrorTag(tag: HorrorTag): ForeignAsset[] {
+  return FOREIGN_ASSETS.filter((a) => a.horrorTag === tag);
+}
 export const SLOTS_BY_ID = new Map(SLOTS.map((s2) => [s2.id, s2]));
 export const ANCHORS_BY_ID = new Map(INTRUDE_ANCHORS.map((a) => [a.id, a]));

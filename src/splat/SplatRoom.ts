@@ -111,6 +111,61 @@ export interface AssetReport {
   missing: string[];
 }
 
+/**
+ * How far below the player's eye the room's floor is taken to be.
+ *
+ * The reconstruction has no level ground plane to stand the charger on, so its feet are
+ * placed relative to the player instead. Matches the walk capsule's eye height, so the
+ * thing's feet land where the player's own would.
+ */
+const CHARGER_EYE_HEIGHT = 1.2;
+
+/**
+ * How close it has to get before it counts as arrived.
+ *
+ * Not zero: stopping a model exactly at the camera puts it through the near plane, and the
+ * player would see the inside of a head rather than something in their face. At half a
+ * metre it is filling the view, which is the intended moment.
+ */
+const CHARGER_STRIKE_M = 0.5;
+
+/** The thing crossing the room. */
+interface Charger {
+  /**
+   * The key it was spawned from.
+   *
+   * Held here rather than read back off the node, because the node may not exist yet and a
+   * caller asking what is coming should get an answer either way.
+   */
+  key: string;
+  /**
+   * The model, once it has parsed.
+   *
+   * Null for the first moments of a charge. Everything about where the thing *is* lives in
+   * `x`/`z` instead, so a charge is in motion from its first frame rather than from the
+   * moment its GLB happens to finish loading.
+   */
+  node: Object3D | null;
+  /** Where it is now. Y comes from the node when there is one, else the spawn floor. */
+  x: number;
+  z: number;
+  y: number;
+  /** Metres per second, derived from the reaction window. */
+  speed: number;
+  travelled: number;
+  total: number;
+  reached: boolean;
+  /**
+   * Where the player was on the last update.
+   *
+   * Kept so the distance can be reported without reaching back into the caller. The
+   * alternative -- measuring from the spawn point -- would read as closing even while the
+   * player walked away from it.
+   */
+  lastPlayerX: number;
+  lastPlayerZ: number;
+}
+
 export class SplatRoom {
   private readonly scene: Scene3D;
   private readonly bytes = new Map<string, ArrayBuffer>();
@@ -118,6 +173,14 @@ export class SplatRoom {
   private placed: PlacedAnomaly[] = [];
   /** Innocent objects. Kept apart from `placed` so they can never score. */
   private readonly bystanderNodes: Object3D[] = [];
+  /**
+   * The thing currently crossing the room, if any.
+   *
+   * Deliberately outside `placed` and `bystanderNodes`: it is never markable and never
+   * counted as an anomaly. It ends when the player clicks or when it arrives, which is a
+   * different lifecycle from every other object in the room.
+   */
+  private charger: Charger | null = null;
 
   constructor(scene: Scene3D) {
     this.scene = scene;
@@ -334,7 +397,180 @@ export class SplatRoom {
     }
     this.bystanderNodes.length = 0;
     this.placed = [];
+    this.clearCharger();
     this.clock = 0;
+  }
+
+  /**
+   * Whether a model has actually loaded, so a caller can fall back honestly.
+   *
+   * The charge used to be a CSS animation on an overlay, which needs no model at all. It
+   * now prefers a real one, and that preference has to be answerable before deciding how
+   * to stage the event: a caller that assumes the model is there and finds it is not gets
+   * a charge with nothing in it -- the mechanic silently stops working, which is worse
+   * than the overlay it replaced.
+   */
+  hasAsset(key: string): boolean {
+    return this.bytes.has(key);
+  }
+
+  /**
+   * A model that crosses the room at the player.
+   *
+   * Placed on the line the player is already looking down, at `meters` away, and then
+   * walked in at a speed chosen so it arrives exactly when the reaction window expires.
+   * The window and the approach are therefore one number, not two that are supposed to
+   * agree: whatever the player sees is what the timer is doing.
+   *
+   * The room's own floor is not a plane -- it is a reconstruction, and the entry point
+   * sits at a height that has nothing to do with the ground under any particular anchor.
+   * The feet are put one eye-height below the player instead of on y=0, which is correct
+   * wherever the scan happens to be level.
+   */
+  spawnCharger(
+    key: string,
+    player: { x: number; y: number; z: number; forwardX: number; forwardZ: number },
+    meters: number,
+    windowMs: number,
+  ): boolean {
+    const buffer = this.bytes.get(key);
+    if (!buffer) return false;
+    this.clearCharger();
+
+    const total = Math.max(0.5, meters);
+    const feetY = player.y - CHARGER_EYE_HEIGHT;
+    const startX = player.x + player.forwardX * total;
+    const startZ = player.z + player.forwardZ * total;
+
+    // In motion from this line, not from whenever the GLB finishes parsing.
+    const charger: Charger = {
+      key,
+      node: null,
+      x: startX,
+      z: startZ,
+      y: feetY,
+      // Metres per second, from the window itself. The window is the source of truth for
+      // how long the player has; the approach is derived from it.
+      speed: total / Math.max(0.2, windowMs / 1000),
+      travelled: 0,
+      total,
+      reached: false,
+      lastPlayerX: player.x,
+      lastPlayerZ: player.z,
+    };
+    this.charger = charger;
+
+    // A copy per spawn: the same buffer serves the placement path, and the loaded scene is
+    // mutated in place, so sharing it would move a marked object.
+    void loadGLTF(buffer.slice(0), { textureLoader: downloadTexture })
+      .then((parsed) => {
+        // The charge may have been answered or superseded while this was parsing. Attaching
+        // the model then would leave a figure standing in the room that nothing owns.
+        if (this.charger !== charger) return;
+        const node = parsed.scene as unknown as Object3D;
+        node.name = `charger:${key}`;
+        // No rescale: every model was normalised to its catalogue `height` when it was
+        // generated, which is also why the placement path does not scale either.
+        node.position.set(charger.x, charger.y, charger.z);
+        this.scene.add(node as never);
+        charger.node = node;
+      })
+      .catch(() => {
+        if (this.charger !== charger) return;
+        // The model failed to load. The charge still runs and still has to be answered --
+        // it is only the picture that is missing, and the overlay behind it is showing.
+        charger.node = null;
+      });
+    return true;
+  }
+
+  /**
+   * Walk the charger in, and say whether it has arrived.
+   *
+   * Homing rather than fixed-direction: a player who turns and runs should still be caught,
+   * or the mechanic becomes "walk backwards" instead of "react". It re-aims every frame
+   * for the same reason the watchers do.
+   */
+  updateCharger(dt: number, player: { x: number; y: number; z: number }): boolean {
+    const charger = this.charger;
+    if (!charger) return false;
+    charger.lastPlayerX = player.x;
+    charger.lastPlayerZ = player.z;
+
+    const dx = player.x - charger.x;
+    const dz = player.z - charger.z;
+    const remaining = Math.hypot(dx, dz);
+
+    if (remaining > CHARGER_STRIKE_M) {
+      const step = Math.min(remaining - CHARGER_STRIKE_M, charger.speed * dt);
+      if (remaining > 1e-4) {
+        charger.x += (dx / remaining) * step;
+        charger.z += (dz / remaining) * step;
+      }
+      charger.travelled += step;
+      // It rises very slightly as it closes, which reads as standing up out of the dark.
+      charger.y += dt * 0.12 * (charger.travelled / charger.total);
+      this.syncChargerNode(charger, Math.atan2(dx, dz));
+      return false;
+    }
+
+    charger.reached = true;
+    this.syncChargerNode(charger, Math.atan2(dx, dz));
+    return true;
+  }
+
+  /**
+   * Put the model where the record says it is.
+   *
+   * One place that decides this, so a charge whose GLB arrives mid-approach appears at the
+   * right spot rather than at its spawn point.
+   */
+  private syncChargerNode(charger: Charger, facing: number): void {
+    const node = charger.node;
+    if (!node) return;
+    node.position.set(charger.x, charger.y, charger.z);
+    // Facing the player, so it is looking at them the whole way in.
+    node.rotation.set(0, facing, 0, 'YXZ');
+  }
+
+  /** Whether the thing has arrived. False when there is nothing coming. */
+  chargerReached(): boolean {
+    return this.charger?.reached === true;
+  }
+
+  /**
+   * What is crossing the room, for a check that has to tell a model from an overlay.
+   *
+   * `distance` is metres between the player and the thing, which is the only way to assert
+   * that it is closing rather than merely present. Reported as null when nothing is
+   * spawned, so a caller cannot mistake a missing model for a distant one.
+   */
+  chargerInfo(): { key: string; distance: number; travelled: number; reached: boolean } | null {
+    const charger = this.charger;
+    if (!charger) return null;
+    return {
+      key: charger.key,
+      distance: Math.hypot(charger.x - charger.lastPlayerX, charger.z - charger.lastPlayerZ),
+      travelled: charger.travelled,
+      reached: charger.reached,
+    };
+  }
+
+  /**
+   * Take it away, because the player answered in time.
+   *
+   * Removed rather than hidden: a corpse left standing in the room would be markable, and
+   * the crosshair would keep finding something that is no longer part of the game.
+   */
+  killCharger(): boolean {
+    if (!this.charger) return false;
+    this.clearCharger();
+    return true;
+  }
+
+  clearCharger(): void {
+    this.charger?.node?.parent?.remove(this.charger.node);
+    this.charger = null;
   }
 
   /**
@@ -344,8 +580,7 @@ export class SplatRoom {
    * set when it is placed would be a static prop that happens to point at the
    * door — the whole point is that it is still following you when you turn
    * around, so this has to run continuously rather than once.
-   */
-  update(dt: number, player: { x: number; y: number; z: number }): void {
+   */  update(dt: number, player: { x: number; y: number; z: number }): void {
     this.clock += dt;
     for (const item of this.placed) {
       if (!item.watches) continue;

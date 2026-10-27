@@ -24,6 +24,7 @@ import {
   judgeMark,
   type MarkOutcome,
 } from '../game/rules.ts';
+import { assetsWithHorrorTag, type ForeignAsset } from '../game/catalog.ts';
 import type { AnomalyKind, FloorPlan } from '../game/types.ts';
 import { SplatPlayer } from './SplatPlayer.ts';
 import { SplatRoom } from './SplatRoom.ts';
@@ -179,6 +180,15 @@ interface SplatDebug {
   chargeActive: () => boolean;
   defuseCharge: () => boolean;
   charges: () => { defused: number; missed: number };
+  /**
+   * The model crossing the room, or null.
+   *
+   * Separate from `chargeActive` because the overlay fallback makes both look identical on
+   * screen. This is the only way to assert that a model was actually spawned.
+   */
+  charger: () => { key: string; distance: number; travelled: number; reached: boolean } | null;
+  /** One step of the charge, through the rule the frame loop uses. */
+  stepCharge: (dt: number) => { key: string; distance: number; travelled: number; reached: boolean } | null;
   /** Which fright is on screen, or null. */
   scareKind: () => string | null;
   /** Every fright kind this floor may deal. */
@@ -296,6 +306,8 @@ const debug: SplatDebug = {
   chargeActive: () => false,
   defuseCharge: () => false,
   charges: () => ({ defused: 0, missed: 0 }),
+  charger: () => null,
+  stepCharge: () => null,
   scareKind: () => null,
   scareKinds: () => ['flash'],
   sinceScare: () => 0,
@@ -739,6 +751,30 @@ let audioSink: { scare(intensity?: number): void } | null = null;
  * it, so a click that lands a millisecond after the window closed cannot also score.
  */
 let chargeActive = false;
+
+/**
+ * The live room and the player's pose.
+ *
+ * The fright functions are module-level while `room` and `player` belong to `main`, so they
+ * are handed over once at start-up. Null before then and after teardown, which the callers
+ * check: a charge is only ever started from inside a running loop.
+ */
+let roomRef: SplatRoom | null = null;
+let poseRef: (() => { x: number; y: number; z: number; yaw: number; pitch: number }) | null =
+  null;
+
+/**
+ * Whether the charge currently on screen is a model in the room or the overlay.
+ *
+ * The two endings are not the same event. A model arriving is the thing the mechanic was
+ * designed around and earns a real fright; an overlay running out is a picture that grew,
+ * and firing a lunge on top of it would be two scares for one. Recorded at the start so
+ * the ending does not have to guess.
+ */
+let chargeIsModel = false;
+
+/** How far in front of the player a charge begins, in metres. */
+const CHARGE_SPAWN_M = 6.5;
 let chargeTimeout = 0;
 let chargeDefused = 0;
 let chargeMissed = 0;
@@ -866,17 +902,92 @@ function startCharge(): void {
   view.classList.remove('shake');
   void scareLayer.offsetWidth;
   scareLayer.style.setProperty('--charge-ms', `${windowMs}ms`);
-  scareLayer.classList.add('on', 'charge');
   view.classList.add('shake');
   audioSink?.scare(1);
+
+  // A real model crossing the real room, when one has been generated for the purpose.
+  //
+  // The overlay alone used to be the whole event: a face scaling up in screen space. It
+  // reads as a jumpscare, but it does not read as *something in the room*, and the room is
+  // the entire point of this game -- a player can tell immediately that the picture on top
+  // is not part of the reconstruction. So the model comes first and the overlay becomes the
+  // fallback for a build whose horror set has not downloaded.
+  //
+  // Only the genuine article gets the `.charge` scaling animation. Running both at once
+  // puts a photograph over the thing that is actually approaching, which is worse than
+  // either alone.
+  const room = roomRef;
+  const pose = poseRef?.() ?? null;
+  const candidates =
+    room && pose
+      ? assetsWithHorrorTag('charge').filter((a: ForeignAsset) => room.hasAsset(a.key))
+      : [];
+  const chosen =
+    candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : null;
+  const spawned =
+    chosen !== null &&
+    room !== null &&
+    pose !== null &&
+    room.spawnCharger(
+      chosen.key,
+      {
+        x: pose.x,
+        y: pose.y,
+        z: pose.z,
+        forwardX: -Math.sin(pose.yaw),
+        forwardZ: -Math.cos(pose.yaw),
+      },
+      CHARGE_SPAWN_M,
+      windowMs,
+    );
+
+  if (spawned) {
+    // A soft vignette stays, so the screen still tells the player that something is
+    // happening even if they have turned away from it.
+    scareLayer.classList.add('on');
+  } else {
+    scareLayer.classList.add('on', 'charge');
+  }
+  chargeIsModel = spawned;
 
   window.clearTimeout(chargeTimeout);
   chargeTimeout = window.setTimeout(() => {
     if (!chargeActive) return;
     // The player did not answer. It arrives, and it costs what a fright costs.
-    chargeActive = false;
-    chargeMissed += 1;
+    missCharge();
   }, windowMs);
+}
+
+/**
+ * It got here.
+ *
+ * The model has usually already closed the distance by now, so this is the moment the
+ * fright lands rather than a countdown expiring. Fired from one place whether the timeout
+ * or the model's own arrival raised it, because two paths that both mean "it reached you"
+ * is how they stop agreeing about what reaching you costs.
+ */
+/**
+ * One frame of the charge, from whichever caller has one to give.
+ *
+ * Returns what is now crossing the room, so a caller can watch it close. Shared with the
+ * frame loop rather than restated for the harness: a check that drives its own copy of the
+ * rule proves the copy works, not the game.
+ */
+function stepCharge(dt: number): ReturnType<SplatRoom['chargerInfo']> {
+  if (chargeActive && debug.state === 'playing') {
+    const room = roomRef;
+    const pose = poseRef?.();
+    if (room && pose && room.updateCharger(dt, pose)) missCharge();
+  }
+  return roomRef?.chargerInfo() ?? null;
+}
+
+function missCharge(): void {
+  if (!chargeActive) return;
+  chargeActive = false;
+  chargeMissed += 1;
+  roomRef?.clearCharger();
+  if (chargeIsModel) fireScare(1, 'lunge');
 }
 
 /**
@@ -890,6 +1001,7 @@ function defuseCharge(): boolean {
   chargeActive = false;
   window.clearTimeout(chargeTimeout);
   chargeDefused += 1;
+  roomRef?.killCharger();
   scareLayer.classList.remove('on', 'charge', 'lunge');
   scareLayer.classList.add('killed');
   window.setTimeout(() => scareLayer.classList.remove('killed'), 160);
@@ -932,6 +1044,12 @@ async function main(): Promise<void> {
   });
   const room = new SplatRoom(scene.viewer.getScene());
   const player = new SplatPlayer(view);
+  // Handed to the module-level fright functions, which can see neither of these. Assigned
+  // here rather than declared here on purpose: a `let` inside `main` sits in the temporal
+  // dead zone for anything the `?autostart=1` path reaches synchronously, and that mistake
+  // broke every shared demo link once already.
+  roomRef = room;
+  poseRef = () => player.cameraState();
   const audio = new GameAudio();
   audioSink = audio;
   player.spawnAt(ROOM_SPAWN);
@@ -1147,10 +1265,19 @@ async function main(): Promise<void> {
     debug.state = 'playing';
 
     // Make sure anything this floor needs is present before it appears.
+    //
+    // The charge models are in this list even though nothing places them: without them
+    // `room.hasAsset` is false for every one, the charge silently falls back to the
+    // overlay, and the feature looks like it was never built. A fallback that is taken
+    // every single time is not a fallback, it is the feature.
     await room.loadAssets([
       ...plan.anomalies.map((a) => a.assetKey ?? ''),
       ...plan.bystanders.map((b) => b.assetKey),
+      ...assetsWithHorrorTag('charge').map((a) => a.key),
     ]);
+    // Anything that was mid-approach belonged to the floor that spawned it.
+    room.clearCharger();
+    chargeActive = false;
     const placed = await room.buildFloor(plan, ROOM_ANCHORS);
     debug.placed = placed.length;
     debug.bystanderCount = plan.bystanders.length;
@@ -1615,6 +1742,22 @@ async function main(): Promise<void> {
   debug.chargeActive = () => chargeActive;
   debug.defuseCharge = () => defuseCharge();
   debug.charges = () => ({ defused: chargeDefused, missed: chargeMissed });
+  /**
+   * What is actually crossing the room, if anything.
+   *
+   * The overlay fallback makes the charge look like it works when nothing was spawned --
+   * there is a face on screen either way. This reports the model, so a check can tell the
+   * two apart instead of asserting on the picture they share.
+   */
+  debug.charger = () => room.chargerInfo();
+  /**
+   * Advance the charge by hand, through the same rule the loop uses.
+   *
+   * Needed because a check cannot wait for frames here: at well under one per second a
+   * sleep of a whole window may contain none, and the distance would then read as unchanged
+   * on a build where the approach works perfectly.
+   */
+  debug.stepCharge = (dt: number) => stepCharge(dt);
   // The kind, not just whether something is on screen: a blackout shows no
   // face at all, so `scareFaceShowing` cannot tell the four apart.
   debug.scareKind = () => currentScareKind;
@@ -1750,6 +1893,10 @@ async function main(): Promise<void> {
     // The room animates against the player's eye: what watches you has to be
     // updated before the frame is drawn, or it lags a frame behind.
     room.update(dt, player.cameraState());
+    // The thing crossing the room, on the same clock the window is counted on. `playing`
+    // only, which `stepCharge` enforces: a paused floor with something mid-approach would
+    // resume it in the player's face, and a cleared floor has nothing to be caught by.
+    stepCharge(dt);
     if (debug.state === 'playing') {
       const near = proximity();
       audio.setTension(near.tension);

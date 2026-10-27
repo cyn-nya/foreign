@@ -1396,12 +1396,17 @@ try {
       await new Promise((r) => setTimeout(r, 100));
     }
     const before = s.state;
-    // Retried within a bounded window rather than dispatched once, because the floor
-    // chain advances on its own: `nextFloor` schedules the following floor from a
-    // 900 ms timer, and that sets `state = 'playing'` whenever it lands. A single
-    // dispatch can therefore be overwritten by a floor change that has nothing to do
-    // with the pause. Retrying does not weaken the assertion -- a build with no pause
-    // never reaches `paused` at any point in the window.
+    // The event only means "the lock was lost" if there is a lock to lose. An earlier check
+    // clicks the canvas, and in headless Chromium that request can genuinely succeed -- so
+    // `pointerLockElement` is sometimes the canvas here, the listener returns on its first
+    // guard, and the check fails for a reason that has nothing to do with pausing. Whether
+    // a lock was held is reported, so this cannot hide behind a bare `playing -> playing`
+    // again.
+    const hadLock = document.pointerLockElement !== null;
+    if (hadLock) {
+      document.exitPointerLock();
+      await new Promise((r) => setTimeout(r, 250));
+    }
     let paused = false;
     const pauseDeadline = performance.now() + 10_000;
     while (!paused && performance.now() < pauseDeadline) {
@@ -1418,7 +1423,8 @@ try {
   check(
     'losing the pointer lock pauses the run',
     pause.before === 'playing' && pause.after === 'paused',
-    `${pause.before} -> ${pause.after}`,
+    `${pause.before} -> ${pause.after}` +
+      (pause.hadLock ? ' (a lock was held and released first)' : ''),
   );
   check(
     'the run clock is stopped while paused',
@@ -1480,6 +1486,72 @@ try {
     'an unanswered charge closes itself',
     unanswered.missed === 1 && unanswered.live === false,
     `missed +${unanswered.missed}, still live ${unanswered.live}`,
+  );
+
+  // The charge is a model now, not only a picture on top of the room.
+  //
+  // This is the check the feature needed and the overlay made impossible to write: with a
+  // full-screen face either way, every assertion about the charge passed on a build that
+  // spawned nothing at all. `charger()` reports the model, so the two can be told apart.
+  //
+  // Stepped by hand rather than waited out. At the frame rates this harness actually
+  // renders, a two-second window can contain no frame at all, and a distance that never
+  // moved would then look exactly like an approach that does not work.
+  const model = await page.evaluate(async () => {
+    const s = window.__splat;
+    await s.start(4, 4242, false);
+    s.charge();
+    const spawned = s.charger();
+    const start = spawned?.distance ?? null;
+    // Three steps of a third of a second closes about a metre and a half of a six-and-a-half
+    // metre approach, so this stops well short of arrival and measures the approach itself.
+    // Stepping all the way in would clear the charger and the distance would read as null,
+    // which is indistinguishable from an approach that never moved.
+    s.stepCharge(0.33);
+    s.stepCharge(0.33);
+    const moving = s.charger();
+    const mid = moving?.distance ?? null;
+    const travelledMid = moving?.travelled ?? null;
+    // And then all the way in, which has to end the charge by itself.
+    for (let i = 0; i < 12 && s.charger() !== null; i++) s.stepCharge(0.33);
+    return {
+      key: spawned?.key ?? null,
+      start,
+      mid,
+      travelledMid,
+      arrived: s.charger() === null,
+      live: s.chargeActive(),
+    };
+  });
+  check(
+    'a charge puts a real model in the room',
+    typeof model.key === 'string' && /^charge_/.test(model.key),
+    `spawned ${model.key ?? 'nothing'}`,
+  );
+  check(
+    'and it closes the distance on the player',
+    model.start !== null && model.mid !== null && model.mid < model.start - 0.5,
+    `distance ${model.start?.toFixed(2) ?? '?'} m -> ${model.mid?.toFixed(2) ?? '?'} m, travelled ${model.travelledMid?.toFixed(2) ?? '?'} m`,
+  );
+  check(
+    'reaching the player ends the charge by itself',
+    model.arrived === true && model.live === false,
+    `arrived ${model.arrived}, still live ${model.live}`,
+  );
+
+  // Answering in time removes it, so a defused charge cannot be marked afterwards.
+  const cleared = await page.evaluate(async () => {
+    const s = window.__splat;
+    s.charge();
+    const spawned = s.charger();
+    s.stepCharge(0.2);
+    s.defuseCharge();
+    return { spawned: spawned !== null, after: s.charger(), live: s.chargeActive() };
+  });
+  check(
+    'answering the charge takes the model away',
+    cleared.spawned && cleared.after === null && cleared.live === false,
+    `spawned ${cleared.spawned}, after ${cleared.after === null ? 'nothing' : 'still there'}, live ${cleared.live}`,
   );
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | ') || 'clean');
