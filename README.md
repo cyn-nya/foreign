@@ -519,7 +519,7 @@ bundle 文件名和本地 `dist/` 比对 —— 因为「链接能用」和「�
 那个东西」是两个不同的断言。**改了游戏、本地验收全绿、忘了重新部署**是一条
 非常容易走上的路，而其他每一项都会照常通过：旧构建也能跑。
 
-### 线上地址当前是 404，原因在仓库可见性
+### 线上地址当前是 404，原因是**两件**没人做过的事
 
 **`https://cyn-nya.github.io/foreign/` 返回 404，而 `gh-pages` 分支本身是好的。**
 推送的树完整（`.nojekyll` / `assets/` / `index.html` / `classic.html`），
@@ -528,19 +528,35 @@ bundle 文件名和本地 `dist/` 比对 —— 因为「链接能用」和「�
     gh api repos/cyn-nya/foreign --jq '{private,has_pages}'
     → {"private":true,"has_pages":false}
 
-**私有仓库不能开 GitHub Pages**（免费计划），所以这个地址从来就没能提供服务 ——
-这也解释了为什么试玩一直是「从本地进去」。改可见性是仓库所有者的决定，
-不是部署脚本能代劳的。要让线上地址生效：
+    gh api repos/cyn-nya/foreign/pages
+    → Not Found (HTTP 404)
+
+**`has_pages: false` 是关键。** 它不只是「私有仓库不能开 Pages」——
+而是 **这个仓库从来没有开过 Pages**，一次都没有。所以有两个独立的前置条件，
+两个都得做，只做第一个仍然是 404：
 
 ```bash
+# 1. 让 Pages 有可能存在：私有仓库（免费计划）不能开 Pages
 gh repo edit cyn-nya/foreign --visibility public --accept-visibility-change-consequences
-npm run deploy          # 重新推送，Pages 才会开始构建
+
+# 2. 第一次发布必须手工开启一次。这一步不能用 npm run deploy 代替 ——
+#    推送 gh-pages 分支不会自动创建站点。
+gh api -X POST repos/cyn-nya/foreign/pages \
+  -f 'source[branch]=gh-pages' -f 'source[path]=/'
+
+npm run deploy          # 重新推送一次，触发第一次构建
 npm run deploy:check:live
 ```
 
-在那之前，本地就是唯一能跑 demo 的地方（`npm run dev`，需要联网取 63 MB 房间）。
-`deploy:check:live` 会一直红着，而**它是唯一能发现这件事的检查** ——
-`deploy:check` 验的是构建产物，构建产物没有问题。
+> 之所以把这一步单独写出来：`tools/deploy-ghpages.mjs` 每次运行都会在末尾打印
+> 「If this is the first publish, enable Pages once」以及上面那行 `gh api` 命令，
+> 但它只是**打印**，不做。而 `deploy:check:live` 之外没有任何检查能发现站点不存在 ——
+> `deploy:check` 验的是构建产物，构建产物从来就没有问题。这是本项目第二次
+> 遇到同一个形状的失效：**检查通过，而它检查的东西和真正起作用的东西不是一回事。**
+
+改可见性是仓库所有者的决定，不是部署脚本能代劳的。在那之前，本地就是唯一能跑
+demo 的地方（`npm run dev`，需要联网取 63 MB 房间）。
+`deploy:check:live` 会一直红着，而**它是唯一能发现这件事的检查**。
 
 > 不用 GitHub Actions 是因为 GitHub 不允许 OAuth app 在没有 `workflow`
 > scope 的情况下推送 `.github/workflows/`。若要改用 Actions，见
