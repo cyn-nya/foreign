@@ -5,7 +5,14 @@
 
 参赛作品，**Manycore Aholo Global 3D AI Hackathon**。
 
-**▶ 在线试玩：https://cyn-nya.github.io/foreign/**
+**▶ 在线试玩：https://cyn-nya.github.io/foreign/** ——
+⚠️ **当前 404**：仓库是私有的，而私有仓库不能开 GitHub Pages（见文末「线上地址当前是 404」）。
+`gh-pages` 分支已部署且产物经验收通过，把仓库改为公开后再跑一次 `npm run deploy` 即可生效。
+在此之前请用本地运行：
+
+```bash
+npm install && npm run dev     # 需联网：63 MB 房间来自 Aholo CDN，仓库里没有副本
+```
 
 ---
 
@@ -511,6 +518,29 @@ npm run deploy:check:live
 bundle 文件名和本地 `dist/` 比对 —— 因为「链接能用」和「链接是我刚验收的
 那个东西」是两个不同的断言。**改了游戏、本地验收全绿、忘了重新部署**是一条
 非常容易走上的路，而其他每一项都会照常通过：旧构建也能跑。
+
+### 线上地址当前是 404，原因在仓库可见性
+
+**`https://cyn-nya.github.io/foreign/` 返回 404，而 `gh-pages` 分支本身是好的。**
+推送的树完整（`.nojekyll` / `assets/` / `index.html` / `classic.html`），
+`deploy:check` 对着同一份产物跑是 **7/7 全绿**。所以问题不在构建，在托管：
+
+    gh api repos/cyn-nya/foreign --jq '{private,has_pages}'
+    → {"private":true,"has_pages":false}
+
+**私有仓库不能开 GitHub Pages**（免费计划），所以这个地址从来就没能提供服务 ——
+这也解释了为什么试玩一直是「从本地进去」。改可见性是仓库所有者的决定，
+不是部署脚本能代劳的。要让线上地址生效：
+
+```bash
+gh repo edit cyn-nya/foreign --visibility public --accept-visibility-change-consequences
+npm run deploy          # 重新推送，Pages 才会开始构建
+npm run deploy:check:live
+```
+
+在那之前，本地就是唯一能跑 demo 的地方（`npm run dev`，需要联网取 63 MB 房间）。
+`deploy:check:live` 会一直红着，而**它是唯一能发现这件事的检查** ——
+`deploy:check` 验的是构建产物，构建产物没有问题。
 
 > 不用 GitHub Actions 是因为 GitHub 不允许 OAuth app 在没有 `workflow`
 > scope 的情况下推送 `.github/workflows/`。若要改用 Actions，见
