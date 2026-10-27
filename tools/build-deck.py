@@ -41,6 +41,9 @@ ACCENT = RGBColor(0xC2, 0x3B, 0x2E)
 BG = RGBColor(0x0B, 0x0B, 0x0D)
 PANEL = RGBColor(0x16, 0x15, 0x18)
 GOOD = RGBColor(0x6F, 0xA8, 0x6B)
+# For a status that is honest but not done. Distinct from ACCENT, which is used for "needs
+# the author" -- this one needs a decision from the repository owner, not more work.
+WARN = RGBColor(0xD8, 0xA6, 0x4A)
 
 MARGIN = Inches(0.72)
 CONTENT_W = W - MARGIN * 2
@@ -305,9 +308,10 @@ def build():
         ("静默失效比崩溃更危险",
          "「文件存在 = 已生成」让整个 Lux3D 环节变成空操作，且不报错。"
          "现在由来源记录判定，并配一条「真资产必须被跳过」的反向断言。"),
-        ("性能也要被量，包括量错再纠正",
-         "先猜瓶颈在填充率，用只采几帧的方法「验证」为否 —— 方法不可靠。改用每档 90 秒重测："
-         "关掉重建后整帧只有 17 ms，重建占 99%，分辨率降 34%。先前的结论是错的，已纠正。"),
+        ("性能也要被量，而且量错了两次",
+         "先猜瓶颈在 CPU 排序 —— 方法不可靠。改用每档 90 秒重测：重建占 99%，"
+         "分辨率 0.40x 省 29%。但同一套方法又报了四个「有效旋钮」，重跑全部落空"
+         "（基线自己漂了 60%）；工具这次拒绝出结论，四个都没进代码。"),
     ]):
         by = Inches(3.72) + Inches(i * 0.80)
         panel(s, MARGIN, by, Inches(7.3), Inches(0.72))
@@ -337,16 +341,23 @@ def build():
         ("声音先于视线",
          "两个失谐振荡器拍频，经低通滤波。靠近最近异常时音量收紧、滤波打开。\n"
          "标记命中是上行音，失手是下行 —— 不用看 HUD 就能分辨。"),
+        ("它会自己冲过来",
+         "第 3 层起，一个真实模型穿过房间向你逼近，窗口按层收紧（2200 ms → 1000 ms）。\n"
+         "点鼠标解除；没解除就撞上你，并触发一次扑脸。这是唯一一个必须动手的机制。"),
+        ("脚步是距离，不是定时器",
+         "站在原地不动时一声不响（0.78 m 一步，且两步之间有下限间隔）。\n"
+         "定时器版本会在你屏住呼吸的时候一直响 —— 那是恐怖游戏最不能犯的错。"),
     ]):
-        by = y + Inches(i * 1.16)
-        panel(s, MARGIN, by, Inches(7.0), Inches(1.06))
-        text(s, MARGIN + Inches(0.24), by + Inches(0.1), Inches(6.5), Inches(0.9),
-             [(t, {"size": 15, "bold": True, "space": 3}), (d, {"size": 11, "color": DIM})], space=0)
-    panel(s, MARGIN, y + Inches(3.62), Inches(7.0), Inches(0.95))
-    text(s, MARGIN + Inches(0.24), y + Inches(3.74), Inches(6.5), Inches(0.72),
+        by = y + Inches(i * 0.80)
+        panel(s, MARGIN, by, Inches(7.0), Inches(0.74))
+        text(s, MARGIN + Inches(0.24), by + Inches(0.06), Inches(6.5), Inches(0.64),
+             [(t, {"size": 13, "bold": True, "space": 3}), (d, {"size": 9.5, "color": DIM})], space=0)
+    panel(s, MARGIN, y + Inches(4.06), Inches(7.0), Inches(0.86))
+    text(s, MARGIN + Inches(0.24), y + Inches(4.16), Inches(6.5), Inches(0.68),
          [("音效是测出来的，不是「我写了」", {"size": 14, "bold": True, "color": GOOD, "space": 3}),
           ("读的是 AnalyserNode 的实际信号：7 m 处 gain 0.789、0.5 m 处 0.909，"
-           "平均 RMS 近处响 21–31%。", {"size": 11, "color": DIM})], space=0)
+           "平均 RMS 近处响 21–31%。脚步则断言「走路有声、站着无声」两半。",
+           {"size": 11, "color": DIM})], space=0)
     picture(s, "artifacts/splat/04-marked.png", Inches(8.3), y, Inches(4.3), Inches(4.15))
 
     # 10 — status
@@ -354,9 +365,11 @@ def build():
     y = head(s, "现在到哪了", "状态", 10, "进度")
     for i, (t, st, d, c) in enumerate([
         ("A · 真实 3DGS 房间", "完成", "默认入口就是重建房间，行走、碰撞、玩法闭环全部实测通过。", GOOD),
-        ("C · 玩法深化", "完成", "异常类型 5 → 7 种；四种惊吓而非一种；黑暗与手电筒逐层递进。", GOOD),
+        ("C · 玩法深化", "完成", "异常类型 5 → 7 种；四种惊吓；冲锋；脚步与逐层加深的音乐床。", GOOD),
         ("可通关性", "已实测", "8/8 层都留出扫视时间；最难的第 8 层剩 92.9 秒。npm run search:time。", GOOD),
-        ("D · 部署 / 报告", "完成", "cyn-nya.github.io/foreign/ —— 线上实测 8/8，55 个资产全部就位。", GOOD),
+        ("D · 部署 / 报告", "未上线",
+         "gh-pages 已部署、本地验收 7/7；但仓库私有，Pages 开不了，线上仍 404。"
+         "需把仓库改为 public。", WARN),
         ("demo 视频", "完成", "90 秒 720p。本机每秒不足一帧，录不了实机，故用真实截图合成。", GOOD),
         ("B · Lux3D 资产", "已完成", "55/55 全部由 Lux3D 生成：21 个异物、鬼影、伪人与冲刺体，13 件写实家具。", GOOD),
         ("X 发帖", "待发", "文案已备好，对传播分（5%）。需要账号。", ACCENT),
@@ -365,10 +378,10 @@ def build():
         panel(s, MARGIN, by, CONTENT_W, Inches(0.68))
         text(s, MARGIN + Inches(0.24), by + Inches(0.17), Inches(4.4), Inches(0.36),
              [(t, {"size": 13, "bold": True})], space=0)
-        text(s, MARGIN + Inches(4.7), by + Inches(0.19), Inches(1.2), Inches(0.32),
-             [(st, {"size": 12, "bold": True, "color": c})], space=0)
-        text(s, MARGIN + Inches(6.0), by + Inches(0.19), CONTENT_W - Inches(6.3), Inches(0.36),
-             [(d, {"size": 11, "color": DIM})], space=0)
+        text(s, MARGIN + Inches(4.7), by + Inches(0.16), Inches(1.2), Inches(0.38),
+             [(st, {"size": 11, "bold": True, "color": c})], space=0)
+        text(s, MARGIN + Inches(6.0), by + Inches(0.14), CONTENT_W - Inches(6.3), Inches(0.44),
+             [(d, {"size": 9.5, "color": DIM})], space=0)
 
     # 11 — closing
     s = slide(prs)
