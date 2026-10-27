@@ -168,6 +168,22 @@ html, body {
   font-size: 13.5px; line-height: 2.0;
   color: var(--dim);
 }
+
+/*
+ * The controls line under the briefing. Smaller and dimmer than the rules, because
+ * it is advice rather than the thing being taught -- but present, because a control
+ * nobody is told about does not exist. The message that prompted it was "线上 demo
+ * 卡到极致": the resolution is the one lever that measurably works, and the player
+ * should be able to pull it without waiting for the controller to guess.
+ */
+.hint {
+  display: inline-block;
+  margin-top: 0.7em;
+  font-size: 0.82em;
+  opacity: 0.72;
+  line-height: 1.7;
+}
+
 .tagline strong { color: var(--fg); font-weight: 500; }
 
 .actions { display: flex; gap: 12px; justify-content: center; }

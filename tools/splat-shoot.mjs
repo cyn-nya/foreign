@@ -1144,8 +1144,12 @@ try {
   // the setting were being ignored the width would not move at all.
   const resolution = await page.evaluate(async () => {
     const s = window.__splat;
-    const canvas = document.querySelector('canvas');
-    const buffer = () => ({ width: canvas.width, height: canvas.height });
+    // The scene reports the buffer it mounted into. Reading
+    // `document.querySelector('canvas')` instead is a guess, and it was the wrong
+    // element: the page has several, and the first one does not track the render
+    // resolution, so "the renderer ignored the setting" looked identical to "this
+    // file read the wrong canvas".
+    const buffer = () => s.canvasSize() ?? { width: 0, height: 0 };
 
     // Wait for the buffer to actually take the new size instead of rendering one
     // frame and looking.
@@ -1189,6 +1193,7 @@ try {
     return { auto, lowest, highest, before, shrunk, restored };
   });
 
+  const sawCanvas = resolution.before.width > 0;
   const shrankActually = resolution.shrunk.width < resolution.before.width;
   const restoredActually = resolution.restored.width > resolution.shrunk.width;
   // A check that cannot tell "the renderer ignored the setting" from "there was
@@ -1198,11 +1203,70 @@ try {
 
   check(
     'the adaptive resolution reaches the renderer, not just the state',
-    baselineIsFull && shrankActually && restoredActually,
+    sawCanvas && baselineIsFull && shrankActually && restoredActually,
     `buffer ${resolution.before.width}x${resolution.before.height} → ` +
       `${resolution.shrunk.width}x${resolution.shrunk.height} at ${resolution.lowest.ratio}x → ` +
       `${resolution.restored.width}x${resolution.restored.height} at ${resolution.highest.ratio}x`,
   );
+  // --- the player's own quality control --------------------------------------
+  //
+  // The resolution is the one lever `npm run bench:render` proved works: 0.40x takes
+  // 34% off the frame time against 1.00x. The controller moves it on its own, but a
+  // player on a machine it has misjudged should not have to wait, and the number keys
+  // are how they take it. Asserted through the canvas rather than through the state,
+  // for the same reason the controller is: a key that only sets a variable is not a
+  // control.
+  const keys = await page.evaluate(async () => {
+    const s = window.__splat;
+    const width = () => s.canvasSize()?.width ?? 0;
+    const settle = async (predicate, ms = 30_000) => {
+      const until = performance.now() + ms;
+      for (;;) {
+        if (predicate(width())) return width();
+        if (performance.now() > until) return width();
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    };
+    const seen = [];
+    window.addEventListener('keydown', (e) => seen.push(e.code), true);
+    const press = (code) =>
+      window.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true }));
+
+    // Take it off auto first, so nothing else is moving the number underneath.
+    s.setQuality(5);
+    const full = await settle((w) => w > 0);
+
+    press('Digit1');
+    const low = await settle((w) => w < full);
+    const afterLow = s.quality();
+
+    press('Digit5');
+    const back = await settle((w) => w > low);
+    const afterBack = s.quality();
+
+    press('Digit0');
+    const auto = s.quality();
+
+    return { full, low, back, afterLow, afterBack, auto, seen };
+  });
+  check(
+    'the number keys move the render resolution the player actually sees',
+    keys.low < keys.full && keys.back > keys.low,
+    `digit 1 -> ${keys.low}px (state now level ${keys.afterLow.level} ratio ` +
+      `${keys.afterLow.ratio}), digit 5 -> ${keys.back}px (level ${keys.afterBack.level}), ` +
+      `from ${keys.full}px; keydown events the page saw: ${JSON.stringify(keys.seen)}`,
+  );
+  check(
+    'pressing a number key stops the controller fighting the player for the setting',
+    keys.afterLow.auto === false && keys.afterBack.auto === false,
+    `auto after digit 1: ${keys.afterLow.auto}; after digit 5: ${keys.afterBack.auto}`,
+  );
+  check(
+    'zero hands the setting back to the controller',
+    keys.auto.auto === true,
+    `auto after digit 0: ${keys.auto.auto}`,
+  );
+
   check(
     'the top level is full resolution, so a fast machine is never charged',
     resolution.highest.ratio === 1,

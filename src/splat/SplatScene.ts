@@ -131,6 +131,22 @@ export class SplatScene {
     setViewerConfig(this.viewer, { pixelRatio: ratio });
   }
 
+  /**
+   * The backing store the reconstruction is rasterised into, as the DOM has it.
+   *
+   * This exists because `document.querySelector('canvas')` is not the same element:
+   * the page has several, and an acceptance check that read the first one was
+   * comparing the resolution against a canvas that never tracked it -- so "the
+   * renderer ignored the setting" and "the check read the wrong element" produced
+   * identical output. Asking the scene, which knows which element it mounted into,
+   * is the difference between those two.
+   */
+  get canvasSize(): { width: number; height: number } | null {
+    const canvas = this.options.container.querySelector('canvas');
+    if (!canvas) return null;
+    return { width: canvas.width, height: canvas.height };
+  }
+
   get pixelRatio(): number {
     return this.appliedPixelRatio;
   }

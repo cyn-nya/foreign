@@ -183,6 +183,7 @@ interface SplatDebug {
   removeSplat: () => void;
   restoreSplat: () => void;
   splatPresent: () => boolean;
+  canvasSize: () => { width: number; height: number } | null;
   renderBudget: () => { ratio: number; sortMs: number };
   setSortInterval: (ms: number) => void;
   setSplatsVisible: (on: boolean) => void;
@@ -290,6 +291,7 @@ const debug: SplatDebug = {
   removeSplat: () => undefined,
   restoreSplat: () => undefined,
   splatPresent: () => false,
+  canvasSize: () => null,
   renderBudget: () => ({ ratio: 1, sortMs: 0 }),
   setSortInterval: () => undefined,
   setSplatsVisible: () => undefined,
@@ -305,6 +307,53 @@ const debug: SplatDebug = {
 (window as unknown as { __splat: SplatDebug }).__splat = debug;
 
 /** Matches the overlay markup the three.js game uses, so both share its CSS. */
+/**
+ * The keyboard controls.
+ *
+ * These used to be registered inside `showMenu`, which meant they only existed when
+ * the menu had been rendered. The acceptance harness — and every `?autostart=1`
+ * demo link — start a floor directly, so in those sessions F3, the torch key and the
+ * quality keys did nothing at all. The acceptance check caught it as "the events
+ * arrived but the state did not change", which is exactly what it was: a control
+ * wired to the wrong lifetime. Registering once, when the scene exists, is the fix.
+ */
+function installKeys(): void {
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'F3') {
+      e.preventDefault();
+      togglePerf();
+    }
+    if (e.code === 'KeyF' && !e.repeat) {
+      e.preventDefault();
+      setTorch(!torchOn);
+    }
+
+    // The resolution is the one performance lever this game has, and it was proved
+    // to be: `npm run bench:render` measures 0.40x at 34% less time per frame than
+    // 1.00x. The controller moves it on its own, but a player on a machine the
+    // controller has misjudged -- or who simply prefers a sharper picture and a
+    // lower rate -- should not have to wait for it. Five keys, and the ratio is
+    // printed rather than a word like "low", because the number is the thing that
+    // can be reported back.
+    const digit = /^Digit([1-9])$/.exec(e.code);
+    if (digit && !e.repeat) {
+      const level = Number(digit[1]) - 1;
+      if (level < QUALITY_LEVELS.length) {
+        e.preventDefault();
+        setQualityLevel(level);
+        toast(
+          `画质 ${level + 1}/${QUALITY_LEVELS.length} · 分辨率 ${pixelRatioForLevel(level).toFixed(2)}×`,
+          'info',
+        );
+      }
+    }
+    if (e.code === 'Digit0' && !e.repeat) {
+      e.preventDefault();
+      setQualityLevel('auto');
+      toast('画质自动', 'info');
+    }
+  });
+}
 function panel(html: string): void {
   overlay.classList.remove('hidden');
   overlay.innerHTML = `<div class="panel">${html}</div>`;
@@ -362,7 +411,9 @@ function briefingHtml(): string {
       里面摆着的家具都是真的、也都正常 —— <strong>它们不是目标</strong>。<br />
       要标记的只有两种：<strong>根本不该存在的</strong>（凭空多出来、不是家具的玩意），<br />
       和<strong>家具做了家具做不到的事</strong>（浮起来、倒挂、变形、忽然变成一群）。<br />
-      打中不扣次数，<strong>打错才扣</strong>：你只有 ${MAX_MISTAKES} 次失手机会，每次还罚 8 秒。`;
+      打中不扣次数，<strong>打错才扣</strong>：你只有 ${MAX_MISTAKES} 次失手机会，每次还罚 8 秒。<br />
+      <span class="hint">画面不流畅就按 <strong>1</strong>–<strong>5</strong> 调画质（5 最清晰，0 交回自动），
+      按 <strong>F3</strong> 看帧率。</span>`;
 }
 
 function showMenu(assetLine: string, onStart: () => void): void {
@@ -378,18 +429,36 @@ function showMenu(assetLine: string, onStart: () => void): void {
   `);
   document.getElementById('start-btn')?.addEventListener('click', onStart);
 
-  // F3 rather than the browser's own F12/devtools: the number has to be readable
-  // by a player who is not going to open a console.
-  window.addEventListener('keydown', (e) => {
-    if (e.code === 'F3') {
-      e.preventDefault();
-      togglePerf();
-    }
-    if (e.code === 'KeyF' && !e.repeat) {
-      e.preventDefault();
-      setTorch(!torchOn);
-    }
-  });
+}
+
+/**
+ * Set the render quality by hand, or hand it back to the controller.
+ *
+ * The single place a level is applied. `debug.setQuality` and the number keys both
+ * come through here, so the value the HUD reports and the value the renderer was
+ * given cannot come apart.
+ */
+function setQualityLevel(
+  level: number | 'auto',
+): { level: number; ratio: number; auto: boolean; changes: number } {
+  if (level === 'auto') {
+    qualityAuto = true;
+    qualityAccumulator = 0;
+  } else {
+    qualityAuto = false;
+    quality = {
+      level: Math.max(0, Math.min(QUALITY_LEVELS.length - 1, Math.floor(level))),
+      streak: 0,
+      changes: quality.changes,
+    };
+    applyPixelRatio(pixelRatioForLevel(quality.level));
+  }
+  return {
+    level: quality.level,
+    ratio: pixelRatioForLevel(quality.level),
+    auto: qualityAuto,
+    changes: quality.changes,
+  };
 }
 
 function toast(message: string, kind: 'good' | 'bad' | 'info' = 'info'): void {
@@ -804,6 +873,7 @@ async function main(): Promise<void> {
   }
   layout();
   window.addEventListener('resize', layout);
+  installKeys();
 
   /**
    * Floors are built one at a time.
@@ -1251,20 +1321,12 @@ async function main(): Promise<void> {
    * would make two runs incomparable for a reason that has nothing to do with
    * what is being tested.
    */
-  debug.setQuality = (level) => {
-    if (level === 'auto') {
-      qualityAuto = true;
-      qualityAccumulator = 0;
-      return debug.quality();
-    }
-    qualityAuto = false;
-    quality = { level: Math.max(0, Math.min(QUALITY_LEVELS.length - 1, level)), streak: 0, changes: quality.changes };
-    applyPixelRatio(pixelRatioForLevel(quality.level));
-    return debug.quality();
-  };
+  debug.setQuality = setQualityLevel;
   debug.removeSplat = () => scene.removeSplat();
   debug.restoreSplat = () => scene.restoreSplat();
   debug.splatPresent = () => scene.splatPresent;
+  /** The buffer the reconstruction is rasterised into, from the scene that owns it. */
+  debug.canvasSize = () => scene.canvasSize;
   debug.renderBudget = () => ({ ratio: scene.pixelRatio, sortMs: scene.sortInterval });
   /**
    * Kept as a diagnostic even though the controller no longer uses it. This is how

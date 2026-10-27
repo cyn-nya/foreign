@@ -4,7 +4,7 @@
       "scene": "room",
       "stage": "done",
       "error": null,
-      "loadSeconds": 14,
+      "loadSeconds": 22.2,
       "views": []
     }
   ],
@@ -12,7 +12,7 @@
     {
       "name": "room: viewer initialised and loaded the splat",
       "ok": true,
-      "detail": "stage=done, 14.0s"
+      "detail": "stage=done, 22.2s"
     },
     {
       "name": "room: no page or console errors",
