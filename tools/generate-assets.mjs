@@ -45,7 +45,12 @@ function parseArgs(argv) {
     else if (a === '--concurrency') args.concurrency = Math.max(1, Number(argv[++i]) || 1);
     else if (a === '--timeout') args.timeoutMs = Math.max(60_000, Number(argv[++i]) || 0);
     else if (a === '--help' || a === '-h') args.help = true;
+    // Both spellings. Only `--key=` used to be parsed while the help text
+    // advertises `--key <key>`, so the spaced form was accepted, ignored, and the
+    // command then failed with "No API key found" -- which reads as a wrong key
+    // rather than an unparsed argument.
     else if (a.startsWith('--key=')) args.key = a.slice(6);
+    else if (a === '--key') args.key = argv[++i];
     else if (a === '--region') args.region = argv[++i];
     else if (a === '--base') args.base = argv[++i];
   }

@@ -181,6 +181,25 @@ export class SplatScene {
     return this.splatsShown;
   }
 
+  /**
+   * Merge a patch into the Splatting plugin config.
+   *
+   * The knobs here change what a frame costs rather than how often it runs:
+   * `sort.highPrecisionEnabled` prices the depth sort, `raster.maxPixelRadius` and
+   * `maxStdDev` price each gaussian, `detailCullingThreshold` drops the small ones.
+   * `tools/bench-splat-config.mjs` varies them one at a time to find out which, if any,
+   * of them is the bottleneck that resolution could not reach.
+   *
+   * Exposed rather than hard-coded because the answer has to come from a measurement,
+   * and a measurement needs a way to move one thing.
+   */
+  setSplatConfig(patch: Record<string, unknown>): void {
+    if (!patch || Object.keys(patch).length === 0) return;
+    setViewerConfig(this.viewer, {
+      pipeline: { Splatting: { enabled: this.splatsShown, ...patch } },
+    } as never);
+  }
+
   setSortInterval(ms: number): void {
     if (!Number.isFinite(ms) || ms < 0) return;
     if (ms === this.appliedSortInterval) return;

@@ -104,6 +104,42 @@ export type ScareFace = (typeof SCARE_FACES)[number];
  * worse than any picture, and it costs nothing to draw.
  */
 export const SCARE_KINDS = ['flash', 'lunge', 'blackout', 'double'] as const;
+
+/**
+ * The charge: something crosses the room at you and you have to put it down.
+ *
+ * Separate from `SCARE_KINDS` on purpose. Those are picked at random and end on a
+ * timer; this one ends when the player clicks, and if it were in that list the random
+ * picker would eventually fire one that nothing ever resolves.
+ */
+
+/** Floor the charge first appears on. Floor 1 and 2 teach looking, not reacting. */
+export const CHARGE_FIRST_FLOOR = 3;
+
+/**
+ * How long the player has to react, in ms, by floor.
+ *
+ * Floor 3 gives 2.2 s -- long enough that the right response is obvious once it has
+ * happened. Floor 8 gives 1.0 s, which is about as short as this can be and still be a
+ * response rather than a formality. Below that it stops being a test of the player.
+ */
+export function chargeWindowForFloor(floor: number): number {
+  const steps = Math.max(0, floor - CHARGE_FIRST_FLOOR);
+  return Math.max(1000, 2200 - steps * 200);
+}
+
+/**
+ * Chance that a scheduled fright is a charge instead of a scream, by floor.
+ *
+ * It starts at a third: frequent enough on the first floor that carries it that a
+ * player meets it more than once, rare enough that the ordinary frights still set the
+ * rhythm. It saturates rather than reaching 1, because a floor made only of charges
+ * has no quiet in it and the quiet is what makes them land.
+ */
+export function chargeChanceForFloor(floor: number): number {
+  if (floor < CHARGE_FIRST_FLOOR) return 0;
+  return Math.min(0.6, 0.33 + (floor - CHARGE_FIRST_FLOOR) * 0.05);
+}
 export type ScareKind = (typeof SCARE_KINDS)[number];
 
 /** How long each kind holds the screen, in milliseconds. */

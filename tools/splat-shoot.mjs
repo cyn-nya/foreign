@@ -732,6 +732,34 @@ try {
     `state=${auto.state} floor=${auto.floor} placed=${auto.placed} anomaly=${auto.anomalies} marks=${auto.marks}`,
   );
 
+  // The bare link, which is the one that actually gets shared, and which is not the one
+  // above. `?autostart=1&floor=3` builds floor 3; a link with no floor builds floor 1,
+  // and floor 1 is the only branch that touches the per-run reset. So a crash confined to
+  // the first-floor path -- which is every demo link handed to a judge -- passes the check
+  // above untouched.
+  //
+  // That is not hypothetical: a run-state declaration placed below the autostart call
+  // threw `Cannot access 'hintGiven' before initialization` inside boot's catch, set
+  // `state = 'failed'`, and left the shared link on a play button that did nothing. This
+  // check was written after the fact and fails on that build.
+  await page.goto(`${base}/?autostart=1`, { waitUntil: 'load', timeout: 240_000 });
+  await page.waitForFunction(() => window.__splat && window.__splat.ready, null, { timeout: 240_000 });
+  const bare = await page.evaluate(async () => {
+    const s = window.__splat;
+    // `ready` is set at the end of boot even on the failure path, so it cannot be the
+    // assertion; the game has to have reached a floor on its own.
+    const until = performance.now() + 60_000;
+    while (s.state !== 'playing' && s.state !== 'failed' && performance.now() < until) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return { state: s.state, floor: s.floor, placed: s.placed, anomalies: s.anomalyCount };
+  });
+  check(
+    'the bare ?autostart=1 link opens a live first floor by itself',
+    bare.state === 'playing' && bare.floor === 1 && bare.anomalies >= 1 && bare.placed >= 1,
+    `state=${bare.state} floor=${bare.floor} placed=${bare.placed} anomaly=${bare.anomalies}`,
+  );
+
   // --- it watches you --------------------------------------------------------
   // The whole mechanic is one number: the gap between where a watcher is looking
   // and where the player is. It has to stay at zero as the player moves, and it
@@ -1094,7 +1122,11 @@ try {
       tried.push(`${slotId}->${on ?? 'nothing'}`);
       if (on !== slotId) continue;
       const result = s.mark();
-      aimed = { slotId, on, result: result?.result ?? null };
+      // `mark` picks again rather than judging the slot the crosshair reported, so the
+      // two can disagree. Recording both turns "an innocent object scored" into whichever
+      // of the two it actually is: a scored bystander, or a judgement about a different
+      // object than the one the crosshair named.
+      aimed = { slotId, on, judged: result?.slotId ?? null, result: result?.result ?? null };
     }
     return { state: s.state, items, bystanders, aimed, tried };
   });
@@ -1123,12 +1155,18 @@ try {
   );
   check(
     'an innocent household object refuses to score',
-    separation.bystanders > 0 && separation.aimed?.result === 'miss',
+    // The slot the crosshair named and the slot the mark judged must be the same object,
+    // and marking it must miss. Asserting only on `result` let a disagreement between the
+    // two read as a broken innocence rule, which is a much more alarming claim than what
+    // was actually happening.
+    separation.bystanders > 0 &&
+      separation.aimed?.judged === separation.aimed?.slotId &&
+      separation.aimed?.result === 'miss',
     separation.bystanders === 0
       ? 'no bystanders on this floor'
       : separation.aimed
         ? `${separation.bystanders} bystanders, crosshair on ${separation.aimed.slotId} → ` +
-          `${separation.aimed.result}`
+          `judged ${separation.aimed.judged} = ${separation.aimed.result}`
         : `${separation.bystanders} bystanders and the crosshair never reached one ` +
           `(tried ${separation.tried.join(', ')}) — the harness could not aim, so this ` +
           `says nothing about the rule`,
@@ -1336,6 +1374,112 @@ try {
     briefing.householdIsInnocent && briefing.intruderIsGenerated && briefing.worstIsGenerated,
     `mundane_plant is 0 -> ${briefing.householdIsInnocent}, ` +
       `gnome is >0 -> ${briefing.intruderIsGenerated}, face is >0 -> ${briefing.worstIsGenerated}`,
+  );
+
+  /* ---------------------------------------------------------- pause ------- */
+
+  // Esc is the browser's key, not ours: it exits the pointer lock and does not reliably
+  // deliver a keydown. So the game is paused by the lock being lost, and this is the
+  // check that the two agree.
+  const pause = await page.evaluate(async () => {
+    const s = window.__splat;
+    // Awaited, like every other start in this file. Without it the promise floats, the
+    // state stays whatever the previous check left behind, and the clock gets read across
+    // two different floors -- which is how this check first reported a run clock that ran
+    // 204 -> 186 in 700 ms, an eighteen-second jump that was really a floor change.
+    await s.start(1, 7, false);
+    // Waiting for `playing` rather than sleeping a fixed 200 ms: `start` builds the
+    // floor and fetches its assets, and asserting too early reads the previous floor's
+    // outcome instead of the one under test.
+    const until = performance.now() + 30_000;
+    while (s.state !== 'playing' && performance.now() < until) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    const before = s.state;
+    // Retried within a bounded window rather than dispatched once, because the floor
+    // chain advances on its own: `nextFloor` schedules the following floor from a
+    // 900 ms timer, and that sets `state = 'playing'` whenever it lands. A single
+    // dispatch can therefore be overwritten by a floor change that has nothing to do
+    // with the pause. Retrying does not weaken the assertion -- a build with no pause
+    // never reaches `paused` at any point in the window.
+    let paused = false;
+    const pauseDeadline = performance.now() + 10_000;
+    while (!paused && performance.now() < pauseDeadline) {
+      document.dispatchEvent(new Event('pointerlockchange'));
+      await new Promise((r) => setTimeout(r, 100));
+      paused = s.state === 'paused';
+    }
+    const after = s.state;
+    // Ten seconds spent by hand, through the same gate the frame loop calls. This is what
+    // makes the check able to fail: on a build with no pause, the clock drops here.
+    const spent = s.frame(10);
+    return { before, after, spent };
+  });
+  check(
+    'losing the pointer lock pauses the run',
+    pause.before === 'playing' && pause.after === 'paused',
+    `${pause.before} -> ${pause.after}`,
+  );
+  check(
+    'the run clock is stopped while paused',
+    pause.spent.before === pause.spent.after && pause.spent.after > 0,
+    `${pause.spent.before.toFixed(2)} -> ${pause.spent.after.toFixed(2)} over 10 s of paused play`,
+  );
+
+  // And it must run again afterwards, or the check above would also pass on a game whose
+  // clock is simply frozen. Same ten seconds, same gate, opposite expectation.
+  const thawed = await page.evaluate(async () => {
+    const s = window.__splat;
+    document.getElementById('resume-btn')?.click();
+    await new Promise((r) => setTimeout(r, 120));
+    const spent = s.frame(10);
+    return { state: s.state, spent };
+  });
+  check(
+    'resuming restarts the clock',
+    thawed.state === 'playing' && thawed.spent.after < thawed.spent.before - 9,
+    `${thawed.state} ${thawed.spent.before.toFixed(2)} -> ${thawed.spent.after.toFixed(2)} over 10 s of resumed play`,
+  );
+
+  /* --------------------------------------------------------- the charge --- */
+
+  // The charge must be live, must resolve on a click, and must stop being live after.
+  const defused = await page.evaluate(async () => {
+    const s = window.__splat;
+    s.charge();
+    const live = s.chargeActive();
+    const before = s.charges().defused;
+    // A click anywhere is the answer -- the thing fills the screen and the player is
+    // being rushed, so hitting a pixel is not the skill being tested.
+    document.querySelector('canvas')?.click();
+    await new Promise((r) => setTimeout(r, 120));
+    return {
+      live,
+      answered: s.charges().defused - before,
+      stillLive: s.chargeActive(),
+      stillOnScreen: s.scareFaceShowing(),
+    };
+  });
+  check('a charge starts', defused.live === true, `chargeActive -> ${defused.live}`);
+  check(
+    'clicking answers the charge and clears it',
+    defused.answered === 1 && defused.stillLive === false && defused.stillOnScreen === false,
+    `defused +${defused.answered}, live ${defused.stillLive}, on screen ${defused.stillOnScreen}`,
+  );
+
+  // The other outcome, and the one that makes the mechanic real: an unanswered charge
+  // has to end by itself. Left running, it is an overlay the player can never clear.
+  const unanswered = await page.evaluate(async () => {
+    const s = window.__splat;
+    const before = s.charges().missed;
+    s.charge();
+    await new Promise((r) => setTimeout(r, 2800));
+    return { missed: s.charges().missed - before, live: s.chargeActive() };
+  });
+  check(
+    'an unanswered charge closes itself',
+    unanswered.missed === 1 && unanswered.live === false,
+    `missed +${unanswered.missed}, still live ${unanswered.live}`,
   );
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | ') || 'clean');

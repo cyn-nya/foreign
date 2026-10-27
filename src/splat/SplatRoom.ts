@@ -15,9 +15,11 @@
  */
 
 import {
+  Box3,
   GLTFLoader,
   Raycaster,
   Vector2,
+  Vector3,
   type Object3D,
   type PerspectiveCamera,
   type Scene3D,
@@ -28,7 +30,39 @@ import type { AnchorDef } from '../game/rules.ts';
 
 const { loadGLTF } = GLTFLoader;
 
+/**
+ * How far off centre the crosshair may sit when the ray passes through an object's holes.
+ *
+ * See `pickThroughHoles`. Two degrees is roughly a fingertip at arm's length.
+ */
+const PICK_TOLERANCE_DEG = 2;
+
 const BASE = `${import.meta.env.BASE_URL ?? '/'}assets/foreign/`;
+
+/**
+ * One asset may not hold a floor hostage.
+ *
+ * See the note in `loadAssets`: the guard against re-fetching a missing asset was added
+ * because retrying hung the page, and the timeout it called for was never written. A
+ * fetch that opens a connection and then stalls therefore never settles, and because
+ * floors run through a serial chain, the whole game stops between two of them with no
+ * error shown.
+ */
+const ASSET_TIMEOUT_MS = 20_000;
+
+/** The caller's signal, plus a deadline. Either one aborts. */
+function withTimeout(signal?: AbortSignal): AbortSignal {
+  const deadline = AbortSignal.timeout(ASSET_TIMEOUT_MS);
+  if (!signal) return deadline;
+  // `any` is the right tool and is available everywhere this game runs; the fallback
+  // exists because a thrown ReferenceError here would be a load failure, and a load
+  // failure is the thing being prevented.
+  return typeof AbortSignal.any === 'function' ? AbortSignal.any([signal, deadline]) : deadline;
+}
+
+// Kept in its own module so the decision can be unit-tested without the viewer.
+import { hasGlbMagic } from './glb.ts';
+
 
 /** Vanilla three.js uses this refactor for a hex value into r/g/b floats. */
 function tintOf(value: number): [number, number, number] {
@@ -130,9 +164,20 @@ export class SplatRoom {
     await Promise.all(
       wanted.map(async (key) => {
         try {
-          const response = await fetch(`${BASE}${key}.glb`, { signal });
+          const response = await fetch(`${BASE}${key}.glb`, { signal: withTimeout(signal) });
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          this.bytes.set(key, await response.arrayBuffer());
+          const buffer = await response.arrayBuffer();
+          // `ok` is not enough. A static host answers 200 with the app's own
+          // `index.html` for any path it does not have, so a missing asset arrives as
+          // a perfectly successful response containing a web page. That page was then
+          // handed to the model loader, which tried to parse it as a glTF header and
+          // threw -- killing the whole session, on a floor the player could otherwise
+          // have played, because one file was absent.
+          //
+          // A GLB starts with the ASCII magic `glTF`. Anything else is not one, and
+          // the honest response is the same as a 404: report it and fall back.
+          if (!hasGlbMagic(buffer)) throw new Error('not a GLB (served as a fallback page)');
+          this.bytes.set(key, buffer);
         } catch {
           // A missing asset is reported and skipped; the rest of the floor still
           // has to be playable, so this must never reject.
@@ -359,17 +404,108 @@ export class SplatRoom {
       true,
     );
     const first = hits[0];
-    if (!first) return null;
+    if (!first) return this.pickThroughHoles(raycaster);
 
     let node: Object3D | null = first.object;
     while (node) {
-      const id = node.userData?.slotId;
-      if (typeof id === 'string') return id;
       const match = this.placed.find((item) => item.node === node);
       if (match) return match.slotId;
+      const id = node.userData?.slotId;
+      if (typeof id === 'string') return id;
       node = node.parent;
     }
     return null;
+  }
+
+  /**
+   * As `pick`, but also saying whether the mesh belongs to a placed anomaly.
+   *
+   * `judgeMark` receives a slot id and nothing else, so it can only be as correct as the
+   * claim that one slot holds one object. When a mark landed on a bystander and still
+   * scored -- because the id it reported was also an anomaly's -- the assumption was the
+   * bug, and the fix is to stop relying on it: a mark scores by reaching the anomaly's own
+   * node, which is what the player did or did not do.
+   *
+   * The ray distance is deliberately not returned. Whether a wall was in the way is
+   * already answered by the fact that the ray hit something at all.
+   */
+  pickDetail(
+    camera: PerspectiveCamera,
+    viewHeight: number,
+    nx?: number,
+    ny?: number,
+  ): { slotId: string | null; reachedAnomaly: boolean } {
+    if (this.placed.length === 0 && this.bystanderNodes.length === 0) {
+      return { slotId: null, reachedAnomaly: false };
+    }
+    const raycaster = new Raycaster();
+    raycaster.setFromCamera(new Vector2(nx ?? 0, ny ?? 0), camera, viewHeight);
+    const hits = raycaster.intersectObjects(
+      [...this.placed.map((item) => item.node), ...this.bystanderNodes],
+      true,
+    );
+    const first = hits[0];
+    if (!first) {
+      // Nothing solid was reached, so the only thing that can be under the crosshair is a
+      // thin object seen through its own holes -- and that is always one of the placed
+      // anomalies, because the hole fallback exists to make marking them possible.
+      const throughHoles = this.pickThroughHoles(raycaster);
+      return { slotId: throughHoles, reachedAnomaly: throughHoles !== null };
+    }
+    // Walked by identity, never by comparing slot ids: two objects reporting one id is
+    // exactly the case that has to stay a miss, and comparing ids is what made it a hit.
+    let node: Object3D | null = first.object;
+    while (node) {
+      const match = this.placed.find((item) => item.node === node);
+      if (match) return { slotId: match.slotId, reachedAnomaly: true };
+      const id = node.userData?.slotId;
+      if (typeof id === 'string') return { slotId: id, reachedAnomaly: false };
+      node = node.parent;
+    }
+    return { slotId: null, reachedAnomaly: false };
+  }
+
+  /**
+   * The frontmost object the crosshair is on, allowing for holes in thin geometry.
+   *
+   * Only called when the ray hit no geometry at all -- see the note at the call site.
+   *
+   * A bearing alone is not enough to choose between candidates, and choosing wrongly is
+   * not a cosmetic error: picking the smallest angle reported a mark on an anomaly while
+   * the player was aiming at the innocent object in front of it, which is precisely the
+   * judgement the game exists to make. So candidates are ordered the way the raycast
+   * orders them -- by distance along the ray -- and the tolerance only decides whether a
+   * candidate counts as being under the crosshair at all.
+   */
+  private pickThroughHoles(raycaster: Raycaster): string | null {
+    const direction = raycaster.ray.direction.clone().normalize();
+    const origin = raycaster.ray.origin;
+    const centre = new Vector3();
+    const toObject = new Vector3();
+    const tan = Math.tan((PICK_TOLERANCE_DEG * Math.PI) / 180);
+
+    let bestId: string | null = null;
+    let bestAlong = Infinity;
+    // Bystanders are candidates too. Leaving them out would make a thin innocent object
+    // un-markable, which is the same unfairness in the other direction: the room would
+    // refuse to accept a mark the player clearly aimed at.
+    for (const item of [...this.placed, ...this.bystanders]) {
+      const box = new Box3().setFromObject(item.node);
+      if (box.isEmpty()) continue;
+      box.getCenter(centre);
+      toObject.copy(centre).sub(origin);
+      const along = toObject.dot(direction);
+      // Behind the player is not a match.
+      if (along <= 0) continue;
+      // The perpendicular distance from the centre to the ray.
+      const perpendicular = toObject.addScaledVector(direction, -along).length();
+      if (perpendicular > along * tan) continue;
+      if (along < bestAlong) {
+        bestAlong = along;
+        bestId = item.slotId;
+      }
+    }
+    return bestId;
   }
 }
 

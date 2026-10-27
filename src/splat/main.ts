@@ -16,11 +16,13 @@ import {
   FINAL_FLOOR,
   MAX_MISTAKES,
   explainMiss,
+  durationForFloor,
   formatClock,
   generateFloor,
   hitScore,
   isFinalFloor,
   judgeMark,
+  type MarkOutcome,
 } from '../game/rules.ts';
 import type { AnomalyKind, FloorPlan } from '../game/types.ts';
 import { SplatPlayer } from './SplatPlayer.ts';
@@ -39,6 +41,8 @@ import {
   torchFlickerForFloor,
   torchRadiusForFloor,
   type ScareKind,
+  chargeWindowForFloor,
+  chargeChanceForFloor,
 } from './horror.ts';
 import { summariseFrames } from './framerate.ts';
 import {
@@ -68,7 +72,7 @@ interface MarkReport {
   label?: string;
 }
 
-type GameState = 'loading' | 'menu' | 'playing' | 'floorClear' | 'gameOver' | 'won' | 'failed';
+type GameState = 'loading' | 'menu' | 'playing' | 'paused' | 'floorClear' | 'gameOver' | 'won' | 'failed';
 
 interface SplatDebug {
   ready: boolean;
@@ -170,6 +174,11 @@ interface SplatDebug {
   torchOn: () => boolean;
   darkness: () => number;
   scareFaceShowing: () => boolean;
+  /** Fire a charge by hand, and ask what became of it. */
+  charge: () => void;
+  chargeActive: () => boolean;
+  defuseCharge: () => boolean;
+  charges: () => { defused: number; missed: number };
   /** Which fright is on screen, or null. */
   scareKind: () => string | null;
   /** Every fright kind this floor may deal. */
@@ -186,6 +195,7 @@ interface SplatDebug {
   canvasSize: () => { width: number; height: number } | null;
   renderBudget: () => { ratio: number; sortMs: number };
   setSortInterval: (ms: number) => void;
+  applySplatPatch: (patch: Record<string, unknown>) => void;
   setSplatsVisible: (on: boolean) => void;
   setPixelRatio: (ratio: number) => void;
   setObjectsVisible: (visible: boolean) => void;
@@ -198,6 +208,8 @@ interface SplatDebug {
   look: (movementX: number, movementY: number) => void;
   /** Advance the clock by hand so a floor can be finished without waiting. */
   tick: (seconds: number) => void;
+  /** Spend run clock through the real pause gate. Refused while paused. */
+  frame: (dt: number) => { state: GameState; before: number; after: number };
   /** Start audio. A gesture starts it in a real browser; a harness has to ask. */
   audioStart: () => boolean;
   audio: () => AudioReport;
@@ -280,6 +292,10 @@ const debug: SplatDebug = {
   torchOn: () => false,
   darkness: () => 0,
   scareFaceShowing: () => false,
+  charge: () => undefined,
+  chargeActive: () => false,
+  defuseCharge: () => false,
+  charges: () => ({ defused: 0, missed: 0 }),
   scareKind: () => null,
   scareKinds: () => ['flash'],
   sinceScare: () => 0,
@@ -294,6 +310,7 @@ const debug: SplatDebug = {
   canvasSize: () => null,
   renderBudget: () => ({ ratio: 1, sortMs: 0 }),
   setSortInterval: () => undefined,
+  applySplatPatch: () => undefined,
   setSplatsVisible: () => undefined,
   setPixelRatio: () => undefined,
   setObjectsVisible: () => undefined,
@@ -302,6 +319,7 @@ const debug: SplatDebug = {
   anchors: () => [],
   placements: () => [],
   tick: () => undefined,
+  frame: () => ({ state: 'menu' as GameState, before: 0, after: 0 }),
   log: [],
 };
 (window as unknown as { __splat: SplatDebug }).__splat = debug;
@@ -357,6 +375,12 @@ function installKeys(): void {
 function panel(html: string): void {
   overlay.classList.remove('hidden');
   overlay.innerHTML = `<div class="panel">${html}</div>`;
+}
+
+/** Take the overlay away, so the room is visible again. */
+function hidePanel(): void {
+  overlay.classList.add('hidden');
+  overlay.innerHTML = '';
 }
 
 function showProgress(fraction: number, label: string): void {
@@ -461,6 +485,42 @@ function setQualityLevel(
   };
 }
 
+/**
+ * The pause screen.
+ *
+ * Written as a panel rather than a browser dialog because it has to sit over the room
+ * the player was just looking at -- the thing they are deciding whether to go back to.
+ * The quality row is here because this is the screen a player reaches when the game is
+ * unplayable and they do not know that the resolution is theirs to move.
+ */
+function showPause(handlers: {
+  onResume: () => void;
+  onMenu: () => void;
+  onQuality: () => void;
+}): void {
+  const { ratio, auto } = debug.quality();
+  panel(`
+    <h1 class="title">已暂停<span class="sub">PAUSED</span></h1>
+    <p class="tagline">
+      第 ${debug.floor} 层 · 已找到 <strong>${debug.foundTotal}</strong> 个 · 剩余 <strong>${formatClock(debug.timeLeft)}</strong>
+    </p>
+    <div class="actions">
+      <button id="resume-btn" class="primary">回到游戏</button>
+      <button id="menu-btn">回主画面</button>
+      <button id="quality-btn">画质：${ratio.toFixed(2)}×${auto ? '（自动）' : '（手动）'}</button>
+    </div>
+    <p class="progress-note dim">
+      回到游戏会重新锁定鼠标；也可以直接点击画面。
+    </p>
+    <p class="progress-note dim">
+      卡的话按 <strong>1</strong>–<strong>5</strong> 直接调画质，<strong>0</strong> 交回自动；<strong>F3</strong> 看帧率。
+    </p>
+  `);
+  document.getElementById('resume-btn')?.addEventListener('click', handlers.onResume);
+  document.getElementById('menu-btn')?.addEventListener('click', handlers.onMenu);
+  document.getElementById('quality-btn')?.addEventListener('click', handlers.onQuality);
+}
+
 function toast(message: string, kind: 'good' | 'bad' | 'info' = 'info'): void {
   el.toast.textContent = message;
   el.toast.className = `toast show ${kind}`;
@@ -535,6 +595,44 @@ function togglePerf(): void {
   if (perfVisible) paintPerf();
 }
 
+/**
+ * The GPU the browser is really drawing with.
+ *
+ * Asked once, because creating a context is not free and the answer cannot change.
+ * `UNMASKED_RENDERER_WEBGL` is the only place the real adapter name appears; without
+ * it a software rasteriser and a discrete card are indistinguishable from inside the
+ * page, which is how "your machine should be fast enough" turns into a guess.
+ */
+let rendererName: string | null | undefined;
+
+function webglRenderer(): string | null {
+  if (rendererName !== undefined) return rendererName;
+  try {
+    const probe = document.createElement('canvas');
+    const gl = probe.getContext('webgl2') ?? probe.getContext('webgl');
+    if (!gl) {
+      rendererName = null;
+      return null;
+    }
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const raw = ext
+      ? (gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) as string)
+      : (gl.getParameter(gl.RENDERER) as string);
+    // Keep it short: some drivers append a paragraph of version numbers, and the
+    // overlay is one line.
+    rendererName = String(raw ?? '').split(/[(),]/)[0]!.trim().slice(0, 46) || null;
+  } catch {
+    rendererName = null;
+  }
+  return rendererName;
+}
+
+/** True when the adapter name says the frame is being drawn on the CPU. */
+function isSoftwareRenderer(): boolean {
+  const name = (webglRenderer() ?? '').toLowerCase();
+  return /swiftshader|llvmpipe|software|basic render|microsoft basic/.test(name);
+}
+
 function paintPerf(): void {
   if (!perfVisible) return;
   const fps = currentFps();
@@ -551,7 +649,13 @@ function paintPerf(): void {
     `${value} fps   最慢 ${worstMs.toFixed(0)} ms   帧 ${debug.frames}　近 5 秒 ${count} 帧` +
     `\n${debug.placed} 模型 · 扫描 ${debug.splatPresent() ? '在' : '移除'}` +
     ` · 画质 ${qualityLabel(quality.level)}${qualityAuto ? '' : '（锁定）'}` +
-    ` · 分辨率 ${budget.ratio.toFixed(2)}×`;
+    ` · 分辨率 ${budget.ratio.toFixed(2)}×` +
+    // Which adapter drew the frame, and a plain warning when it is the CPU. This is
+    // the first thing to read on a machine that is fast on paper and slow in the
+    // game: without it, a software rasteriser and a dead GPU look identical from
+    // inside the page, and every other number here is then being read as a
+    // measurement of the game when it is a measurement of the fallback.
+    `\n${rendererName ?? '未知渲染器'}${isSoftwareRenderer() ? '  ⚠ 软件渲染（未用显卡）' : ''}`;
   const tone = fps === null ? '' : fps < 15 ? 'bad' : fps < 30 ? 'warn' : '';
   el.perf.className = `perf${tone ? ` ${tone}` : ''}`;
 }
@@ -626,6 +730,18 @@ let currentScareKind: ScareKind | null = null;
  * hands the graph over through this.
  */
 let audioSink: { scare(intensity?: number): void } | null = null;
+
+/**
+ * The charge, and whether the player has answered it.
+ *
+ * `chargeActive` is the whole state machine: set when the thing starts moving, cleared
+ * by whichever of the two outcomes happens first. The timeout and the click both check
+ * it, so a click that lands a millisecond after the window closed cannot also score.
+ */
+let chargeActive = false;
+let chargeTimeout = 0;
+let chargeDefused = 0;
+let chargeMissed = 0;
 
 /**
  * Paint the torch beam for the current floor.
@@ -731,6 +847,55 @@ function fireScare(intensity = 1, forceKind?: ScareKind): void {
     if (currentScareKind === kind) currentScareKind = null;
     if (kind === 'blackout' && torchWasOn) setTorch(true);
   }, holdMs);
+}
+
+/**
+ * Something starts coming.
+ *
+ * The window is the CSS animation's duration as well as the timer's, so what the
+ * player sees and what the game allows are the same number of milliseconds. Two
+ * numbers that are supposed to agree is how they stop agreeing.
+ */
+function startCharge(): void {
+  if (!scaresEnabled || chargeActive) return;
+  chargeActive = true;
+  sinceScare = 0;
+  const windowMs = chargeWindowForFloor(debug.floor);
+
+  scareLayer.classList.remove('on', 'lunge', 'blackout');
+  view.classList.remove('shake');
+  void scareLayer.offsetWidth;
+  scareLayer.style.setProperty('--charge-ms', `${windowMs}ms`);
+  scareLayer.classList.add('on', 'charge');
+  view.classList.add('shake');
+  audioSink?.scare(1);
+
+  window.clearTimeout(chargeTimeout);
+  chargeTimeout = window.setTimeout(() => {
+    if (!chargeActive) return;
+    // The player did not answer. It arrives, and it costs what a fright costs.
+    chargeActive = false;
+    chargeMissed += 1;
+  }, windowMs);
+}
+
+/**
+ * The player clicked in time.
+ *
+ * Returns whether there was anything to defuse, so the caller knows not to also treat
+ * the click as a mark.
+ */
+function defuseCharge(): boolean {
+  if (!chargeActive) return false;
+  chargeActive = false;
+  window.clearTimeout(chargeTimeout);
+  chargeDefused += 1;
+  scareLayer.classList.remove('on', 'charge', 'lunge');
+  scareLayer.classList.add('killed');
+  window.setTimeout(() => scareLayer.classList.remove('killed'), 160);
+  view.classList.remove('shake');
+  toast('解除', 'good');
+  return true;
 }
 
 /** Turn the frights off entirely, for a player who does not want them. */
@@ -854,6 +1019,24 @@ async function main(): Promise<void> {
    */
   let plan: FloorPlan | null = null;
 
+  /**
+   * Findability hint state.
+   *
+   * Declared here for the same reason as `plan` above, and it is not a coincidence that
+   * the two sit together: the hint marker is written by `buildFloorNow`, which the
+   * autostart path reaches synchronously from `main`, so a `let` further down is still in
+   * its temporal dead zone when the first floor is built. That threw
+   * `Cannot access 'hintGiven' before initialization` inside `boot`'s catch, which set
+   * `state = 'failed'` and left every `?autostart=1` link — every demo link — showing a
+   * play button that did nothing.
+   *
+   * The menu path hid it, which is also what the `plan` comment says: a button handler
+   * runs after `main` has finished, so the declaration has executed by then. So the bug is
+   * only visible on the exact URLs that get shared.
+   */
+  const HINT_AFTER_S = 90;
+  let hintGiven = false;
+
   if (params.get('autostart') === '1') {
     await startFloor(
       Number.isFinite(requestedFloor) && requestedFloor > 0 ? requestedFloor : 1,
@@ -885,6 +1068,52 @@ async function main(): Promise<void> {
    * "next floor" twice does the same thing. Queueing costs nothing here because
    * a floor build is already seconds long.
    */
+  /**
+   * Stop the clock.
+   *
+   * The frame loop already gates the timer, the proximity drone and the frights on
+   * `playing`, so leaving that state is what freezes the run -- there is no second
+   * place that has to remember to stop. The player is also left where they stand
+   * rather than being reset, because a pause is not a checkpoint.
+   */
+  function pauseGame(): void {
+    if (debug.state !== 'playing') return;
+    debug.state = 'paused';
+    player.releaseLock();
+    showPause({
+      onResume: resumeFromPause,
+      onMenu: () => {
+        debug.state = 'menu';
+        showMenu(assetLine, () => {
+          void startFloor(1, undefined, true);
+        });
+      },
+      onQuality: () => {
+        // Back to auto, then straight into the pause screen again: this button is the
+        // one a struggling player presses twice, and making them aim at a moving
+        // target between presses is the wrong design.
+        setQualityLevel('auto');
+        toast('画质自动', 'info');
+        showPause({
+          onResume: resumeFromPause,
+          onMenu: () => {
+            debug.state = 'menu';
+            showMenu(assetLine, () => {
+              void startFloor(1, undefined, true);
+            });
+          },
+          onQuality: () => undefined,
+        });
+      },
+    });
+  }
+
+  function resumeFromPause(): void {
+    if (debug.state === 'paused') debug.state = 'playing';
+    player.requestLock();
+    hidePanel();
+  }
+
   async function startFloor(floor = 1, seed?: number, lock = false, kinds?: AnomalyKind[]): Promise<void> {
     const previous = floorChain;
     let release!: () => void;
@@ -906,6 +1135,7 @@ async function main(): Promise<void> {
     // Floor 1 is a new run; every later floor is a continuation of it.
     if (floor === 1) {
       debug.foundTotal = 0;
+    hintGiven = false;
       debug.mistakes = 0;
     }
     // A fixed seed keeps a floor reproducible from the URL; otherwise the floor
@@ -1018,12 +1248,18 @@ async function main(): Promise<void> {
 
   /** The single path a mark takes, whether from a click or the harness. */
   function mark(): MarkReport {
-    const slotId = room.pick(scene.camera, scene.viewer.getSize().height);
+    const { slotId, reachedAnomaly } = room.pickDetail(scene.camera, scene.viewer.getSize().height);
     if (!plan || debug.state !== 'playing') {
       return { result: 'miss', slotId, found: debug.found.length, marksLeft: debug.marksLeft, state: debug.state };
     }
 
-    const outcome = judgeMark(plan, slotId ?? '', debug.found);
+    // Judged on the node the crosshair reached, not on the identifier it reported. A slot
+    // id is only unambiguous while one slot holds one object, and the acceptance run found
+    // a floor where marking a bystander scored because the id it reported was also an
+    // anomaly's. Reaching the anomaly's own mesh is what the player actually did.
+    const outcome = reachedAnomaly
+      ? judgeMark(plan, slotId ?? '', debug.found)
+      : ({ result: 'miss' } as MarkOutcome);
 
     if (outcome.result === 'hit' && outcome.anomaly) {
       debug.found.push(outcome.anomaly.id);
@@ -1062,10 +1298,84 @@ async function main(): Promise<void> {
     };
   }
 
+  // A click means "mark" only when the mouse is actually captured and we are playing.
+  //
+  // It used to mean "mark" whenever the state was `playing`, and the state stays
+  // `playing` while the pointer is unlocked -- so the one gesture that can restore
+  // mouse-look, a click, was spent on a shot instead. The player could not get back
+  // into the game after pressing Esc.
   view.addEventListener('click', () => {
-    if (debug.state === 'playing') mark();
+    if (debug.state === 'paused') {
+      resumeFromPause();
+      return;
+    }
+    // First, and before anything else: a charge in the air owns this click. If this
+    // check were after `mark()` the player would spend their one answer on a shot at
+    // the furniture.
+    if (defuseCharge()) return;
+    if (debug.state === 'playing' && player.isLocked) mark();
     else player.requestLock();
   });
+
+  /**
+   * Esc is the browser's, not ours: it exits the pointer lock and does not reliably
+   * deliver a keydown. So the pause is driven by the lock being lost, which is the
+   * event that always arrives and always means the same thing.
+   */
+  document.addEventListener('pointerlockchange', () => {
+    if (document.pointerLockElement) return;
+    if (debug.state !== 'playing') return;
+    pauseGame();
+  });
+
+  /**
+   * How long to search before the game says which way to look, in seconds.
+   *
+   * Floor 1 is capped at 240 s and its single anomaly is meant to be met in the first
+   * minute. Ninety seconds is long past that, so the hint cannot be what finds it for
+   * an attentive player -- and it is the difference between a floor that teaches and
+   * one that just costs four minutes.
+   *
+   * The value and the marker it checks are declared at the top of `main`, next to `plan`;
+   * see the note there for why they cannot live here.
+   */
+
+  /**
+   * A bearing, once, and never a distance.
+   *
+   * The drone already says how warm the player is; this says which way to turn when
+   * they have not heard it. Naming a direction keeps the search intact -- they still
+   * have to see it -- where a marker would replace the game with a walk.
+   */
+  function maybeHint(): void {
+    if (hintGiven || debug.state !== 'playing') return;
+    const elapsed = durationForFloor(debug.floor) - debug.timeLeft;
+    if (elapsed < HINT_AFTER_S) return;
+    const eye = player.cameraState();
+    let nearest: { x: number; z: number } | null = null;
+    let best = Infinity;
+    for (const item of room.placements) {
+      const d = Math.hypot(item.node.position.x - eye.x, item.node.position.z - eye.z);
+      if (d < best) {
+        best = d;
+        nearest = { x: item.node.position.x, z: item.node.position.z };
+      }
+    }
+    if (!nearest) return;
+    hintGiven = true;
+    // Bearing relative to where the player is facing, not to north: "left" has to mean
+    // left of the screen or it is not a hint.
+    const bearing = Math.atan2(nearest.x - eye.x, nearest.z - eye.z);
+    let delta = bearing - eye.yaw;
+    while (delta > Math.PI) delta -= Math.PI * 2;
+    while (delta < -Math.PI) delta += Math.PI * 2;
+    const abs = Math.abs(delta);
+    const where =
+      abs < Math.PI / 4 ? '正前方'
+      : abs < (Math.PI * 3) / 4 ? (delta > 0 ? '左边' : '右边')
+      : '身后';
+    toast(`有什么在${where}，很近`, 'info');
+  }
 
   /**
    * How close the nearest anomaly is, as 0..1.
@@ -1111,6 +1421,19 @@ async function main(): Promise<void> {
     debug.renderOnce();
     return { from, to: [player.x, player.y, player.z] };
   };
+  /**
+   * Spend `dt` seconds of run clock through the real gate, and report what happened.
+   *
+   * Unlike `tick`, this is refused while paused -- which is the whole point of having
+   * both. `tick` exists to reach the end of a run quickly; this exists to ask whether
+   * the run is running.
+   */
+  debug.frame = (dt: number) => {
+    const before = debug.timeLeft;
+    advanceRunClock(dt);
+    return { state: debug.state, before, after: debug.timeLeft };
+  };
+
   debug.tick = (seconds) => {
     debug.timeLeft = Math.max(0, debug.timeLeft - seconds);
     syncHud();
@@ -1251,6 +1574,15 @@ async function main(): Promise<void> {
    * made the ending untestable. This exercises `settle`, which is what decides
    * whether the run continues, wins or ends.
    */
+  /**
+   * Finish the floor: mark everything still outstanding, settle the run, report the state.
+   *
+   * NOT a state reader, despite the name -- and it was read as one. A check that asked
+   * `autoplay()` whether the game was playing cleared the floor instead, then found the
+   * state was `floorClear` and reported the pause as broken. The reader is `debug.state`.
+   * The name is kept because the acceptance harness calls it in six places for its real
+   * purpose, where it is exactly right.
+   */
   debug.autoplay = () => {
     if (!plan || debug.state !== 'playing') return debug.state;
     for (const anomaly of plan.anomalies) {
@@ -1279,6 +1611,10 @@ async function main(): Promise<void> {
   debug.torchOn = () => torchOn;
   debug.darkness = () => darknessForFloor(debug.floor);
   debug.scareFaceShowing = () => scareLayer.classList.contains('on');
+  debug.charge = () => startCharge();
+  debug.chargeActive = () => chargeActive;
+  debug.defuseCharge = () => defuseCharge();
+  debug.charges = () => ({ defused: chargeDefused, missed: chargeMissed });
   // The kind, not just whether something is on screen: a blackout shows no
   // face at all, so `scareFaceShowing` cannot tell the four apart.
   debug.scareKind = () => currentScareKind;
@@ -1334,6 +1670,8 @@ async function main(): Promise<void> {
    * about the sort gets asked without moving the resolution as well.
    */
   debug.setSortInterval = (ms) => scene.setSortInterval(ms);
+  /** One Splatting knob at a time, for the benchmark and for a bug report. */
+  debug.applySplatPatch = (patch) => scene.setSplatConfig(patch);
   /** Turn the reconstruction off without unloading it, to price the frame around it. */
   debug.setSplatsVisible = (on) => scene.setSplatsVisible(on);
   /** Pin the render scale by hand, for the same reason `setSortInterval` exists. */
@@ -1382,6 +1720,20 @@ async function main(): Promise<void> {
   };
 
   let previous = performance.now();
+  /**
+   * Spend run clock, if the run is actually being played.
+   *
+   * Split out of the frame loop so a test can drive it directly. The pause gate lives
+   * here and nowhere else, and it could not be observed through the frame loop on a
+   * machine that renders slower than the sleep in the check.
+   */
+  function advanceRunClock(dt: number): void {
+    if (debug.state !== 'playing' || !autoRender) return;
+    debug.timeLeft = Math.max(0, debug.timeLeft - dt);
+    if (debug.timeLeft <= 0) endRun();
+    else syncHud();
+  }
+
   function frame(now: number): void {
     // Two different numbers, and conflating them made the frame counter lie.
     // `dt` is clamped so a long stall cannot teleport the player through a wall;
@@ -1392,7 +1744,9 @@ async function main(): Promise<void> {
     const dt = Math.min(0.05, rawDt);
     previous = now;
     recordFrame(now);
-    player.update(dt);
+    // Frozen while paused, because the keyboard is not: the pointer lock is gone but
+    // WASD still arrives, and a pause the player can walk around inside is not a pause.
+    if (debug.state !== 'paused') player.update(dt);
     // The room animates against the player's eye: what watches you has to be
     // updated before the frame is drawn, or it lags a frame behind.
     room.update(dt, player.cameraState());
@@ -1403,11 +1757,7 @@ async function main(): Promise<void> {
     scene.applyPose(player.cameraState());
     if (autoRender) scene.render();
 
-    if (debug.state === 'playing' && autoRender) {
-      debug.timeLeft = Math.max(0, debug.timeLeft - dt);
-      if (debug.timeLeft <= 0) endRun();
-      else syncHud();
-    }
+    advanceRunClock(dt);
 
     const state = player.cameraState();
     debug.player = {
@@ -1436,10 +1786,17 @@ async function main(): Promise<void> {
 
     // The quiet between frights, which shortens with depth.
     if (debug.state === 'playing') {
+      maybeHint();
       sinceScare += rawDt;
-      if (sinceScare >= scareAfter) {
+      if (sinceScare >= scareAfter && chargeActive) {
+        // A charge already in the air is the event; a fright on top of it would resolve
+        // the player's reaction for them and make the click meaningless.
+        sinceScare = 0;
+      } else if (sinceScare >= scareAfter) {
         // Scaled by depth: an early fright is a suggestion, a late one is not.
-        fireScare(scareIntensityForFloor(debug.floor));
+        // From floor 3 some of those frights are instead something that comes for you.
+        if (Math.random() < chargeChanceForFloor(debug.floor)) startCharge();
+        else fireScare(scareIntensityForFloor(debug.floor));
         scareAfter = nextScareDelay(Math.random, debug.floor);
       }
     }

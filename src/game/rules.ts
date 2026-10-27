@@ -195,9 +195,44 @@ function householdAssets(): ForeignAsset[] {
   return FOREIGN_ASSETS.filter((a) => a.weirdness === 0);
 }
 
-/** A household object, as an anomaly payload: what it is, and what it does. */
+/**
+ * The smallest household object that is fair to hide.
+ *
+ * The catalogue contains a 0.07 m key bowl, a 0.2 m kettle and a 0.3 m microwave. The
+ * first floor pins its single anomaly to the one spot nearest the way in and expects the
+ * player to notice it from across the room; at head height in a dark reconstruction,
+ * rendered at 0.40x, none of those three is noticeable. A player reported walking almost
+ * the whole floor and finding nothing, which is this constant missing.
+ */
+const MIN_VISIBLE_HEIGHT = 0.6;
+
+/**
+ * The shortest object that still reads as an object when it is hung in mid-air.
+ *
+ * A stare anomaly floats at 1.15-1.85 m facing the door. Anything flat -- `stain` is 5 cm
+ * -- becomes a line seen edge-on and is invisible from the floor, so the floor's anomaly
+ * cannot be found at all. `search:time` reported exactly that: `stance=none ray=[]`.
+ *
+ * Lower than `MIN_VISIBLE_HEIGHT` because the two are different questions: that one asks
+ * whether a piece of furniture is too small to notice at all, this one asks whether an
+ * object has enough vertical extent to have a silhouette in the air.
+ */
+const STARE_MIN_HEIGHT = 0.35;
+
+/** Anomaly assets with enough height to hang. Falls back to all if a pass finds none. */
+function hangableAssets(): ForeignAsset[] {
+  const all = horrorAssets();
+  const tall = all.filter((a) => (a.height ?? 0) >= STARE_MIN_HEIGHT);
+  return tall.length > 0 ? tall : all;
+}
+
+/** A household object big enough to be found, as an anomaly payload. */
 function mundanePayload(rng: RNG): { key: string; name: string } {
-  const pool = householdAssets();
+  const all = householdAssets();
+  const large = all.filter((a) => (a.height ?? 0) >= MIN_VISIBLE_HEIGHT);
+  // Fall back rather than return nothing: a floor with no anomaly is worse than a floor
+  // with a small one, because it cannot be cleared at all.
+  const pool = large.length > 0 ? large : all;
   const item = pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))];
   return { key: item.key, name: item.name };
 }
@@ -312,7 +347,7 @@ function buildStare(
   // turned to face the way in — and that is the point. A chair hanging in the air
   // and tracking you is far worse than a face, because the face was never going
   // to be innocent and the chair was.
-  const asset = mundane ? mundanePayload(rng) : pick(rng, horrorAssets());
+  const asset = mundane ? mundanePayload(rng) : pick(rng, hangableAssets());
   const height = 1.15 + rng() * 0.7;
   const dx = spawn.x - anchor.pos.x;
   const dz = spawn.z - anchor.pos.z;

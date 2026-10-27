@@ -163,7 +163,10 @@ try {
   const mundaneKeys = catalogue.assets.map((a) => a.key).filter((k) => k.startsWith('mundane_'));
   const mundane = mundaneKeys.length;
   const lux3d = claimed.size;
-  const placeholder = catalogue.assets.length - mundane - lux3d;
+  // Assets with no Lux3D output behind them. NOT `total - mundane - lux3d`: that
+  // was right only while the household objects were never generated, and once they
+  // were it subtracted all thirteen of them twice and reported a negative count.
+  const placeholder = catalogue.assets.length - lux3d;
   const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
   const stated = /已生成 \*\*(\d+)\*\* 个（Lux3D 文生 3D），\s*\n?\s*\*\*(\d+)\*\* 个仍是程序化占位，另有 \*\*(\d+)\*\* 件家务家具/.exec(
     readme,

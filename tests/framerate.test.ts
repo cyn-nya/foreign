@@ -64,15 +64,21 @@ describe('the frame-rate counter', () => {
     for (let i = 0; i < 32; i++) burst.push(100_000 + i * (783 / 31));
     const times = [...burst, 100_783 + 3_834];
     const s = summariseFrames(times, WINDOW);
-    // Dividing 33 intervals by the 4617 ms history says 7.15 fps for a loop that
-    // has just taken 3.8 seconds over one frame.
-    expect(s.fps).toBeLessThan(1);
-    expect(1000 / s.fps).toBeCloseTo(3_834, 0);
-    // And the summary has to be internally consistent: whoever reads `fps` must
-    // get the same number by dividing the intervals it reports by the span it
-    // reports. Reporting the window's intervals against a single gap is how this
-    // said 47/2.87 = 16.4 fps while stating 0.35.
+    // This used to assert that the answer was `1 / 3834 ms`, i.e. that a single frame
+    // after a stall was itself the frame rate. That convention is defensible in isolation
+    // -- the loop really did just spend 3.8 s on one frame -- but it reads as the current
+    // rate, and the acceptance suite caught it disagreeing with an independent count of
+    // the same five seconds by more than an order of magnitude (0.49 fps reported, 2.99
+    // measured). It is also the number the player uses to judge whether the game is
+    // playable.
+    //
+    // One frame is not a rate, so the window's is reported instead. The stall is not
+    // hidden by this: `worstMs` still carries it, and it is what the HUD prints next to
+    // the rate. What is gone is the claim that a single gap describes the loop.
+    expect(s.fps).toBeGreaterThan(1);
     expect(s.intervals / (s.spanMs / 1000)).toBeCloseTo(s.fps, 6);
+    // The stall stays visible in the number whose job that is.
+    expect(s.worstMs).toBeCloseTo(3_834, 0);
     // `samples` is still the count in the window, which is what the HUD prints.
     expect(s.samples).toBeGreaterThan(2);
   });
@@ -173,5 +179,25 @@ describe('the frame-rate counter', () => {
       }
       expect(s.intervals / (s.spanMs / 1000)).toBeCloseTo(s.fps, 6);
     }
+  });
+
+  /**
+   * One frame after a stall is not a frame rate.
+   *
+   * The reported case: `1 intervals in 2033 ms` -> `0.49 fps`, measured against an
+   * independent count of the same five seconds that said 2.99 fps. The gap being divided
+   * by was the stall, not a frame time, so the counter under-reported by the length of the
+   * very stall it was describing -- and this is the number the player reads to decide
+   * whether the game is playable.
+   */
+  it('does not report the stall gap as a frame time when only one frame follows it', () => {
+    // Twenty frames, then three seconds of nothing, then a single frame.
+    const times = [...even(20, 16, 100_000), 103_000];
+    const s = summariseFrames(times, WINDOW);
+
+    // Whatever it reports must be something the data supports. Twenty frames across the
+    // window is a real rate; `1 / 3 s` is a description of the stall, not of the loop.
+    expect(s.fps).toBeGreaterThan(0.5);
+    expect(s.intervals / (s.spanMs / 1000)).toBeCloseTo(s.fps, 6);
   });
 });

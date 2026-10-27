@@ -106,11 +106,31 @@ export function summariseFrames(
 
   if (runStart > 0) {
     const run = recent.slice(runStart);
-    // A single frame after the stall still dates the stall: the gap that ended
-    // the previous run is the only evidence there is about the current one.
-    const runSpan =
-      run.length >= 2 ? run[run.length - 1] - run[0] : recent[runStart] - recent[runStart - 1];
-    const runIntervals = run.length >= 2 ? run.length - 1 : 1;
+    // A single frame after a stall dates the stall, but it is not a frame time.
+    //
+    // This branch used to divide by that gap: `runIntervals = 1` over
+    // `recent[runStart] - recent[runStart - 1]`, the stall itself. A loop running at
+    // 3 fps would report `1 / 2.033 = 0.49 fps` for as long as no second frame had
+    // arrived after the stall -- an order of magnitude low, on a number the player
+    // reads to decide whether the game is playable, and measured by the acceptance
+    // suite against an independent count of the same five seconds.
+    //
+    // One frame is not a rate. When the run has fewer than two of them, the only
+    // supported claim is the window's, which is the same pessimistic ceiling used
+    // above and keeps `fps === intervals / spanMs`.
+    if (run.length < 2) {
+      const winSpan = newest - Math.max(frameTimes[0], from);
+      return {
+        samples: recent.length,
+        intervals: winSpan > 0 ? recent.length - 1 : 0,
+        spanMs: winSpan,
+        historyMs,
+        fps: windowFps,
+        worstMs: worst,
+      };
+    }
+    const runSpan = run[run.length - 1] - run[0];
+    const runIntervals = run.length - 1;
     const runFps = runSpan > 0 ? runIntervals / (runSpan / 1000) : 0;
 
     if (runFps > windowFps) {

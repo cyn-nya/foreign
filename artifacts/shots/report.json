@@ -1,5 +1,5 @@
 {
-  "url": "http://127.0.0.1:13553",
+  "url": "http://127.0.0.1:3455",
   "views": [
     {
       "name": "01-hall-into-apartment",
@@ -120,7 +120,7 @@
     {
       "name": "a wrong mark costs time and does not score",
       "ok": true,
-      "detail": "score 0 -> 0, time 232.6 -> 224.5"
+      "detail": "score 0 -> 0, time 232.5 -> 224.4"
     },
     {
       "name": "marking the anomaly scores and clears the floor",
@@ -140,7 +140,7 @@
     {
       "name": "a stare anomaly hangs at head height and is seeable from the floor",
       "ok": true,
-      "detail": "asset=eye y=1.77 stance=(2.7, -1) ray=[{\"slot\":\"fx_bedroom_corner\",\"distance\":1.41},{\"slot\":\"fx_bedroom_corner\",\"distance\":2.15},{\"slot\":null,\"distance\":2.54}]"
+      "detail": "asset=charge_crawl y=1.77 stance=(2.7, -1) ray=[{\"slot\":\"fx_bedroom_corner\",\"distance\":2.22},{\"slot\":\"fx_bedroom_corner\",\"distance\":2.22},{\"slot\":\"fx_bedroom_corner\",\"distance\":2.36},{\"slot\":\"fx_bedroom_corner\",\"distance\":2.39}]"
     },
     {
       "name": "no page or console errors",
@@ -165,15 +165,36 @@
   ],
   "assets": {
     "loaded": [
+      "anomaly_chairstack",
+      "anomaly_door",
+      "anomaly_hole",
+      "anomaly_mirror",
+      "anomaly_portrait",
+      "anomaly_stairs",
+      "anomaly_teethfloor",
       "astronaut",
       "cactus",
+      "charge_crawl",
+      "charge_doll",
+      "charge_doppel",
+      "charge_grin",
+      "charge_hair",
+      "charge_legs",
+      "charge_pale",
       "cone",
       "doll",
+      "doppel_child",
+      "doppel_neighbour",
+      "doppel_suit",
       "duck",
       "eye",
       "face",
       "figure",
       "flamingo",
+      "ghost_float",
+      "ghost_hanging",
+      "ghost_sheet",
+      "ghost_thin",
       "gnome",
       "hand",
       "horse",
