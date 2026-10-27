@@ -1147,17 +1147,43 @@ try {
     const canvas = document.querySelector('canvas');
     const buffer = () => ({ width: canvas.width, height: canvas.height });
 
-    s.setQuality('auto');
-    const auto = s.quality();
-    const before = buffer();
+    // Wait for the buffer to actually take the new size instead of rendering one
+    // frame and looking.
+    //
+    // The resize is the viewer's, not the caller's: `renderOnce` draws a frame, and
+    // on a machine doing one frame every two seconds the backing store can still be
+    // the old one when the very next statement reads it. That produced a check which
+    // passed or failed depending on timing — it read 384x216 twice and reported that
+    // the renderer had ignored the resolution, which is not what had happened. This
+    // asserts the thing the check is named for (the number reaches the renderer) and
+    // waits for it rather than assuming a deadline.
+    const settle = async (predicate, ms = 30_000) => {
+      const until = performance.now() + ms;
+      for (;;) {
+        if (predicate(buffer())) return buffer();
+        if (performance.now() > until) return buffer();
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    };
+
+    // Start from full resolution, whatever the controller had settled on.
+    //
+    // This check read its baseline from `setQuality('auto')`, and by the time it ran
+    // the auto controller had already spent the resolution on this machine — so the
+    // baseline was the *low* size and there was nothing left to shrink from. It
+    // passed for as long as the controller happened to settle at a level above the
+    // floor, which is to say it passed by luck, and it failed the moment the floor
+    // arrived faster. Assigning its own starting state is the difference between a
+    // check and a coincidence.
+    const auto = (s.setQuality('auto'), s.quality());
+    s.setQuality(5);
+    const before = await settle((b) => b.width > 0);
 
     const lowest = s.setQuality(0);
-    await s.renderOnce();
-    const shrunk = buffer();
+    const shrunk = await settle((b) => b.width < before.width);
 
     const highest = s.setQuality(5);
-    await s.renderOnce();
-    const restored = buffer();
+    const restored = await settle((b) => b.width > shrunk.width);
 
     s.setQuality('auto');
     return { auto, lowest, highest, before, shrunk, restored };
@@ -1165,10 +1191,14 @@ try {
 
   const shrankActually = resolution.shrunk.width < resolution.before.width;
   const restoredActually = resolution.restored.width > resolution.shrunk.width;
+  // A check that cannot tell "the renderer ignored the setting" from "there was
+  // nothing to shrink from" has not earned its green. If the baseline is already at
+  // the floor, say so rather than reporting a failure that is about this file.
+  const baselineIsFull = resolution.before.width >= resolution.restored.width;
 
   check(
     'the adaptive resolution reaches the renderer, not just the state',
-    shrankActually && restoredActually,
+    baselineIsFull && shrankActually && restoredActually,
     `buffer ${resolution.before.width}x${resolution.before.height} → ` +
       `${resolution.shrunk.width}x${resolution.shrunk.height} at ${resolution.lowest.ratio}x → ` +
       `${resolution.restored.width}x${resolution.restored.height} at ${resolution.highest.ratio}x`,

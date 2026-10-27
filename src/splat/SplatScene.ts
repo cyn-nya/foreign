@@ -145,6 +145,26 @@ export class SplatScene {
    * merges into the existing config, which is why re-applying a single key here
    * does not wipe the pipeline set up in the constructor.
    */
+  /**
+   * Hide the splats without unloading them.
+   *
+   * `removeSplat` frees the data, so it cannot be used to ask "what would this frame
+   * cost without the reconstruction" -- by the time the question is answered there is
+   * nothing left to put back. This only flips the pipeline stage, which is the thing
+   * being priced.
+   */
+  setSplatsVisible(on: boolean): void {
+    if (this.splatsShown === on) return;
+    this.splatsShown = on;
+    setViewerConfig(this.viewer, {
+      pipeline: { Splatting: { enabled: on } },
+    } as never);
+  }
+
+  get splatsVisible(): boolean {
+    return this.splatsShown;
+  }
+
   setSortInterval(ms: number): void {
     if (!Number.isFinite(ms) || ms < 0) return;
     if (ms === this.appliedSortInterval) return;
@@ -159,6 +179,7 @@ export class SplatScene {
   }
 
   private appliedSortInterval = 0;
+  private splatsShown = true;
 
   private constructor(
     viewer: Viewer,

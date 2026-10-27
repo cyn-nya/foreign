@@ -185,6 +185,8 @@ interface SplatDebug {
   splatPresent: () => boolean;
   renderBudget: () => { ratio: number; sortMs: number };
   setSortInterval: (ms: number) => void;
+  setSplatsVisible: (on: boolean) => void;
+  setPixelRatio: (ratio: number) => void;
   setObjectsVisible: (visible: boolean) => void;
   lookBy: (dx: number, dy: number) => void;
 
@@ -290,6 +292,8 @@ const debug: SplatDebug = {
   splatPresent: () => false,
   renderBudget: () => ({ ratio: 1, sortMs: 0 }),
   setSortInterval: () => undefined,
+  setSplatsVisible: () => undefined,
+  setPixelRatio: () => undefined,
   setObjectsVisible: () => undefined,
   lookBy: () => undefined,
 
@@ -1268,6 +1272,10 @@ async function main(): Promise<void> {
    * about the sort gets asked without moving the resolution as well.
    */
   debug.setSortInterval = (ms) => scene.setSortInterval(ms);
+  /** Turn the reconstruction off without unloading it, to price the frame around it. */
+  debug.setSplatsVisible = (on) => scene.setSplatsVisible(on);
+  /** Pin the render scale by hand, for the same reason `setSortInterval` exists. */
+  debug.setPixelRatio = (ratio) => scene.setPixelRatio(ratio);
   /** Hide the placed models too, so their cost can be separated from the scan's. */
   debug.setObjectsVisible = (visible) => room.setVisible(visible);
   /** Move the camera without the collision walker, to separate move from idle. */

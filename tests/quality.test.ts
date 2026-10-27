@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_QUALITY_LEVEL, QUALITY_LEVELS, STREAK_TO_CHANGE, TARGET_HIGH_FPS, TARGET_LOW_FPS, evaluateQuality, initialQuality, pixelRatioForLevel, qualityLabel, type QualityState } from '../src/splat/quality';
+import { DEFAULT_QUALITY_LEVEL, PANIC_FPS, QUALITY_LEVELS, STREAK_TO_CHANGE, TARGET_HIGH_FPS, TARGET_LOW_FPS, evaluateQuality, initialQuality, pixelRatioForLevel, qualityLabel, type QualityState } from '../src/splat/quality';
 
 /** Feed a run of readings in and return the settled state. */
 function run(readings: (number | null)[], from: QualityState = initialQuality()): QualityState {
@@ -81,5 +81,55 @@ describe('adaptive render resolution', () => {
   it('clamps an out-of-range level rather than returning undefined', () => {
     expect(pixelRatioForLevel(-3)).toBe(QUALITY_LEVELS[0]);
     expect(pixelRatioForLevel(99)).toBe(1);
+  });
+});
+
+describe('a machine that is failing badly', () => {
+  it('gives up more than one level per change, because waiting is its own cost', () => {
+    // Start at full resolution and feed it frames this slow. One level per change
+    // would take ten readings to reach the floor; the floor should arrive sooner.
+    let state = initialQuality();
+    const start = state.level;
+    for (let i = 0; i < STREAK_TO_CHANGE; i++) {
+      state = evaluateQuality(state, PANIC_FPS - 1);
+    }
+    expect(state.level).toBeLessThanOrEqual(start - 2);
+  });
+
+  it('still waits for consecutive readings, so one stalled frame is not a verdict', () => {
+    const start = initialQuality();
+    const afterOne = evaluateQuality(start, PANIC_FPS - 1);
+    expect(afterOne.level).toBe(start.level);
+    expect(afterOne.changes).toBe(0);
+  });
+
+  it('does not panic over a reading that is merely below target', () => {
+    // The distinction the threshold exists for: 20 fps is too slow to keep and not
+    // slow enough to skip a level over.
+    let state = initialQuality();
+    for (let i = 0; i < STREAK_TO_CHANGE; i++) {
+      state = evaluateQuality(state, TARGET_LOW_FPS - 1);
+    }
+    expect(state.level).toBe(initialQuality().level - 1);
+  });
+
+  it('never overshoots the floor when panicking', () => {
+    let state: QualityState = { level: 1, streak: 0, changes: 0 };
+    for (let i = 0; i < STREAK_TO_CHANGE; i++) {
+      state = evaluateQuality(state, PANIC_FPS - 1);
+    }
+    expect(state.level).toBe(0);
+    expect(pixelRatioForLevel(state.level)).toBe(QUALITY_LEVELS[0]);
+  });
+
+  it('a panic is still monotone: it never raises the level', () => {
+    let state = initialQuality();
+    let previous = state.level;
+    for (const fps of [1, 1, 2, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1]) {
+      state = evaluateQuality(state, fps);
+      expect(state.level).toBeLessThanOrEqual(previous);
+      previous = state.level;
+    }
+    expect(state.level).toBe(0);
   });
 });

@@ -49,6 +49,21 @@ export const TARGET_HIGH_FPS = 55;
  */
 export const STREAK_TO_CHANGE = 2;
 
+/**
+ * The frame rate below which one level at a time is too slow to be worth waiting for.
+ *
+ * The controller starts at full resolution, and on a machine that cannot afford it
+ * the honest cost of caution is the player's first half-minute. Two readings per
+ * level over five levels, at one frame every two seconds, is twenty seconds of a
+ * slideshow before the game is playable -- and the player has usually given up by
+ * then.
+ *
+ * So a reading this far under target gives up two levels per change instead of one.
+ * The debounce is unchanged: it still takes `STREAK_TO_CHANGE` consecutive readings,
+ * because a single slow frame is a floor loading and not a verdict on the machine.
+ */
+export const PANIC_FPS = TARGET_LOW_FPS / 4;
+
 export interface QualityState {
   /** Index into QUALITY_LEVELS. */
   level: number;
@@ -82,7 +97,13 @@ export function evaluateQuality(state: QualityState, fps: number | null): Qualit
   if (fps < TARGET_LOW_FPS) {
     const streak = Math.min(0, state.streak) - 1;
     if (-streak >= STREAK_TO_CHANGE && state.level > 0) {
-      return { level: state.level - 1, streak: 0, changes: state.changes + 1 };
+      // Halve the wait on a machine that is failing badly rather than marginally.
+      const step = fps < PANIC_FPS ? 2 : 1;
+      return {
+        level: Math.max(0, state.level - step),
+        streak: 0,
+        changes: state.changes + 1,
+      };
     }
     return { ...state, streak };
   }
@@ -105,19 +126,12 @@ export function pixelRatioForLevel(level: number): number {
 }
 
 /**
- * A short label for the HUD.
- *
- * Stated as the multiplier rather than as "low / medium / high", because the
- * number is the thing a player can act on when they report a problem.
- */
-/**
- * A note on the lever that is not here.
+ * A note on the two levers that are not here, and the one that is.
  *
  * `sort.minIntervalMs` was added as a second degradation axis, on the reasoning
- * that the measured bottleneck is the CPU sort rather than fill rate. It was
- * removed after `tools/bench-sort.mjs` measured it: 335 frames across four
- * settings produced 2134 / 2072 / 2052 / 2088 ms per frame, a 2-4% spread that is
- * noise. The reason is structural and worth keeping written down --
+ * that the bottleneck is the CPU sort rather than fill rate. `tools/bench-sort.mjs`
+ * removed that reasoning: 335 frames across four settings gave 2134 / 2072 / 2052 /
+ * 2088 ms per frame, a 2-4% spread that is noise, and the reason is structural --
  *
  *   the option caps how often the sort may run, but a renderer already sorts once
  *   per frame, and on a machine slow enough to need help the frame time is far
@@ -125,13 +139,25 @@ export function pixelRatioForLevel(level: number): number {
  *   never binds. It can only take effect above 1/interval frames per second, which
  *   is exactly the machine that does not need it.
  *
- * So the controller degrades resolution and only resolution. The lesson is narrower
- * than "performance work is hard": an option that sounds like it targets a
- * bottleneck is not the same as one that does, and shipping the first while
- * believing the second is how a quality setting ends up costing sharpness for
- * nothing.
+ * Then `tools/bench-render.mjs` established that resolution -- this file's only
+ * lever -- is the right one, and by how much:
+ *
+ *   1.00x with the splats drawn   2017 ms   the reconstruction is 99% of the frame
+ *   0.55x with the splats drawn   1400 ms   31% off
+ *   0.40x with the splats drawn   1333 ms   34% off
+ *   1.00x with the splats hidden    17 ms   everything else in the frame
+ *
+ * So the controller degrades resolution and only resolution, and the curve says the
+ * floor is placed correctly: 0.55x already recovers 31% of a possible 34%, so
+ * another step down buys 5% and costs a lot of sharpness.
  */
 
+/**
+ * A short label for the HUD.
+ *
+ * Stated as the multiplier rather than as "low / medium / high", because the
+ * number is the thing a player can act on when they report a problem.
+ */
 export function qualityLabel(level: number): string {
   const ratio = pixelRatioForLevel(level);
   return `${ratio.toFixed(2)}x`;
