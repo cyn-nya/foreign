@@ -139,14 +139,22 @@
       <p>每层三次误判额度，用完这一层就结束；标记对了不扣任何东西，所以没有「该不该开枪」，只有「看没看清」。第一层只放一个异常，教你看什么叫做「不该在这儿」。</p>
     </div>
   </section>
-<section class="scene s-text" data-index="10">
+<section class="scene s-card" data-index="10">
+    <div class="still" style="background-image:url('10-charge.png')"></div>
+    <div class="caption">
+      <div class="tag">恐吓 · 要动手</div>
+      <h2>它冲过来了 —— 点鼠标</h2>
+      <p>第 3 层起，一个 Lux3D 生成的模型会真的穿过房间向你逼近，窗口按层收紧（2200 ms → 1000 ms）。点鼠标把它解除；没解除就撞上你，并扑一张脸。画面里这个东西不是贴图，是从文字生成、有网格有材质的模型。</p>
+    </div>
+  </section>
+<section class="scene s-text" data-index="11">
       <div class="text-wrap">
         <div class="tag">技术</div>
         <h2>全部由 Aholo 驱动，每一步都被验收</h2>
-        <ul><li>Lux3D 文生 3D：14 个异物由文字生成，再加 13 件写实家具与 7 个程序化占位，共 34 个资产、10,602,848 字节。</li><li>3DGS 高斯泼溅：场景加载、体素碰撞、第一人称行走。</li><li>261 项断言全绿：10 体素碰撞 · 12 资产完整性 · 5 高斯泼溅探测 · 65 真实房间验收 · 15 程序化房间验收 · 8 可通关性 · 7 部署检查 · 139 单测。</li><li>无头 Chromium 真机跑验收，不是「我看过了」。</li></ul>
+        <ul><li>Lux3D 文生 3D：55 个资产全部由文字生成——异物、鬼影、伪人、冲刺体与写实家具，共 254,497,908 字节。</li><li>3DGS 高斯泼溅：场景加载、体素碰撞、第一人称行走。</li><li>306 项断言全绿：10 体素碰撞 · 12 资产完整性 · 5 高斯泼溅探测 · 81 真实房间验收 · 15 程序化房间验收 · 8 可通关性 · 7 部署检查 · 168 单测。</li><li>无头 Chromium 真机跑验收，不是「我看过了」。</li></ul>
       </div>
     </section>
-<section class="scene s-title" data-index="11">
+<section class="scene s-title" data-index="12">
       <div class="title-wrap">
         <h1>异物</h1>
         <div class="sub">FOREIGN</div>
@@ -155,7 +163,7 @@
     </section>
 <div id="bar"></div>
 <script>
-  const HOLD = [5,8,9,8,8,8,7,9,5,7,9,5];
+  const HOLD = [5,8,9,8,8,8,7,9,5,7,11,9,5];
   const scenes = [...document.querySelectorAll('.scene')];
   const bar = document.getElementById('bar');
   const total = HOLD.reduce((a, b) => a + b, 0);

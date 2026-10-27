@@ -159,7 +159,13 @@ await shot('02-room.png');
 // A bystander is a household prop doing nothing. This is the baseline the player
 // judges everything else against, and while it did not exist "does this belong"
 // had no answer.
-await startWith(4, 4104, null);
+//
+// Floor 3 rather than 4, and the reason is in the check rather than in the eye: on floor 4
+// this shot came back at 89% near-black with a centre standard deviation of 3.6 -- a frame
+// of a dark corner. `check-stills.py` flags exactly that ("flat / likely a wall"), which is
+// how it was caught. The floor number is not part of what this still has to show, and the
+// darkness curve is, so the shot moves up rather than the check moving down.
+await startWith(3, 3103, null);
 await settle(5);
 {
   const found = await aimAtVisibleBystander();
@@ -248,6 +254,41 @@ await settle(5);
   } else {
     failures.push('09-marked.png: nothing under the crosshair to mark');
   }
+}
+
+// --- 10. the charge: a generated model crossing the room ---------------------
+//
+// The newest mechanic and the clearest single frame of what Lux3D is for: the thing
+// walking at the camera is a model generated from a text prompt, in a room nobody built.
+// Photographed mid-approach rather than at the moment of impact, because the point is that
+// it is *coming* -- a frame of the strike is a frame of the screen going white.
+await startWith(5, 5105, null);
+await settle(4);
+{
+  const spawned = await page.evaluate(() => {
+    const s = window.__splat;
+    s.charge();
+    // A third of the way in, so the model is legible and the approach is still happening.
+    for (let i = 0; i < 3; i++) s.stepCharge(0.3);
+    return s.charger();
+  });
+  if (spawned?.key) {
+    await sleep(150);
+    await shot('10-charge.png');
+    evidence.push({
+      still: '10-charge.png',
+      of: 'charge',
+      key: spawned.key,
+      distance: spawned.distance,
+      travelled: spawned.travelled,
+    });
+    console.log(`    caught ${spawned.key} at ${spawned.distance?.toFixed?.(2)} m`);
+  } else {
+    failures.push('10-charge.png: no charge model spawned');
+  }
+  // Cleared before the next shot, so a fright from the strike does not land in it.
+  await page.evaluate(() => window.__splat.defuseCharge());
+  await sleep(250);
 }
 
 const report = await page.evaluate(() => {

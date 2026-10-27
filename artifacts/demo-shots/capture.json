@@ -12,14 +12,15 @@
     "06-swarm.png",
     "07-torch.png",
     "08-scare.png",
-    "09-marked.png"
+    "09-marked.png",
+    "10-charge.png"
   ],
   "evidence": [
     {
       "still": "03-furniture.png",
       "of": "bystander",
-      "slotId": "fx_room_09",
-      "index": 1,
+      "slotId": "fx_room_03",
+      "index": 0,
       "confirmed": true
     },
     {
@@ -36,7 +37,7 @@
       "of": "invert",
       "slotId": "fx_room_04",
       "kind": "invert",
-      "key": "mundane_side_table",
+      "key": "mundane_trash_bin",
       "index": 0,
       "confirmed": true
     },
@@ -45,7 +46,7 @@
       "of": "swarm",
       "slotId": "fx_room_04",
       "kind": "swarm",
-      "key": "mundane_shoe_rack",
+      "key": "mundane_umbrella_stand",
       "index": 0,
       "confirmed": true
     },
@@ -60,14 +61,21 @@
       "result": "hit",
       "slotId": "fx_room_04",
       "kind": "invert",
-      "key": "mundane_side_table",
+      "key": "mundane_trash_bin",
       "index": 0,
       "confirmed": true
+    },
+    {
+      "still": "10-charge.png",
+      "of": "charge",
+      "key": "charge_hair",
+      "distance": 2.8888888888888897,
+      "travelled": 3.6111111111111107
     }
   ],
   "failures": [],
   "report": {
-    "frames": 254,
+    "frames": 411,
     "state": "playing",
     "darkness": 0.5800000000000001
   },
