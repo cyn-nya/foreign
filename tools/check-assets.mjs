@@ -150,6 +150,39 @@ try {
     realManifestSource !== LUX3D_SOURCE || real.already.length > 0 || claimed.size === 0,
     `manifest source: ${realManifestSource ?? '(none)'}`,
   );
+  // The README states this composition to a reader, and it stated it wrongly: it
+  // said "21 procedural placeholders" when 21 was the count of *non-household*
+  // assets and only 7 of them were still placeholders. The numbers are known
+  // exactly here, so the prose is checked against the thing it describes rather
+  // than trusted. Failing when the sentence is absent is deliberate -- deleting
+  // the claim must not be a way to pass.
+  // Not `real.standIns`: that classification runs against the throwaway directory
+  // this file builds to exercise the logic, so it calls every non-generated asset
+  // a placeholder and reported 20. The composition a reader cares about is the one
+  // on disk, counted from the manifest and the catalogue.
+  const mundaneKeys = catalogue.assets.map((a) => a.key).filter((k) => k.startsWith('mundane_'));
+  const mundane = mundaneKeys.length;
+  const lux3d = claimed.size;
+  const placeholder = catalogue.assets.length - mundane - lux3d;
+  const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+  const stated = /已生成 \*\*(\d+)\*\* 个（Lux3D 文生 3D），\s*\n?\s*\*\*(\d+)\*\* 个仍是程序化占位，另有 \*\*(\d+)\*\* 件家务家具/.exec(
+    readme,
+  );
+  check(
+    'the README states the asset composition',
+    stated !== null,
+    stated ? 'found the sentence' : 'the sentence stating the composition is missing from README.md',
+  );
+  if (stated) {
+    const [gen, place, house] = [Number(stated[1]), Number(stated[2]), Number(stated[3])];
+    check(
+      'and the numbers in it are the numbers on disk',
+      gen === lux3d && place === placeholder && house === mundane,
+      `README says ${gen} generated / ${place} placeholder / ${house} household; ` +
+        `disk has ${lux3d} / ${placeholder} / ${mundane}`,
+    );
+  }
+
   console.log(
     `\n  current state: ${real.already.length} from Lux3D, ${real.standIns.length} placeholders, ` +
       `${real.todo.length} to generate`,

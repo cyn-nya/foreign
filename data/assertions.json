@@ -1,5 +1,5 @@
 {
-  "total": 248,
+  "total": 250,
   "steps": [
     {
       "step": "copy:check",
@@ -19,7 +19,7 @@
     {
       "step": "assets:check",
       "label": "资产完整性",
-      "count": 10
+      "count": 12
     },
     {
       "step": "splat:check",
