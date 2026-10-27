@@ -210,13 +210,28 @@ for (const [rel, body] of bodies) {
     }
   }
 }
-for (const [rel, body] of bodies) {
-  if (!/\.md$/.test(rel)) continue;
-  for (const m of body.matchAll(UNIT_TEST_CLAIM)) {
-    const n = Number(m[1]);
-    if (n !== stepCounts.get('test')) {
-      const line = body.slice(0, m.index).split('\n').length;
-      wrongSteps.push(`${rel}:${line} says ${n} unit tests, there are ${stepCounts.get('test')}`);
+// A step the record does not mention is "not recorded", not `undefined`.
+//
+// `data/assertions.json` is written by a full run, and a run that stops early can
+// leave it thin. Reading `stepCounts.get('test')` unguarded turned that into
+// "README.md:209 says 134 unit tests, there are undefined" -- a message about a
+// missing record that reads like a mistake in the docs, and sends the reader to
+// the wrong file. If the record is thin, say so and say which step is missing.
+const testCount = stepCounts.get('test');
+if (testCount === undefined) {
+  wrongSteps.push(
+    'data/assertions.json records no unit-test count, so the docs cannot be ' +
+      'checked against it -- run `npm run verify` to write a complete record',
+  );
+} else {
+  for (const [rel, body] of bodies) {
+    if (!/\.md$/.test(rel)) continue;
+    for (const m of body.matchAll(UNIT_TEST_CLAIM)) {
+      const n = Number(m[1]);
+      if (n !== testCount) {
+        const line = body.slice(0, m.index).split('\n').length;
+        wrongSteps.push(`${rel}:${line} says ${n} unit tests, there are ${testCount}`);
+      }
     }
   }
 }

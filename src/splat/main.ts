@@ -45,7 +45,6 @@ import {
   evaluateQuality,
   initialQuality,
   pixelRatioForLevel,
-  sortIntervalForLevel,
   QUALITY_LEVELS,
   qualityLabel,
 } from './quality.ts';
@@ -185,6 +184,7 @@ interface SplatDebug {
   restoreSplat: () => void;
   splatPresent: () => boolean;
   renderBudget: () => { ratio: number; sortMs: number };
+  setSortInterval: (ms: number) => void;
   setObjectsVisible: (visible: boolean) => void;
   lookBy: (dx: number, dy: number) => void;
 
@@ -289,6 +289,7 @@ const debug: SplatDebug = {
   restoreSplat: () => undefined,
   splatPresent: () => false,
   renderBudget: () => ({ ratio: 1, sortMs: 0 }),
+  setSortInterval: () => undefined,
   setObjectsVisible: () => undefined,
   lookBy: () => undefined,
 
@@ -468,16 +469,16 @@ function paintPerf(): void {
   // `debug.frames` is the total, so a stalled loop is visible as a number that
   // never moves rather than as a number that reads plausibly.
   const value = fps === null ? '—' : fps.toFixed(1);
-  // The resolution and the sort interval are both on here because they are the
-  // two things a report from a machine this was not built on has to contain. The
-  // README tells the reader to press F3 and send these numbers, so the line and
-  // the claim are asserted together by the acceptance run.
+  // The resolution is on here because it is the one thing a report from a machine
+  // this was not built on has to contain. The sort interval is shown too: the
+  // controller does not move it, but a benchmark or a bug report may have, and a
+  // number that can be set by hand should be visible when it is.
   const budget = debug.renderBudget();
   el.perf.textContent =
     `${value} fps   最慢 ${worstMs.toFixed(0)} ms   帧 ${debug.frames}　近 5 秒 ${count} 帧` +
     `\n${debug.placed} 模型 · 扫描 ${debug.splatPresent() ? '在' : '移除'}` +
     ` · 画质 ${qualityLabel(quality.level)}${qualityAuto ? '' : '（锁定）'}` +
-    ` · 分辨率 ${budget.ratio.toFixed(2)}× · 排序 ${budget.sortMs} ms`;
+    ` · 分辨率 ${budget.ratio.toFixed(2)}×`;
   const tone = fps === null ? '' : fps < 15 ? 'bad' : fps < 30 ? 'warn' : '';
   el.perf.className = `perf${tone ? ` ${tone}` : ''}`;
 }
@@ -499,15 +500,6 @@ let qualityAccumulator = 0;
 /** Applied through the scene, which owns the renderer. */
 let applyPixelRatio: (ratio: number) => void = () => undefined;
 /**
- * Both degradation axes at once, from the current level.
- *
- * Kept as one function so a caller cannot apply the resolution and forget the
- * sort interval -- which is precisely the bug this fixes: the controller lowered
- * resolution for a bottleneck that was never in the resolution.
- */
-let applyRenderBudget: () => void = () => undefined;
-
-/**
  * How often the frame rate is re-read.
  *
  * Longer than the counter's own five-second window would be pointless, and much
@@ -525,7 +517,7 @@ function updateQuality(rawDt: number): void {
   const before = quality.level;
   quality = evaluateQuality(quality, currentFps());
   if (quality.level !== before) {
-    applyRenderBudget();
+    applyPixelRatio(pixelRatioForLevel(quality.level));
   }
 }
 
@@ -1237,14 +1229,7 @@ async function main(): Promise<void> {
   // The scene owns the renderer, so the controller reaches it through here
   // rather than importing the viewer into module scope.
   applyPixelRatio = (ratio) => scene.setPixelRatio(ratio);
-  // Both axes, from the same level. The resolution alone was measured not to
-  // move the frame rate on a sort-bound renderer, so lowering quality used to
-  // cost sharpness and buy nothing.
-  applyRenderBudget = () => {
-    applyPixelRatio(pixelRatioForLevel(quality.level));
-    scene.setSortInterval(sortIntervalForLevel(quality.level));
-  };
-  applyRenderBudget();
+  applyPixelRatio(pixelRatioForLevel(quality.level));
   /** The briefing text with its markup stripped, so a test can read the words. */
   debug.briefing = () => briefingHtml().replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
   debug.quality = () => ({
@@ -1270,13 +1255,19 @@ async function main(): Promise<void> {
     }
     qualityAuto = false;
     quality = { level: Math.max(0, Math.min(QUALITY_LEVELS.length - 1, level)), streak: 0, changes: quality.changes };
-    applyRenderBudget();
+    applyPixelRatio(pixelRatioForLevel(quality.level));
     return debug.quality();
   };
   debug.removeSplat = () => scene.removeSplat();
   debug.restoreSplat = () => scene.restoreSplat();
   debug.splatPresent = () => scene.splatPresent;
   debug.renderBudget = () => ({ ratio: scene.pixelRatio, sortMs: scene.sortInterval });
+  /**
+   * Kept as a diagnostic even though the controller no longer uses it. This is how
+   * `tools/bench-sort.mjs` varies one thing at a time, and how any future question
+   * about the sort gets asked without moving the resolution as well.
+   */
+  debug.setSortInterval = (ms) => scene.setSortInterval(ms);
   /** Hide the placed models too, so their cost can be separated from the scan's. */
   debug.setObjectsVisible = (visible) => room.setVisible(visible);
   /** Move the camera without the collision walker, to separate move from idle. */

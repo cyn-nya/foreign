@@ -1,11 +1,6 @@
 {
-  "total": 276,
+  "total": 253,
   "steps": [
-    {
-      "step": "copy:check",
-      "label": "文案一致性",
-      "count": 19
-    },
     {
       "step": "voxel:check",
       "label": "体素碰撞",
@@ -14,7 +9,7 @@
     {
       "step": "test",
       "label": "单元测试",
-      "count": 138
+      "count": 134
     },
     {
       "step": "assets:check",

@@ -83,6 +83,35 @@ const out = {
 };
 if (stills) out.stills = Number(stills[1]);
 
+// An aborted run must not overwrite a good record with a partial one.
+//
+// `verify` runs this after every step, but a failure stops it early, and the run
+// that stopped at `copy:check` wrote a one-step file over a complete one. The next
+// run then compared the docs against a record with no `test` count in it and
+// reported "there are undefined unit tests" -- a failure that says nothing about
+// the docs. If a step is missing, keep the old file and say so.
+// The steps that must all be present for the record to describe a whole suite.
+//
+// `copy:check` is deliberately not in this list: it *reads* the record, so it runs
+// after this file, not inside the chain whose log this parses. Listing it here made
+// every honest run look partial -- the record was refused, stayed at its previous
+// value, and copy:check then failed against a number no run had produced. A guard
+// against stale records became the reason the record was stale.
+const EXPECTED = [
+  'voxel:check', 'test', 'assets:check', 'splat:check',
+  'splat:shoot', 'shoot', 'search:time', 'deploy:check',
+];
+const missing = EXPECTED.filter((e) => !steps.some((s) => s.step === e));
+if (missing.length && !process.argv.includes('--partial')) {
+  console.log(
+    `\nrefusing to write data/assertions.json: this run has no result for ` +
+      `${missing.join(', ')}. The suite stopped early, and a partial record would make ` +
+      `the docs look wrong for a reason that has nothing to do with them.`,
+  );
+  console.log(`(re-run \`npm run verify\`, or pass --partial to record this much)`);
+  process.exit(0);
+}
+
 writeFileSync(join(root, 'data/assertions.json'), JSON.stringify(out, null, 2) + '\n', 'utf8');
 
 console.log(`${total} assertions across ${steps.length} steps:`);

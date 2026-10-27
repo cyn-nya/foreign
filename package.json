@@ -35,10 +35,12 @@
     "deploy:check:live": "node tools/check-deploy.mjs --url https://cyn-nya.github.io/foreign/",
     "deploy": "node tools/deploy-ghpages.mjs",
     "assets:check": "node tools/check-assets.mjs",
-    "verify": "npm run typecheck && npm run copy:check && npm run voxel:check && npm run test && npm run assets:check && npm run build && npm run splat:check && npm run splat:shoot && npm run shoot && npm run search:time && npm run demo:stills && npm run deploy:check",
+    "verify": "npm run typecheck && npm run voxel:check && npm run test && npm run assets:check && npm run build && npm run splat:check && npm run splat:shoot && npm run shoot && npm run search:time && npm run demo:stills && npm run deploy:check",
     "copy:check": "node tools/check-copy.mjs",
     "counts": "node tools/count-assertions.mjs",
-    "search:time": "node tools/search-time.mjs"
+    "search:time": "node tools/search-time.mjs",
+    "bench:sort": "node tools/bench-sort.mjs",
+    "verify:all": "bash tools/verify-all.sh"
   },
   "dependencies": {
     "@manycore/aholo-viewer": "^1.11.0",

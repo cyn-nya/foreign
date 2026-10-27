@@ -371,16 +371,21 @@ try {
       `outer ${gloom.shallow.style.outer}->${gloom.deep.style.outer} ` +
       `(torch on at both reads: ${gloom.shallow.on ?? 'n/a'})`,
   );
-  // The resolution lever alone was measured not to move the frame rate on a
-  // sort-bound renderer: 640x360 was not meaningfully faster than 960x540. So
-  // the controller now degrades both axes, and this asserts the second one
-  // actually reaches the viewer rather than only reaching the debug object.
+  // The resolution controller, and an honest note about what is checked here.
+  //
+  // `sort.minIntervalMs` was briefly a second degradation axis. It is gone: this
+  // machine measured it at 2-4% across four settings -- noise -- and the reason is
+  // structural. The option caps how often the sort runs, but the renderer already
+  // sorts once per frame, and on a machine slow enough to need help the frame time
+  // is far longer than any sane interval, so the cap never binds. `tools/bench-sort.mjs`
+  // holds that measurement.
+  //
+  // What is asserted is that the level reaches the renderer, and that the overlay
+  // the README tells the reader to photograph carries the number they need to send.
   const budget = await page.evaluate(async () => {
     const s = window.__splat;
     const read = async (level) => {
       s.setQuality(level);
-      // The apply is synchronous, but give the config a turn to settle so a
-      // failure here is about the value and not about the timing.
       await new Promise((r) => setTimeout(r, 60));
       return s.quality();
     };
@@ -392,19 +397,24 @@ try {
     return { auto, full, low, back };
   });
   check(
-    'lowering quality throttles the splat sort, not only the resolution',
-    budget.full.sortIntervalMs === 0 && budget.low.sortIntervalMs > 0,
-    `full: ratio=${budget.full.ratio} sort=${budget.full.sortIntervalMs}ms; ` +
-      `low: ratio=${budget.low.ratio} sort=${budget.low.sortIntervalMs}ms`,
+    'lowering quality lowers the render resolution the viewer is using',
+    budget.full.ratio === 1 && budget.low.ratio < budget.full.ratio,
+    `full ratio=${budget.full.ratio}; low ratio=${budget.low.ratio}`,
   );
   check(
-    'the sort interval comes back when quality does',
-    budget.back.sortIntervalMs === 0 && budget.back.ratio === budget.full.ratio,
-    `back: ratio=${budget.back.ratio} sort=${budget.back.sortIntervalMs}ms`,
+    'the resolution comes back when quality does',
+    budget.back.ratio === budget.full.ratio,
+    `back ratio=${budget.back.ratio}`,
   );
+  check(
+    'the renderer reports the budget the overlay prints',
+    typeof budget.full.ratio === 'number' && typeof budget.low.ratio === 'number',
+    `ratio=${budget.full.ratio} / ${budget.low.ratio}`,
+  );
+
   // The README tells the reader to press F3 and report these numbers, so the
-  // numbers have to be on the line. Claiming they are without checking is how
-  // the asset counts and the rule sentence rotted before.
+  // numbers have to be on the line. Claiming they are without checking is how the
+  // asset counts and the rule sentence rotted before.
   const overlay = await page.evaluate(async () => {
     const s = window.__splat;
     s.setQuality(0);
@@ -416,17 +426,8 @@ try {
   });
   check(
     'the F3 overlay carries the numbers a report from another machine needs',
-    /\d+(\.\d+)? fps/.test(overlay) &&
-      /分辨率 0\.40×/.test(overlay) &&
-      /排序 24 ms/.test(overlay) &&
-      /画质/.test(overlay),
+    /\d+(\.\d+)? fps/.test(overlay) && /分辨率 0\.40×/.test(overlay) && /画质/.test(overlay),
     `overlay: ${overlay.replace(/\n/g, ' | ')}`,
-  );
-
-  check(
-    'the render budget is reported alongside the resolution',
-    typeof budget.full.sortIntervalMs === 'number' && typeof budget.low.ratio === 'number',
-    `sortIntervalMs=${budget.full.sortIntervalMs}, ratio=${budget.full.ratio}`,
   );
 
   check(
@@ -1070,14 +1071,32 @@ try {
     }));
 
     // A bystander must be innocent: aim at one and mark it.
+    //
+    // Aiming is a raycast at a bounding-box centre, so the ray does not always
+    // land on the object it was pointed at -- it can reach an anomaly standing on
+    // the same line. When that happens the mark *should* hit, and the old check
+    // called it a failure: it read "the crosshair was on the anomaly" as "an
+    // innocent object scored". So aim, then ask where the crosshair actually is,
+    // and only assert on the case the check is about.
     const bystanders = s.bystanderCount ?? 0;
-    let miss = null;
-    if (bystanders > 0) {
-      const aimedAt = s.aimAtBystander(0);
+    let aimed = null;
+    const tried = [];
+    for (let i = 0; i < bystanders && !aimed; i++) {
+      const slotId = s.aimAtBystander(i);
+      if (!slotId) continue;
+      // Draw the frame the aim produced before asking where it points. Aiming
+      // turns the camera, and a pick taken before the camera's world matrix is
+      // rebuilt reads the previous orientation -- the old check marked straight
+      // after aiming and scored a hit on whatever the camera had been looking at
+      // before. A real player always has a rendered frame between the two.
+      s.renderOnce();
+      const on = s.crosshair();
+      tried.push(`${slotId}->${on ?? 'nothing'}`);
+      if (on !== slotId) continue;
       const result = s.mark();
-      miss = { aimedAt, result: result?.result ?? null };
+      aimed = { slotId, on, result: result?.result ?? null };
     }
-    return { state: s.state, items, bystanders, miss };
+    return { state: s.state, items, bystanders, aimed, tried };
   });
 
   const items = separation.items;
@@ -1104,9 +1123,15 @@ try {
   );
   check(
     'an innocent household object refuses to score',
-    separation.bystanders > 0 && separation.miss?.result === 'miss',
-    `${separation.bystanders} bystanders, aimed at ${separation.miss?.aimedAt ?? 'none'} → ` +
-      `${separation.miss?.result ?? 'never marked'}`,
+    separation.bystanders > 0 && separation.aimed?.result === 'miss',
+    separation.bystanders === 0
+      ? 'no bystanders on this floor'
+      : separation.aimed
+        ? `${separation.bystanders} bystanders, crosshair on ${separation.aimed.slotId} → ` +
+          `${separation.aimed.result}`
+        : `${separation.bystanders} bystanders and the crosshair never reached one ` +
+          `(tried ${separation.tried.join(', ')}) — the harness could not aim, so this ` +
+          `says nothing about the rule`,
   );
 
   // --- adaptive resolution ---------------------------------------------------

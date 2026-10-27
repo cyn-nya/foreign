@@ -111,30 +111,26 @@ export function pixelRatioForLevel(level: number): number {
  * number is the thing a player can act on when they report a problem.
  */
 /**
- * How long the splat renderer must wait between re-sorts, in milliseconds.
+ * A note on the lever that is not here.
  *
- * The resolution lever was the only one for a while, and on the machine this was
- * built on it turned out to be the wrong one: 640x360 did not render meaningfully
- * faster than 960x540, because the cost was not in filling pixels but in sorting
- * gaussian centres on the CPU every frame. Lowering `pixelRatio` therefore bought
- * nothing and cost sharpness.
+ * `sort.minIntervalMs` was added as a second degradation axis, on the reasoning
+ * that the measured bottleneck is the CPU sort rather than fill rate. It was
+ * removed after `tools/bench-sort.mjs` measured it: 335 frames across four
+ * settings produced 2134 / 2072 / 2052 / 2088 ms per frame, a 2-4% spread that is
+ * noise. The reason is structural and worth keeping written down --
  *
- * `sort.minIntervalMs` is the documented option that addresses the measured
- * bottleneck directly -- it caps how often the expensive step runs. Zero means
- * every frame, which is correct when the machine has headroom; the deeper levels
- * spend some sorting latency to keep the frame rate up, which is a trade the
- * player can see the result of.
+ *   the option caps how often the sort may run, but a renderer already sorts once
+ *   per frame, and on a machine slow enough to need help the frame time is far
+ *   longer than any sane interval. At 0.5 fps the frame is 2000 ms; a 24 ms cap
+ *   never binds. It can only take effect above 1/interval frames per second, which
+ *   is exactly the machine that does not need it.
  *
- * This is applied *alongside* the resolution, not instead of it: on a machine
- * that is fill-bound rather than sort-bound the resolution is the right lever,
- * and neither hypothesis is worth betting the whole controller on.
+ * So the controller degrades resolution and only resolution. The lesson is narrower
+ * than "performance work is hard": an option that sounds like it targets a
+ * bottleneck is not the same as one that does, and shipping the first while
+ * believing the second is how a quality setting ends up costing sharpness for
+ * nothing.
  */
-export const SORT_INTERVAL_MS = [24, 16, 8, 4, 0] as const;
-
-export function sortIntervalForLevel(level: number): number {
-  const index = Math.max(0, Math.min(SORT_INTERVAL_MS.length - 1, Math.round(level)));
-  return SORT_INTERVAL_MS[index];
-}
 
 export function qualityLabel(level: number): string {
   const ratio = pixelRatioForLevel(level);
