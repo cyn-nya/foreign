@@ -23,7 +23,7 @@
  * being relied on (see the sabotage note in the commit).
  */
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 
 /** Written by tools/count-assertions.mjs from the verify log. */
 const ASSERTIONS = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'data/assertions.json'), 'utf8'));
@@ -45,10 +45,12 @@ function check(name, ok, detail) {
  */
 const surfaces = [
   'README.md',
+  'docs/06-真实房间摆放设计.md',
   'index.html',
   'src/splat/main.ts',
   'tools/build-demo-page.mjs',
   'tools/build-deck.py',
+  'data/foreign-assets.json',
   'docs/04-报名材料.md',
 ];
 
@@ -157,6 +159,191 @@ const TYPED_COUNT = /\("(\d{1,3})",\s*"([^"]*)"\)/g;
     wrong.length === 0
       ? `all quoted counts are among the ${counts.size} the suite reports`
       : wrong.join(' | '),
+  );
+}
+
+// 5. The anomaly kinds. `types.ts` declares them as a union and `docs/06` and the
+//    tools slide each print a number. Both said a smaller number than the union
+//    has -- six and five against seven -- and neither had anything comparing them
+//    to the type. The union is the source of truth, so it is parsed from source.
+const typesSrc = readFileSync(join(root, 'src/game/types.ts'), 'utf8');
+const unionBody = /export type AnomalyKind =([\s\S]*?);/.exec(typesSrc)?.[1] ?? '';
+const kindCount = [...unionBody.matchAll(/\|\s*'([a-z]+)'/g)].length;
+check('the anomaly union parses', kindCount >= 2, `${kindCount} kind(s) found in types.ts`);
+
+const KIND_CLAIM = /(?:现有\s*)?(\d+)\s*种异常|(\d+)\s*kinds? of anomaly/g;
+const claimedKinds = [];
+for (const [rel, body] of [...bodies, ['docs/06-真实房间摆放设计.md', null]]) {
+  const src = body ?? readFileSync(join(root, rel), 'utf8');
+  for (const m of src.matchAll(KIND_CLAIM)) {
+    const n = Number(m[1] ?? m[2]);
+    const line = src.slice(0, m.index).split('\n').length;
+    if (n !== kindCount) claimedKinds.push(`${rel}:${line} says ${n}, types.ts has ${kindCount}`);
+  }
+}
+check(
+  'every surface that counts the anomaly kinds counts them all',
+  claimedKinds.length === 0,
+  claimedKinds.length === 0
+    ? `${kindCount} kinds, every mention agrees`
+    : claimedKinds.join(' | '),
+);
+
+// 6. Per-step assertion counts in prose. The README's table of what `verify` runs
+//    said "52 项" for the real-room suite long after it had grown to 62; the table
+//    is the first thing a judge reads about the testing, and nothing read it back.
+const STEP_COUNT = /`([a-z][\w:-]*)`\s*\|\s*\*{0,2}(\d+)\s*项/g;
+// "125 个单测" is the same claim in different words, and it was stale in two
+// places -- the table row and the sentence above it -- precisely because the
+// pattern above only looked for "N 项" after a step name in backticks.
+const UNIT_TEST_CLAIM = /(\d+)\s*个单测/g;
+const stepCounts = new Map(ASSERTIONS.steps.map((s) => [s.step, s.count]));
+const wrongSteps = [];
+for (const [rel, body] of bodies) {
+  if (!/\.md$/.test(rel)) continue;
+  for (const m of body.matchAll(STEP_COUNT)) {
+    const [, step, n] = m;
+    if (!stepCounts.has(step)) continue;
+    if (Number(n) !== stepCounts.get(step)) {
+      const line = body.slice(0, m.index).split('\n').length;
+      wrongSteps.push(`${rel}:${line} says ${step} = ${n}, it is ${stepCounts.get(step)}`);
+    }
+  }
+}
+for (const [rel, body] of bodies) {
+  if (!/\.md$/.test(rel)) continue;
+  for (const m of body.matchAll(UNIT_TEST_CLAIM)) {
+    const n = Number(m[1]);
+    if (n !== stepCounts.get('test')) {
+      const line = body.slice(0, m.index).split('\n').length;
+      wrongSteps.push(`${rel}:${line} says ${n} unit tests, there are ${stepCounts.get('test')}`);
+    }
+  }
+}
+check(
+  'the per-step counts in the docs match the suite',
+  wrongSteps.length === 0,
+  wrongSteps.length === 0
+    ? `${stepCounts.size} steps, every printed count agrees`
+    : wrongSteps.join(' | '),
+);
+
+// 7. The sizes of the two files the game streams. The tools slide said the voxel
+//    was "304 KB": 304,628 bytes read as thousands, then labelled KB, which means
+//    1024 -- so the slide was 7 KB out and nobody could have noticed, because a
+//    unit is not a thing you can check by looking. The byte counts now live in
+//    data/foreign-assets.json and every printed size is compared to them.
+const CATALOGUE = JSON.parse(readFileSync(join(root, 'data/foreign-assets.json'), 'utf8'));
+const SIZE_CLAIM = /([\d][\d,]{3,})\s*(?:字节|bytes)/g;
+const sizes = [CATALOGUE.scene?.splat?.bytes, CATALOGUE.scene?.voxel?.bytes].filter(Boolean);
+check('the streamed sizes are recorded', sizes.length === 2, `${sizes.length} of 2 recorded`);
+
+// Everything a surface is allowed to print a size for. The asset total is summed
+// from the files themselves, so it needs no record -- and it was a real claim that
+// nothing checked: the demo caption said "10.1 MB" for 10,602,848 bytes, which is
+// 10.1 *MiB*. That is the same mistake as the voxel's "304 KB", one surface over.
+const assetDir = join(root, 'public/assets/foreign');
+const assetFiles = readdirSync(assetDir).filter((f) => f.endsWith('.glb'));
+const assetBytes = assetFiles.reduce((sum, f) => sum + statSync(join(assetDir, f)).size, 0);
+const knownSizes = new Map([
+  ...sizes.map((b, i) => [b, i === 0 ? 'the splat scene' : 'the voxel field']),
+  [assetBytes, `the ${assetFiles.length} catalogue models`],
+]);
+check(
+  'the catalogue total is measurable',
+  assetFiles.length > 0 && assetBytes > 0,
+  `${assetFiles.length} models, ${assetBytes} bytes`,
+);
+
+const wrongSizes = [];
+let claimed = 0;
+for (const [rel, body] of bodies) {
+  for (const m of body.matchAll(SIZE_CLAIM)) {
+    claimed++;
+    const n = Number(m[1].replace(/,/g, ''));
+    if (!knownSizes.has(n)) {
+      const line = body.slice(0, m.index).split('\n').length;
+      const near = [...knownSizes.keys()].map((b) => b.toLocaleString('en-US')).join(' / ');
+      wrongSizes.push(`${rel}:${line} says ${m[1]} bytes; the real sizes are ${near}`);
+    }
+  }
+}
+check(
+  'every printed file size is the size of the file it names',
+  wrongSizes.length === 0,
+  wrongSizes.length === 0 ? `${claimed} printed size(s), all match` : wrongSizes.join(' | '),
+);
+
+// 8. The size of the catalogue. `assets:check` holds the three parts of it to the
+//    disk -- generated, placeholder, household -- and never the total, so the
+//    README's "34 个资产" was free to say 44 and nothing objected. The sum is the
+//    number a judge is most likely to repeat.
+{
+  const total = CATALOGUE.assets?.length ?? 0;
+  const TOTAL_CLAIM = /(\d+)\s*个资产|(\d+)\s*assets?\b/g;
+  const wrong = [];
+  let seen = 0;
+  for (const [rel, body] of bodies) {
+    for (const m of body.matchAll(TOTAL_CLAIM)) {
+      const n = Number(m[1] ?? m[2]);
+      seen++;
+      if (n !== total) {
+        const line = body.slice(0, m.index).split('\n').length;
+        wrong.push(`${rel}:${line} says ${n}, the catalogue holds ${total}`);
+      }
+    }
+  }
+  check(
+    'every surface that counts the catalogue counts it correctly',
+    wrong.length === 0 && seen > 0,
+    wrong.length ? wrong.join(' | ') : seen === 0 ? 'nothing states the total, so this proved nothing' : `${seen} mention(s), all say ${total}`,
+  );
+}
+
+// "MB" in prose, checked against the file the sentence is about.
+//
+// Banning it outright was the first instinct and it was too blunt: "63 MB" for
+// 63,022,215 bytes is right, and four surfaces say it. What was wrong was saying
+// "304 KB" for 304,628 bytes and "10.1 MB" for 10.1 *MiB* -- a unit used without
+// being the unit meant. So the claim is checked rather than the unit: if the
+// sentence names a file whose size is known, the number must be that file's size
+// in metric megabytes. A number in a sentence about nothing in particular is not a
+// claim about our files and is left alone.
+{
+  const MB_CLAIM = /(?<![\d.,])(\d+(?:\.\d+)?)\s*MB\b/g;
+  const SUBJECTS = [
+    { re: /splat|泼溅|高斯|场景|scene/i, bytes: CATALOGUE.scene?.splat?.bytes },
+    { re: /voxel|体素/i, bytes: CATALOGUE.scene?.voxel?.bytes },
+    { re: /资产|模型|models?/i, bytes: assetBytes },
+  ];
+  const wrongMb = [];
+  let checkedMb = 0;
+  for (const [rel, body] of bodies) {
+    const lines = body.split(/\r?\n/);
+    lines.forEach((line, i) => {
+      for (const m of line.matchAll(MB_CLAIM)) {
+        // A rate is not a total. "~16 MB per asset" is the Lux3D budget for one
+        // generation, not the size of the catalogue, and comparing it to the sum
+        // of 34 files is a false alarm -- which is its own kind of broken check,
+        // because a guard that cries wolf gets switched off.
+        const after = line.slice(m.index + m[0].length, m.index + m[0].length + 12);
+        if (/^\s*(per|每|\/)/i.test(after)) continue;
+        const subject = SUBJECTS.find((s) => s.bytes && s.re.test(line));
+        if (!subject) continue;
+        checkedMb++;
+        const n = Number(m[1]);
+        if (Math.abs(subject.bytes / 1e6 - n) > 0.6) {
+          wrongMb.push(
+            `${rel}:${i + 1} says ${m[1]} MB where the file is ${(subject.bytes / 1e6).toFixed(1)} MB`,
+          );
+        }
+      }
+    });
+  }
+  check(
+    'a size in MB matches the file the sentence is about',
+    wrongMb.length === 0,
+    wrongMb.length === 0 ? `${checkedMb} MB claim(s), all metric-correct` : wrongMb.join(' | '),
   );
 }
 

@@ -1,10 +1,10 @@
 {
-  "total": 268,
+  "total": 276,
   "steps": [
     {
       "step": "copy:check",
       "label": "文案一致性",
-      "count": 11
+      "count": 19
     },
     {
       "step": "voxel:check",

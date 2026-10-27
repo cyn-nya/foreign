@@ -202,7 +202,7 @@ def build():
          size=12, color=DIM, space=0)
     kinds = ["注视", "悬浮", "变形", "复制", "倒挂", "成群"]
     text(s, MARGIN, Inches(4.55), Inches(6.6), Inches(0.4),
-         [("现有 6 种异常", {"size": 15, "bold": True})], space=6)
+         [("现有 7 种异常", {"size": 15, "bold": True})], space=6)
     for i, k in enumerate(kinds):
         col, row = i % 4, i // 4
         bx = MARGIN + Inches(col * 1.62)
@@ -222,8 +222,8 @@ def build():
         ("Aholo Lux3D", "文生 3D · 必需", "异物资产的唯一来源。两条接入路径：Open API 批处理，或网页版导出后导入。"),
         ("Aholo Open API", "REST · 已对真实接口验证", "创建 → 轮询 → 立刻下载（结果 URL 2 小时过期）。认证头与错误映射已实测。"),
         ("@manycore/aholo-viewer", "3DGS 渲染", "在浏览器里渲染真实重建的房间，第一人称行走。"),
-        ("官方开源 3DGS 场景", "scene.7c26e842.spz", "63 MB 室内高斯泼溅场景，运行时流式加载。"),
-        ("官方体素碰撞场", "collision.voxel.bin", "304 KB，八叉树 + 叶位。地板、墙体、天花板都是它。"),
+        ("官方开源 3DGS 场景", "scene.7c26e842.spz", "63,022,215 字节的室内高斯泼溅场景，运行时流式加载。"),
+        ("官方体素碰撞场", "collision.voxel.bin", "304,628 字节，八叉树 + 叶位。地板、墙体、天花板都是它。"),
     ]
     for i, (name, tag, desc) in enumerate(rows):
         by = y + Inches(i * 0.95)
