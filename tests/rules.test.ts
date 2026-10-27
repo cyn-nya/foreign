@@ -34,6 +34,19 @@ function isHousehold(key: string): boolean {
   return asset !== undefined && asset.weirdness === 0;
 }
 
+/**
+ * A payload for a kind that is not an intrusion.
+ *
+ * Ordinary furniture misbehaving, or a ghost: a figure that is wrong by being present at
+ * all. Both are judgeable from the frame with no memory of the room, which is the rule
+ * these tests exist to defend. Any *other* generated object is still rejected -- that is
+ * the distinction, and it is the one a change here must not quietly erase.
+ */
+function isOrdinaryOrGhost(key: string): boolean {
+  const asset = ASSETS_BY_KEY.get(key);
+  return asset !== undefined && (asset.weirdness === 0 || asset.horrorTag === 'ghost');
+}
+
 describe('rng', () => {
   it('is deterministic for a given seed', () => {
     const a = mulberry32(1234);
@@ -210,7 +223,7 @@ describe('every anomaly is judgeable without memorising the room', () => {
           // legible against something ordinary. If these were generated objects
           // too, "a chair that moved" and "a face that should not be here" would
           // be the same picture and neither would be answerable.
-          expect(isHousehold(a.assetKey!)).toBe(true);
+          expect(isOrdinaryOrGhost(a.assetKey!)).toBe(true);
         }
       }
     }

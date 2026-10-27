@@ -98,6 +98,18 @@ export function anomalyCountForFloor(floor: number): number {
 }
 
 /** Seconds allowed. Generous early, then tight. */
+/**
+ * The floor from which a stare is a figure rather than a floating household object.
+ *
+ * Floors one to three are where the game is learnt, and a chair in mid-air is the most
+ * legible possible statement of what is wrong. Later floors can afford to be less
+ * legible, and the ghost models were generated for precisely this kind -- a shape that
+ * hangs and faces you. Before this they were unreachable in the reconstructed room: the
+ * `stare` builder was pinned to household geometry there, so four generated models could
+ * never appear in the build that ships.
+ */
+export const GHOST_FROM_FLOOR = 4;
+
 export function durationForFloor(floor: number): number {
   const t = 240 - (floor - 1) * 18;
   return Math.max(105, t);
@@ -191,6 +203,19 @@ function horrorAssets(): ForeignAsset[] {
   return FOREIGN_ASSETS.filter((a) => a.weirdness === 3);
 }
 
+/**
+ * What a staring anomaly is made of.
+ *
+ * The ghost role exists for this kind: something suspended, still, and facing the way in.
+ * A giant eye hanging at head height is strange, but it is not the thing that watches you,
+ * and the four models generated to be that thing were being picked a quarter as often as
+ * they should have been.
+ */
+function hangableHorror(): ForeignAsset[] {
+  const ghosts = horrorAssets().filter((a) => a.horrorTag === 'ghost');
+  return ghosts.length > 0 ? ghosts : horrorAssets();
+}
+
 function householdAssets(): ForeignAsset[] {
   return FOREIGN_ASSETS.filter((a) => a.weirdness === 0);
 }
@@ -220,8 +245,25 @@ const MIN_VISIBLE_HEIGHT = 0.6;
 const STARE_MIN_HEIGHT = 0.35;
 
 /** Anomaly assets with enough height to hang. Falls back to all if a pass finds none. */
+/**
+ * The generated models built for one horror role, or everything if none were.
+ *
+ * The fallback matters: a catalogue whose horror entries predate the tags, or one where a
+ * role was never generated, has to keep working. Returning an empty pool instead would make
+ * `pick` fail or hand out `undefined`, which is how a missing tag turns into a crash rather
+ * than into the plainer model it should be.
+ */
+function taggedHorrorPool(tag: string, budget: number): ForeignAsset[] {
+  const pool = foreignPool(budget);
+  const tagged = pool.filter((a) => a.horrorTag === tag);
+  return tagged.length > 0 ? tagged : pool;
+}
+
 function hangableAssets(): ForeignAsset[] {
-  const all = horrorAssets();
+  // The ghost role first: the models generated to hang and face the way in. Then the height
+  // filter, because a hanging object thinner than a hand is invisible edge-on from the
+  // floor -- which is how floor one once came to hold an anomaly nobody could find.
+  const all = hangableHorror();
   const tall = all.filter((a) => (a.height ?? 0) >= STARE_MIN_HEIGHT);
   return tall.length > 0 ? tall : all;
 }
@@ -293,7 +335,10 @@ function buildIntrude(
   const anchor = pick(rng, free);
   usedAnchors.add(anchor.id);
 
-  const asset = pick(rng, foreignPool(budget));
+  // The one kind that is a presence rather than a behaviour, so it draws from the dressed
+  // figures and the objects that should not be objects -- not from the household pool,
+  // which is what every other kind is built from.
+  const asset = pick(rng, taggedHorrorPool('doppel', budget));
 
   return {
     id: nextId('intrude', anchor.id),
@@ -619,7 +664,7 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
     // building it through the real builder rather than by hand is what keeps it
     // airborne, facing the way in, and labelled like every other stare.
     const first = foreignOnly
-      ? buildStare(rng, usedAnchors, anchors, spawn, anchor, true)
+      ? buildStare(rng, usedAnchors, anchors, spawn, anchor, floor < GHOST_FROM_FLOOR)
       : null;
     anomalies.push(
       first ?? {
@@ -656,7 +701,7 @@ export function generateFloor(floor: number, seed: number, opts: GenerateOptions
       const forced = requested ? requested[i % requested.length] : null;
       const kind = forced ?? pick(rng, kinds);
       const built = kind === 'stare'
-        ? buildStare(rng, usedAnchors, anchors, spawn, undefined, true)
+        ? buildStare(rng, usedAnchors, anchors, spawn, undefined, floor < GHOST_FROM_FLOOR)
         : kind === 'intrude'
           ? buildIntrude(rng, budget, usedAnchors, anchors)
           : buildForeignAtAnchor(rng, usedAnchors, anchors, kind);

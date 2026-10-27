@@ -140,6 +140,43 @@ export function chargeChanceForFloor(floor: number): number {
   if (floor < CHARGE_FIRST_FLOOR) return 0;
   return Math.min(0.6, 0.33 + (floor - CHARGE_FIRST_FLOOR) * 0.05);
 }
+
+/**
+ * How many charge models one floor may use.
+ *
+ * Two, not seven. The whole charge set is 45 MB, against a 63 MB reconstruction -- so
+ * preloading all of it would nearly double what a player waits for, to show at most two of
+ * them, and it would do it while they are still on floor one, which has no charges at all.
+ * Two is enough that a player cannot predict which is coming, which is the only reason to
+ * have more than one.
+ */
+export const CHARGE_MODELS_PER_FLOOR = 2;
+
+/**
+ * Which charge models a floor preloads.
+ *
+ * Deterministic in the floor, for the same reason the floors themselves are: the same floor
+ * number has to be the same floor, or a report about "floor five" means nothing. Rotated
+ * through the sorted keys rather than drawn at random, so every model is used by some floor
+ * and a player who reaches floor eight has met all of them.
+ *
+ * Empty below `CHARGE_FIRST_FLOOR`: those floors teach looking, and a 45 MB download for a
+ * mechanic that cannot fire is the kind of thing that is only ever noticed as "the game is
+ * slow".
+ */
+export function chargeModelsForFloor(floor: number, keys: readonly string[]): string[] {
+  if (floor < CHARGE_FIRST_FLOOR || keys.length === 0) return [];
+  const sorted = [...keys].sort();
+  const count = Math.min(CHARGE_MODELS_PER_FLOOR, sorted.length);
+  // The floor number itself, not a multiple of it. `floor * 7 % 7` is zero on every floor
+  // when there are seven models -- so every floor would load the same two and the other
+  // five would never be seen by anyone, having each cost a Lux3D task to generate. The
+  // unit test that wanted every model used by some floor is what caught it.
+  const offset = ((floor % sorted.length) + sorted.length) % sorted.length;
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) out.push(sorted[(offset + i) % sorted.length]);
+  return out;
+}
 export type ScareKind = (typeof SCARE_KINDS)[number];
 
 /** How long each kind holds the screen, in milliseconds. */

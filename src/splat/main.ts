@@ -44,6 +44,7 @@ import {
   type ScareKind,
   chargeWindowForFloor,
   chargeChanceForFloor,
+  chargeModelsForFloor,
 } from './horror.ts';
 import { summariseFrames } from './framerate.ts';
 import {
@@ -135,6 +136,8 @@ interface SplatDebug {
    * real catalogue rather than against a copy of it kept in the harness.
    */
   assetWeirdness: (key: string) => number | null;
+  /** The horror role a model was generated for, or null. */
+  assetHorrorTag: (key: string) => string | null;
   /**
    * What the frame-rate counter is actually looking at.
    *
@@ -281,6 +284,7 @@ const debug: SplatDebug = {
   aimAt: () => null,
   aimAtBystander: () => null,
   assetWeirdness: () => null,
+  assetHorrorTag: () => null,
   perfWindow: () => ({ samples: 0, spanMs: 0, intervals: 0, historyMs: 0 }),
   briefing: () => '',
   quality: () => ({ level: 0, ratio: 1, auto: false, changes: 0 }),
@@ -918,6 +922,9 @@ function startCharge(): void {
   // either alone.
   const room = roomRef;
   const pose = poseRef?.() ?? null;
+  // Whatever this floor preloaded. Asking `hasAsset` rather than recomputing the floor's
+  // subset keeps one source of truth for what is on disk -- a second calculation here is
+  // how the spawn and the preload would come to disagree.
   const candidates =
     room && pose
       ? assetsWithHorrorTag('charge').filter((a: ForeignAsset) => room.hasAsset(a.key))
@@ -1266,14 +1273,21 @@ async function main(): Promise<void> {
 
     // Make sure anything this floor needs is present before it appears.
     //
-    // The charge models are in this list even though nothing places them: without them
-    // `room.hasAsset` is false for every one, the charge silently falls back to the
-    // overlay, and the feature looks like it was never built. A fallback that is taken
-    // every single time is not a fallback, it is the feature.
+    // A couple of charge models are in this list even though nothing places them: without
+    // them `room.hasAsset` is false, the charge silently falls back to the overlay, and the
+    // feature looks like it was never built. A fallback that is taken every single time is
+    // not a fallback, it is the feature.
+    //
+    // A couple, not all seven -- see `chargeModelsForFloor` for why the whole set would
+    // cost more than the room it is shown in.
+    const chargeKeys = chargeModelsForFloor(
+      floor,
+      assetsWithHorrorTag('charge').map((a) => a.key),
+    );
     await room.loadAssets([
       ...plan.anomalies.map((a) => a.assetKey ?? ''),
       ...plan.bystanders.map((b) => b.assetKey),
-      ...assetsWithHorrorTag('charge').map((a) => a.key),
+      ...chargeKeys,
     ]);
     // Anything that was mid-approach belonged to the floor that spawned it.
     room.clearCharger();
@@ -1647,6 +1661,11 @@ async function main(): Promise<void> {
 
   debug.assetWeirdness = (key) =>
     FOREIGN_ASSETS.find((asset) => asset.key === key)?.weirdness ?? null;
+
+  // Which horror role a model was generated for, so a check can assert that the right
+  // models reach the right kinds without hard-coding the catalogue into the harness.
+  debug.assetHorrorTag = (key) =>
+    FOREIGN_ASSETS.find((asset) => asset.key === key)?.horrorTag ?? null;
 
   // The same summary the HUD uses, reported rather than recomputed. When these
   // were two implementations they disagreed with each other about a stalled loop.

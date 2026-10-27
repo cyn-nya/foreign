@@ -4,6 +4,9 @@ import {
   MAX_DARKNESS_FLOOR,
   MIN_DARKNESS,
   SCARE_FACES,
+  CHARGE_MODELS_PER_FLOOR,
+  CHARGE_FIRST_FLOOR,
+  chargeModelsForFloor,
   SCARE_KINDS,
   SCARE_KIND_MS,
   darknessForFloor,
@@ -164,5 +167,51 @@ describe('how a fright is delivered', () => {
     // reproducible in the acceptance run.
     const alwaysZero = () => 0;
     expect(pickScareKind(alwaysZero, 1, null)).toBe(pickScareKind(alwaysZero, 1, null));
+  });
+
+  /**
+   * What a floor preloads for the charge.
+   *
+   * The whole charge set is 45 MB against a 63 MB room, so "load them all" nearly doubles
+   * the wait to show at most two -- and it does it on floor one, which has no charges. These
+   * pin the three properties that keep that from creeping back.
+   */
+  describe('the charge models a floor preloads', () => {
+    const keys = ['charge_a', 'charge_b', 'charge_c', 'charge_d', 'charge_e', 'charge_f', 'charge_g'];
+
+    it('loads none on the floors that cannot charge', () => {
+      for (let floor = 1; floor < CHARGE_FIRST_FLOOR; floor++) {
+        expect(chargeModelsForFloor(floor, keys), `floor ${floor}`).toEqual([]);
+      }
+    });
+
+    it('loads a couple, never the whole set', () => {
+      for (let floor = CHARGE_FIRST_FLOOR; floor <= 8; floor++) {
+        const chosen = chargeModelsForFloor(floor, keys);
+        expect(chosen.length, `floor ${floor}`).toBe(CHARGE_MODELS_PER_FLOOR);
+        expect(chosen.length, `floor ${floor}`).toBeLessThan(keys.length);
+      }
+    });
+
+    it('is the same floor every time, and never picks one key twice', () => {
+      for (let floor = CHARGE_FIRST_FLOOR; floor <= 8; floor++) {
+        const first = chargeModelsForFloor(floor, keys);
+        expect(chargeModelsForFloor(floor, keys)).toEqual(first);
+        expect(new Set(first).size, `floor ${floor} repeated a key`).toBe(first.length);
+      }
+    });
+
+    it('uses every model across the descent, so none of them was generated for nothing', () => {
+      const used = new Set<string>();
+      for (let floor = CHARGE_FIRST_FLOOR; floor <= 8; floor++) {
+        for (const key of chargeModelsForFloor(floor, keys)) used.add(key);
+      }
+      expect([...used].sort()).toEqual([...keys].sort());
+    });
+
+    it('survives being handed fewer models than a floor wants', () => {
+      expect(chargeModelsForFloor(4, ['only'])).toEqual(['only']);
+      expect(chargeModelsForFloor(4, [])).toEqual([]);
+    });
   });
 });

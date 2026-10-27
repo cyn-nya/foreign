@@ -1,5 +1,5 @@
 {
-  "total": 282,
+  "total": 291,
   "steps": [
     {
       "step": "voxel:check",
@@ -9,7 +9,7 @@
     {
       "step": "test",
       "label": "单元测试",
-      "count": 149
+      "count": 158
     },
     {
       "step": "assets:check",

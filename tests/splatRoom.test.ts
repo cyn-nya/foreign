@@ -39,6 +39,19 @@ function isHousehold(key: string): boolean {
   return asset !== undefined && asset.weirdness === 0;
 }
 
+/**
+ * A payload for a kind that is not an intrusion.
+ *
+ * Ordinary furniture misbehaving, or a ghost: a figure that is wrong by being present at
+ * all. Both are judgeable from the frame with no memory of the room, which is the rule
+ * these tests exist to defend. Any *other* generated object is still rejected -- that is
+ * the distinction, and it is the one a change here must not quietly erase.
+ */
+function isOrdinaryOrGhost(key: string): boolean {
+  const asset = ASSETS_BY_KEY.get(key);
+  return asset !== undefined && (asset.weirdness === 0 || asset.horrorTag === 'ghost');
+}
+
 describe('the reconstructed room’s anchors', () => {
   it('were measured out of the scan, not authored', () => {
     expect(ROOM_ANCHORS.length).toBeGreaterThanOrEqual(6);
@@ -101,7 +114,7 @@ describe('generateFloor in foreignOnly mode', () => {
         if (anomaly.kind === 'intrude') {
           expect(isHousehold(anomaly.assetKey!)).toBe(false);
         } else {
-          expect(isHousehold(anomaly.assetKey!)).toBe(true);
+          expect(isOrdinaryOrGhost(anomaly.assetKey!)).toBe(true);
         }
       }
     }
@@ -383,7 +396,7 @@ describe('an object that does not belong is obvious', () => {
             expect(isHousehold(anomaly.assetKey!)).toBe(false);
           } else {
             furniture++;
-            expect(isHousehold(anomaly.assetKey!)).toBe(true);
+            expect(isOrdinaryOrGhost(anomaly.assetKey!)).toBe(true);
           }
         }
 

@@ -1,5 +1,5 @@
 {
-  "url": "http://127.0.0.1:7584",
+  "url": "http://127.0.0.1:10769",
   "views": [
     {
       "name": "01-hall-into-apartment",
@@ -120,12 +120,12 @@
     {
       "name": "a wrong mark costs time and does not score",
       "ok": true,
-      "detail": "score 0 -> 0, time 233.7 -> 225.7"
+      "detail": "score 0 -> 0, time 233.6 -> 225.5"
     },
     {
       "name": "marking the anomaly scores and clears the floor",
       "ok": true,
-      "detail": "state=floorClear score=1091 found=1"
+      "detail": "state=floorClear score=1090 found=1"
     },
     {
       "name": "a wrong mark spends exactly one of the limited marks",
@@ -140,7 +140,7 @@
     {
       "name": "a stare anomaly hangs at head height and is seeable from the floor",
       "ok": true,
-      "detail": "asset=charge_crawl y=1.77 stance=(2.7, -1) ray=[{\"slot\":\"fx_bedroom_corner\",\"distance\":2.22},{\"slot\":\"fx_bedroom_corner\",\"distance\":2.22},{\"slot\":\"fx_bedroom_corner\",\"distance\":2.36},{\"slot\":\"fx_bedroom_corner\",\"distance\":2.39}]"
+      "detail": "asset=ghost_sheet y=1.77 stance=(2.7, -1) ray=[{\"slot\":\"fx_bedroom_corner\",\"distance\":1.51},{\"slot\":\"fx_bedroom_corner\",\"distance\":1.6},{\"slot\":\"fx_bedroom_corner\",\"distance\":1.99},{\"slot\":null,\"distance\":2.54}]"
     },
     {
       "name": "no page or console errors",

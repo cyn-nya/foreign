@@ -1096,6 +1096,7 @@ try {
       kind: item.kind,
       key: item.assetKey ?? '',
       weirdness: s.assetWeirdness(item.assetKey ?? ''),
+      horrorTag: s.assetHorrorTag(item.assetKey ?? ''),
     }));
 
     // A bystander must be innocent: aim at one and mark it.
@@ -1149,9 +1150,14 @@ try {
       : `intruders: ${intruders.map((i) => `${i.key}(w${i.weirdness})`).join(', ')}`,
   );
   check(
-    'every other kind is household furniture, so "is this behaving" has an answer',
-    behaviour.every((i) => i.weirdness === 0),
-    `kinds: ${behaviour.map((i) => `${i.kind}:${i.key}(w${i.weirdness})`).join(', ') || 'none'}`,
+    'every other kind is ordinary or a ghost, so "is this behaving" has an answer',
+    // The rule is that an anomaly must be judgeable from the frame alone. Furniture
+    // misbehaving answers it by behaviour; a ghost answers it by being a person who is
+    // hanging in the air, which needs no memory of the room either. Every other generated
+    // object is still rejected -- that is the distinction, and the reason this is not
+    // simply `weirdness >= 0`.
+    behaviour.every((i) => i.weirdness === 0 || i.horrorTag === 'ghost'),
+    `kinds: ${behaviour.map((i) => `${i.kind}:${i.key}(w${i.weirdness},${i.horrorTag ?? '-'})`).join(', ') || 'none'}`,
   );
   check(
     'an innocent household object refuses to score',
