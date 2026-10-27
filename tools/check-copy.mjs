@@ -24,6 +24,9 @@
  */
 
 import { readFileSync, readdirSync } from 'node:fs';
+
+/** Written by tools/count-assertions.mjs from the verify log. */
+const ASSERTIONS = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'data/assertions.json'), 'utf8'));
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -119,6 +122,42 @@ for (const rel of ['src/splat/main.ts', 'tools/build-demo-page.mjs']) {
   const body = bodies.get(rel);
   if (!body) continue;
   check(`\`${rel}\` says the furniture is innocent`, INNOCENT.test(body));
+}
+
+// 4. A hand-typed assertion count in the deck builder. The rigour slide claimed
+//    "52 真实房间" while the real number had grown to 62, and nothing compared the
+//    two -- the same rot as the rule sentence, one layer down. Every tile on that
+//    slide now reads `data/assertions.json`, so a number typed into the source is
+//    a number that will drift. The shape of the mistake is a quoted count next to
+//    a label.
+//
+// The judgement is not "was this number typed in" but "does the number on the
+// slide match the number the suite produces". The first version of this check
+// asked the former, line by line, and was vacuous: the rigour slide puts two
+// tiles on one line, so a line that mentioned `by_step` at all was skipped --
+// including the hand-typed number sitting next to it. It passed with the 52 still
+// in the file.
+const DECK_BUILDER = 'tools/build-deck.py';
+const TYPED_COUNT = /\("(\d{1,3})",\s*"([^"]*)"\)/g;
+{
+  const body = bodies.get(DECK_BUILDER) ?? readFileSync(join(root, DECK_BUILDER), 'utf8');
+  const counts = new Set();
+  for (const step of ASSERTIONS.steps) counts.add(step.count);
+  const known = (n) => counts.has(n) || n === ASSERTIONS.total;
+  const wrong = [];
+  let m;
+  while ((m = TYPED_COUNT.exec(body)) !== null) {
+    const n = Number(m[1]);
+    const line = body.slice(0, m.index).split('\n').length;
+    if (!known(n)) wrong.push(`line ${line}: ${m[0]} — ${n} is not a count the suite reports`);
+  }
+  check(
+    'every number the deck prints is a number the suite actually reports',
+    wrong.length === 0,
+    wrong.length === 0
+      ? `all quoted counts are among the ${counts.size} the suite reports`
+      : wrong.join(' | '),
+  );
 }
 
 const failed = checks.filter((c) => !c.ok);

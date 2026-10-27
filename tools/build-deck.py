@@ -284,8 +284,10 @@ def build():
     text(s, MARGIN, y, Inches(7.3), Inches(0.6),
          [f"npm run verify  =  类型检查 → 单测 → 构建 → 验收，共 {ASSERTIONS['total']} 项断言，全部通过"],
          size=14, color=INK, space=8)
-    stats = [(str(by_step("test")), "单元测试"), (str(by_step("voxel:check")), "体素"), (str(by_step("assets:check")), "资产"), (str(by_step("splat:check")), "splat"),
-             ("52", "真实房间"), ("15", "程序化"), ("7", "部署")]
+    stats = [(str(by_step("test")), "单元测试"), (str(by_step("voxel:check")), "体素"),
+             (str(by_step("assets:check")), "资产"), (str(by_step("splat:shoot")), "真实房间"),
+             (str(by_step("shoot")), "程序化"), (str(by_step("search:time")), "可通关性"),
+             (str(by_step("deploy:check")), "部署")]
     for i, (v, k) in enumerate(stats):
         bx = MARGIN + Inches(i * 1.42)
         panel(s, bx, Inches(2.5), Inches(1.28), Inches(1.05))
@@ -303,8 +305,11 @@ def build():
         ("静默失效比崩溃更危险",
          "「文件存在 = 已生成」让整个 Lux3D 环节变成空操作，且不报错。"
          "现在由来源记录判定，并配一条「真资产必须被跳过」的反向断言。"),
+        ("降级必须降在瓶颈上",
+         "自适应画质本来只降分辨率。实测 640×360 并不比 960×540 快 —— 时间在 CPU 排序上，"
+         "不在填像素上。于是两个维度一起降，画面不再白糊。"),
     ]):
-        by = Inches(3.78) + Inches(i * 0.84)
+        by = Inches(3.72) + Inches(i * 0.80)
         panel(s, MARGIN, by, Inches(7.3), Inches(0.72))
         text(s, MARGIN + Inches(0.22), by + Inches(0.08), Inches(6.9), Inches(0.6),
              [(t, {"size": 12, "bold": True, "space": 2}), (d, {"size": 10, "color": DIM})], space=0)

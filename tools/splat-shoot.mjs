@@ -282,10 +282,15 @@ try {
     const report = s.mark();
     const during = {
       showing: s.scareFaceShowing(),
+      kind: s.scareKind(),
       count: s.scareCount(),
+      torch: s.torchOn(),
     };
-    // The face is deliberately brief; wait past its window and it must be gone.
-    await new Promise((r) => setTimeout(r, 600));
+    // Frights are not all the same length any more: a blackout holds for 620 ms
+    // and takes the torch with it, so waiting 600 ms -- which is what this did
+    // when a flash was the only fright -- left it on screen and failed. Wait past
+    // the longest fright there is.
+    await new Promise((r) => setTimeout(r, 950));
     return {
       started,
       before,
@@ -294,6 +299,7 @@ try {
       result: report.result,
       during,
       after: s.scareFaceShowing(),
+      afterTorch: s.torchOn(),
     };
   });
   check(
@@ -304,12 +310,22 @@ try {
       fright.during.showing === true,
     `floor state=${fright.started.state} marks=${fright.started.marks} ` +
       `bystanders=${fright.started.bystanders} result=${fright.result} ` +
-      `scares ${fright.before}->${fright.during.count} face=${fright.during.showing}`,
+      `scares ${fright.before}->${fright.during.count} face=${fright.during.showing} ` +
+      `kind=${fright.during.kind} torch=${fright.during.torch}`,
   );
   check(
     'the fright is taken away again rather than left on screen',
     fright.after === false,
-    `face showing 600ms later = ${fright.after}`,
+    `face showing 950ms after a ${fright.during.kind} = ${fright.after}`,
+  );
+  check(
+    'a fright that takes the torch gives it back',
+    // The blackout fright turns the torch off and only restores it after its own
+    // hold. A fright that forgot to restore would leave the player in the dark
+    // for the rest of the run, which is the worst failure this game can have.
+    fright.afterTorch === true &&
+      (fright.during.kind !== 'blackout' || fright.during.torch === false),
+    `kind=${fright.during.kind} torch during=${fright.during.torch} after=${fright.afterTorch}`,
   );
   check(
     'the fright makes a sound',
@@ -322,6 +338,12 @@ try {
   // failure this is here to catch.
   const gloom = await page.evaluate(async () => {
     const s = window.__splat;
+    // These checks are about the lamp and the dark, not about frights, and a
+    // blackout legitimately takes the torch away and stops `paintTorch` from
+    // running at all. Left on, the result depended on whether the miss above
+    // happened to draw a blackout -- which is a coin toss, not a measurement.
+    s.setScaresEnabled(false);
+    s.setTorch(true);
     await s.start(1);
     const shallow = { curve: s.darkness(), style: s.torchStyle(), floor: s.floor };
     await s.start(6);
@@ -330,6 +352,7 @@ try {
     const off = { on: s.torchOn(), hidden: document.getElementById('dark').classList.contains('off') };
     s.setTorch(true);
     const on = { on: s.torchOn(), hidden: document.getElementById('dark').classList.contains('off') };
+    s.setScaresEnabled(true);
     return { shallow, deep, off, on };
   });
   check(
@@ -345,8 +368,67 @@ try {
       /gradient/.test(gloom.shallow.style.background) &&
       parseFloat(gloom.deep.style.outer) < parseFloat(gloom.shallow.style.outer),
     `inner ${gloom.shallow.style.inner}->${gloom.deep.style.inner}, ` +
-      `outer ${gloom.shallow.style.outer}->${gloom.deep.style.outer}`,
+      `outer ${gloom.shallow.style.outer}->${gloom.deep.style.outer} ` +
+      `(torch on at both reads: ${gloom.shallow.on ?? 'n/a'})`,
   );
+  // The resolution lever alone was measured not to move the frame rate on a
+  // sort-bound renderer: 640x360 was not meaningfully faster than 960x540. So
+  // the controller now degrades both axes, and this asserts the second one
+  // actually reaches the viewer rather than only reaching the debug object.
+  const budget = await page.evaluate(async () => {
+    const s = window.__splat;
+    const read = async (level) => {
+      s.setQuality(level);
+      // The apply is synchronous, but give the config a turn to settle so a
+      // failure here is about the value and not about the timing.
+      await new Promise((r) => setTimeout(r, 60));
+      return s.quality();
+    };
+    s.setQuality('auto');
+    const auto = s.quality();
+    const full = await read(5);
+    const low = await read(0);
+    const back = await read(5);
+    return { auto, full, low, back };
+  });
+  check(
+    'lowering quality throttles the splat sort, not only the resolution',
+    budget.full.sortIntervalMs === 0 && budget.low.sortIntervalMs > 0,
+    `full: ratio=${budget.full.ratio} sort=${budget.full.sortIntervalMs}ms; ` +
+      `low: ratio=${budget.low.ratio} sort=${budget.low.sortIntervalMs}ms`,
+  );
+  check(
+    'the sort interval comes back when quality does',
+    budget.back.sortIntervalMs === 0 && budget.back.ratio === budget.full.ratio,
+    `back: ratio=${budget.back.ratio} sort=${budget.back.sortIntervalMs}ms`,
+  );
+  // The README tells the reader to press F3 and report these numbers, so the
+  // numbers have to be on the line. Claiming they are without checking is how
+  // the asset counts and the rule sentence rotted before.
+  const overlay = await page.evaluate(async () => {
+    const s = window.__splat;
+    s.setQuality(0);
+    s.togglePerf();
+    const text = document.getElementById('hud-perf').textContent;
+    s.togglePerf();
+    s.setQuality(5);
+    return text;
+  });
+  check(
+    'the F3 overlay carries the numbers a report from another machine needs',
+    /\d+(\.\d+)? fps/.test(overlay) &&
+      /分辨率 0\.40×/.test(overlay) &&
+      /排序 24 ms/.test(overlay) &&
+      /画质/.test(overlay),
+    `overlay: ${overlay.replace(/\n/g, ' | ')}`,
+  );
+
+  check(
+    'the render budget is reported alongside the resolution',
+    typeof budget.full.sortIntervalMs === 'number' && typeof budget.low.ratio === 'number',
+    `sortIntervalMs=${budget.full.sortIntervalMs}, ratio=${budget.full.ratio}`,
+  );
+
   check(
     'F turns the torch off and on',
     gloom.off.on === false && gloom.off.hidden === true && gloom.on.on === true && gloom.on.hidden === false,

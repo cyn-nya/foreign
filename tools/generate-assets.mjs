@@ -33,7 +33,7 @@ const MANIFEST = path.join(OUT_DIR, 'manifest.json');
 /* ---------------------------------------------------------------- args --- */
 
 function parseArgs(argv) {
-  const args = { only: null, force: false, dryRun: false, style: undefined, version: 'G1', faceCount: undefined, concurrency: 2, timeoutMs: 15 * 60 * 1000 };
+  const args = { only: null, force: false, dryRun: false, style: undefined, version: 'G1', faceCount: undefined, concurrency: 2, timeoutMs: 15 * 60 * 1000, base: undefined };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--dry-run') args.dryRun = true;
@@ -46,18 +46,54 @@ function parseArgs(argv) {
     else if (a === '--timeout') args.timeoutMs = Math.max(60_000, Number(argv[++i]) || 0);
     else if (a === '--help' || a === '-h') args.help = true;
     else if (a.startsWith('--key=')) args.key = a.slice(6);
+    else if (a === '--region') args.region = argv[++i];
+    else if (a === '--base') args.base = argv[++i];
   }
   return args;
 }
 
+/**
+ * The two service regions, and the key variable the vendor documents for each.
+ *
+ * `manycore-research/Aholo-Lux3D` states plainly that "China and international
+ * API Keys are not interchangeable", and lists the China key at
+ * labs.aholo3d.cn against the international one at labs.aholo.ai. This tool
+ * defaulted to the China base URL and read `AHOLO_API_KEY`, so an international
+ * key was being spent against the China region with nothing anywhere saying so.
+ *
+ * Both regions answer `task/list` identically for either key, which is exactly
+ * why this was invisible: the only way to notice is a call that costs something.
+ */
+export const REGIONS = {
+  cn: { base: 'https://api.aholo3d.cn', keyVar: 'LUX3D_CN_API_KEY', label: 'China' },
+  global: { base: 'https://api.aholo.ai/global', keyVar: 'LUX3D_GLOBAL_API_KEY', label: 'international' },
+};
+
+export function regionFor(args) {
+  if (args.base) return { base: args.base, keyVar: null, label: `custom (${args.base})` };
+  const name = args.region ?? ((process.env.LUX3D_REGION ?? '').trim() || 'cn');
+  const region = REGIONS[name];
+  if (!region) {
+    throw new Error(`unknown region "${name}" — use cn or global, or pass --base`);
+  }
+  return { ...region, name };
+}
+
 function loadApiKey(args) {
   if (args.key) return args.key;
+  // The region's own variable wins, then the generic one, so an existing
+  // .env.local keeps working while the documented names take over.
+  const region = regionFor(args);
+  if (region.keyVar && process.env[region.keyVar]) return process.env[region.keyVar].trim();
   if (process.env.AHOLO_API_KEY) return process.env.AHOLO_API_KEY.trim();
   for (const file of ['.env.local', '.env']) {
     const p = path.join(root, file);
     if (!fs.existsSync(p)) continue;
     const match = fs.readFileSync(p, 'utf8').match(/^\s*AHOLO_API_KEY\s*=\s*(.+)\s*$/m);
     if (match) return match[1].trim().replace(/^["']|["']$/g, '');
+    // The vendor's own variable name, so a .env.local written for the Skill works.
+    const regionMatch = file.match(/^\s*LUX3D_(CN|GLOBAL)_API_KEY\s*=\s*(.+)\s*$/m);
+    if (regionMatch) return regionMatch[2].trim().replace(/^["']|["']$/g, '');
   }
   return '';
 }
@@ -78,8 +114,15 @@ Options
   --concurrency <n>    parallel tasks                       (default: 2)
   --timeout <ms>       per-task timeout                     (default: 900000)
   --key <key>          API key (else AHOLO_API_KEY, else .env.local)
+  --region cn|global   service region (default: cn)
+  --base <url>         explicit base URL, overriding --region
 
-Get a key at https://labs.aholo.ai/api-keys
+The regions are separate accounts and their keys are not interchangeable:
+  cn      https://api.aholo3d.cn        LUX3D_CN_API_KEY
+  global  https://api.aholo.ai/global   LUX3D_GLOBAL_API_KEY
+
+Get a China key at https://labs.aholo3d.cn/api-keys
+and an international one at https://labs.aholo.ai/api-keys
 `;
 
 /**
@@ -212,7 +255,9 @@ async function main() {
     process.exit(2);
   }
 
-  const client = new AholoClient({ apiKey, onLog: (m) => console.log(m) });
+  const region = regionFor(args);
+  console.log(`region: ${region.label} (${region.base})`);
+  const client = new AholoClient({ apiKey, baseUrl: region.base, onLog: (m) => console.log(m) });
   const results = [];
 
   const queue = todo.slice();

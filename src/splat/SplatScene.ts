@@ -138,6 +138,28 @@ export class SplatScene {
   /** 1 until the quality controller has measured something and decided otherwise. */
   private appliedPixelRatio = 1;
 
+  /**
+   * How often the sort may run, in milliseconds. 0 is every frame.
+   *
+   * The same merge-not-replace caveat as `setPixelRatio`: `setViewerConfig`
+   * merges into the existing config, which is why re-applying a single key here
+   * does not wipe the pipeline set up in the constructor.
+   */
+  setSortInterval(ms: number): void {
+    if (!Number.isFinite(ms) || ms < 0) return;
+    if (ms === this.appliedSortInterval) return;
+    this.appliedSortInterval = ms;
+    setViewerConfig(this.viewer, {
+      pipeline: { Splatting: { enabled: true, sort: { minIntervalMs: ms } } },
+    } as never);
+  }
+
+  get sortInterval(): number {
+    return this.appliedSortInterval;
+  }
+
+  private appliedSortInterval = 0;
+
   private constructor(
     viewer: Viewer,
     camera: PerspectiveCamera,

@@ -1,10 +1,10 @@
 {
-  "total": 258,
+  "total": 268,
   "steps": [
     {
       "step": "copy:check",
       "label": "文案一致性",
-      "count": 10
+      "count": 11
     },
     {
       "step": "voxel:check",
@@ -14,7 +14,7 @@
     {
       "step": "test",
       "label": "单元测试",
-      "count": 134
+      "count": 138
     },
     {
       "step": "assets:check",
@@ -29,7 +29,7 @@
     {
       "step": "splat:shoot",
       "label": "真实房间验收",
-      "count": 57
+      "count": 62
     },
     {
       "step": "shoot",

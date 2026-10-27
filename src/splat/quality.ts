@@ -110,6 +110,32 @@ export function pixelRatioForLevel(level: number): number {
  * Stated as the multiplier rather than as "low / medium / high", because the
  * number is the thing a player can act on when they report a problem.
  */
+/**
+ * How long the splat renderer must wait between re-sorts, in milliseconds.
+ *
+ * The resolution lever was the only one for a while, and on the machine this was
+ * built on it turned out to be the wrong one: 640x360 did not render meaningfully
+ * faster than 960x540, because the cost was not in filling pixels but in sorting
+ * gaussian centres on the CPU every frame. Lowering `pixelRatio` therefore bought
+ * nothing and cost sharpness.
+ *
+ * `sort.minIntervalMs` is the documented option that addresses the measured
+ * bottleneck directly -- it caps how often the expensive step runs. Zero means
+ * every frame, which is correct when the machine has headroom; the deeper levels
+ * spend some sorting latency to keep the frame rate up, which is a trade the
+ * player can see the result of.
+ *
+ * This is applied *alongside* the resolution, not instead of it: on a machine
+ * that is fill-bound rather than sort-bound the resolution is the right lever,
+ * and neither hypothesis is worth betting the whole controller on.
+ */
+export const SORT_INTERVAL_MS = [24, 16, 8, 4, 0] as const;
+
+export function sortIntervalForLevel(level: number): number {
+  const index = Math.max(0, Math.min(SORT_INTERVAL_MS.length - 1, Math.round(level)));
+  return SORT_INTERVAL_MS[index];
+}
+
 export function qualityLabel(level: number): string {
   const ratio = pixelRatioForLevel(level);
   return `${ratio.toFixed(2)}x`;

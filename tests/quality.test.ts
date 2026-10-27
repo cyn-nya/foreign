@@ -1,16 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  DEFAULT_QUALITY_LEVEL,
-  evaluateQuality,
-  initialQuality,
-  pixelRatioForLevel,
-  QUALITY_LEVELS,
-  qualityLabel,
-  STREAK_TO_CHANGE,
-  TARGET_HIGH_FPS,
-  TARGET_LOW_FPS,
-  type QualityState,
-} from '../src/splat/quality.ts';
+import { DEFAULT_QUALITY_LEVEL, QUALITY_LEVELS, SORT_INTERVAL_MS, STREAK_TO_CHANGE, TARGET_HIGH_FPS, TARGET_LOW_FPS, evaluateQuality, initialQuality, pixelRatioForLevel, qualityLabel, sortIntervalForLevel, type QualityState } from '../src/splat/quality';
 
 /** Feed a run of readings in and return the settled state. */
 function run(readings: (number | null)[], from: QualityState = initialQuality()): QualityState {
@@ -92,5 +81,43 @@ describe('adaptive render resolution', () => {
   it('clamps an out-of-range level rather than returning undefined', () => {
     expect(pixelRatioForLevel(-3)).toBe(QUALITY_LEVELS[0]);
     expect(pixelRatioForLevel(99)).toBe(1);
+  });
+});
+
+
+describe('the second degradation axis', () => {
+  it('sorts every frame at full quality', () => {
+    // 0 means no throttle. The best level must not spend sorting latency it does
+    // not need to.
+    expect(sortIntervalForLevel(DEFAULT_QUALITY_LEVEL)).toBe(0);
+  });
+
+  it('throttles the sort harder the lower the level', () => {
+    // Monotonic, so "lower quality" always means "strictly less sorting work"
+    // and a level can never be cheaper than the level above it.
+    for (let level = 1; level <= DEFAULT_QUALITY_LEVEL; level++) {
+      expect(sortIntervalForLevel(level - 1)).toBeGreaterThanOrEqual(sortIntervalForLevel(level));
+    }
+    expect(sortIntervalForLevel(0)).toBeGreaterThan(0);
+  });
+
+  it('covers every level and clamps anything else', () => {
+    for (let level = 0; level < SORT_INTERVAL_MS.length; level++) {
+      expect(sortIntervalForLevel(level)).toBe(SORT_INTERVAL_MS[level]);
+    }
+    // A bad level must not produce NaN, which `setViewerConfig` would take and
+    // then render with.
+    for (const level of [-5, 99, 2.4]) {
+      const ms = sortIntervalForLevel(level);
+      expect(Number.isFinite(ms)).toBe(true);
+      expect(ms).toBeGreaterThanOrEqual(0);
+      expect(ms).toBeLessThanOrEqual(24);
+    }
+  });
+
+  it('keeps the throttle under a frame at the worst level', () => {
+    // A sort interval longer than a frame budget is a stutter the player sees as
+    // the room swimming, which is worse than the frame rate it buys back.
+    for (const ms of SORT_INTERVAL_MS) expect(ms).toBeLessThanOrEqual(33);
   });
 });

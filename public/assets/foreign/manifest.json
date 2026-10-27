@@ -2,7 +2,7 @@
   "source": "aholo-lux3d-text-to-3d",
   "generatedWith": "Aholo Lux3D text-to-3D (G1)",
   "endpoint": "https://api.aholo3d.cn/lux3d/v1/generate/text-to-3d/task/create",
-  "generatedAt": "2026-10-26T12:15:13.900Z",
+  "generatedAt": "2026-10-27T00:48:35.326Z",
   "assets": [
     {
       "key": "duck",
