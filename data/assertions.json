@@ -1,5 +1,5 @@
 {
-  "total": 250,
+  "total": 258,
   "steps": [
     {
       "step": "copy:check",
@@ -35,6 +35,11 @@
       "step": "shoot",
       "label": "程序化房间验收",
       "count": 15
+    },
+    {
+      "step": "search:time",
+      "label": "可通关性",
+      "count": 8
     },
     {
       "step": "deploy:check",

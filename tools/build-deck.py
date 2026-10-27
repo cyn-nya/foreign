@@ -349,13 +349,14 @@ def build():
     y = head(s, "现在到哪了", "状态", 10, "进度")
     for i, (t, st, d, c) in enumerate([
         ("A · 真实 3DGS 房间", "完成", "默认入口就是重建房间，行走、碰撞、玩法闭环全部实测通过。", GOOD),
-        ("C · 玩法深化", "完成", "音效、注视者动画、异常类型 5 → 7 种。", GOOD),
+        ("C · 玩法深化", "完成", "异常类型 5 → 7 种；四种惊吓而非一种；黑暗与手电筒逐层递进。", GOOD),
+        ("可通关性", "已实测", "8/8 层都留出扫视时间；最难的第 8 层剩 92.9 秒。npm run search:time。", GOOD),
         ("D · 部署 / 报告", "完成", "cyn-nya.github.io/foreign/ —— 线上实测 8/8，34 个资产全部就位。", GOOD),
         ("demo 视频", "完成", "90 秒 720p。本机每秒不足一帧，录不了实机，故用真实截图合成。", GOOD),
-        ("B · Lux3D 资产", "待生成", "两条接入路径都已就绪并验证；占位模型保证游戏完整可玩。", ACCENT),
+        ("B · Lux3D 资产", "待生成", "14/21 已由 Lux3D 生成，7 个仍是占位；接入已就绪，只缺额度。", ACCENT),
         ("X 发帖", "待发", "文案已备好，对传播分（5%）。需要账号。", ACCENT),
     ]):
-        by = y + Inches(i * 0.78)
+        by = y + Inches(i * 0.665)
         panel(s, MARGIN, by, CONTENT_W, Inches(0.68))
         text(s, MARGIN + Inches(0.24), by + Inches(0.17), Inches(4.4), Inches(0.36),
              [(t, {"size": 13, "bold": True})], space=0)

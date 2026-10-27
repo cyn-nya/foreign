@@ -39,6 +39,11 @@ for (const line of log.split('\n')) {
   if (/^PASS /.test(line)) current.passes++;
   const tests = /^\s*Tests\s+(\d+) passed/.exec(line);
   if (tests) current.tests = Number(tests[1]);
+  // `search:time` reports "N/M floors leave time to search" instead of PASS
+  // lines. Leaving it out would have made the headline total quietly wrong for
+  // the same reason the total went wrong three times before.
+  const floors = /^(\d+)\/(\d+) floors leave time to search/.exec(line);
+  if (floors) current.passes = Number(floors[1]);
 }
 
 if (sections.length === 0) {
@@ -54,6 +59,7 @@ const LABELS = {
   'assets:check': '资产完整性',
   'splat:check': '高斯泼溅探测',
   'splat:shoot': '真实房间验收',
+  'search:time': '可通关性',
   shoot: '程序化房间验收',
   'demo:stills': '演示静帧',
   'deploy:check': '部署检查',
