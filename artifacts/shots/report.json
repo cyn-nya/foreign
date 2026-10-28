@@ -1,5 +1,5 @@
 {
-  "url": "http://127.0.0.1:5263",
+  "url": "http://127.0.0.1:7760",
   "views": [
     {
       "name": "01-hall-into-apartment",
@@ -120,7 +120,7 @@
     {
       "name": "a wrong mark costs time and does not score",
       "ok": true,
-      "detail": "score 0 -> 0, time 233.5 -> 225.4"
+      "detail": "score 0 -> 0, time 233.8 -> 225.7"
     },
     {
       "name": "marking the anomaly scores and clears the floor",

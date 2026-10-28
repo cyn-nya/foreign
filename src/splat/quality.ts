@@ -27,8 +27,30 @@
  */
 export const QUALITY_LEVELS = [0.4, 0.55, 0.7, 0.85, 1] as const;
 
-/** The level a player starts on, before anything has been measured. */
-export const DEFAULT_QUALITY_LEVEL = QUALITY_LEVELS.length - 1;
+/**
+ * The level a player starts on, before anything has been measured.
+ *
+ * The middle, and that is a change made on evidence rather than on taste.
+ *
+ * This used to be the top. The argument for the top was that a good machine should never be
+ * shown a soft image, and the note on `PANIC_FPS` even priced the alternative: "twenty seconds
+ * of a slideshow before the game is playable -- and the player has usually given up by then."
+ * That price was accepted for a hypothetical player. Then the one person who has actually
+ * played it reported the machine "卡的几乎很难玩" and an F3 line reading 6.9 fps, which is
+ * exactly the slideshow, and it is the only impression they formed of the game.
+ *
+ * Starting in the middle halves the worst case: two steps to the floor instead of four. On a
+ * capable machine it costs at most a second or two of a slightly softer image before the
+ * controller measures spare capacity and climbs, and 0.7x of a gaussian splat field is not
+ * meaningfully different from 1.0x -- the reconstruction is not text. The asymmetry is the
+ * whole argument: the fast machine pays a fraction of a second, and the slow machine is spared
+ * the twenty seconds that decide whether it is played at all.
+ *
+ * This cannot be validated on the machine it was written on, which renders an empty room at
+ * under two frames a second. What *is* verified is the shape: the worst-case descent is two
+ * steps, the ascent is unbounded, and neither depends on knowing the player's hardware.
+ */
+export const DEFAULT_QUALITY_LEVEL = Math.floor((QUALITY_LEVELS.length - 1) / 2);
 
 /**
  * The frame rate the controller aims to stay above, and the rate it treats as
@@ -52,11 +74,11 @@ export const STREAK_TO_CHANGE = 2;
 /**
  * The frame rate below which one level at a time is too slow to be worth waiting for.
  *
- * The controller starts at full resolution, and on a machine that cannot afford it
- * the honest cost of caution is the player's first half-minute. Two readings per
- * level over five levels, at one frame every two seconds, is twenty seconds of a
- * slideshow before the game is playable -- and the player has usually given up by
- * then.
+ * The controller starts in the middle (see `DEFAULT_QUALITY_LEVEL`), so on a machine that
+ * cannot afford even that the honest cost of caution is a few seconds rather than the
+ * half-minute it used to be. Two readings per level over the two levels below the start, at
+ * one frame every two seconds, is eight seconds of a slideshow instead of twenty -- still long
+ * enough to matter, which is why this exists at all.
  *
  * So a reading this far under target gives up two levels per change instead of one.
  * The debounce is unchanged: it still takes `STREAK_TO_CHANGE` consecutive readings,

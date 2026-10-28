@@ -1416,7 +1416,11 @@ try {
   );
 
   check(
-    'the top level is full resolution, so a fast machine is never charged',
+    // Named for what it asserts. The old name ended "so a fast machine is never charged",
+    // which stopped being true when the controller began starting mid-scale: a fast machine
+    // is charged a second or two of softness before it climbs. The top of the scale is still
+    // full resolution, and that is worth pinning -- it is what the climb can reach.
+    'the top of the scale is still full resolution, which is what the climb reaches',
     resolution.highest.ratio === 1,
     `top level ${resolution.highest.ratio}x`,
   );

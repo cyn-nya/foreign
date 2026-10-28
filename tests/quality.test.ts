@@ -7,9 +7,20 @@ function run(readings: (number | null)[], from: QualityState = initialQuality())
 }
 
 describe('adaptive render resolution', () => {
-  it('starts at full resolution, so a fast machine never pays for this', () => {
-    expect(pixelRatioForLevel(DEFAULT_QUALITY_LEVEL)).toBe(1);
+  it('starts in the middle, so the worst case is bounded', () => {
+    // This used to assert that it started at the top, and the assertion was the design
+    // talking. The design changed on evidence: the one real player's machine sat at the
+    // floor and their first twenty seconds were a slideshow, which is the only impression
+    // they formed. Starting mid-scale halves how long a slow machine is unplayable, and a
+    // fast machine climbs back within a reading or two.
     expect(initialQuality()).toEqual({ level: DEFAULT_QUALITY_LEVEL, streak: 0, changes: 0 });
+    // Neither extreme. At the top there is nothing to climb to; at the bottom the game
+    // would be blurry for a good machine with no way to prove otherwise.
+    expect(DEFAULT_QUALITY_LEVEL).toBeGreaterThan(0);
+    expect(DEFAULT_QUALITY_LEVEL).toBeLessThan(QUALITY_LEVELS.length - 1);
+    // The value of the change, stated as the property it buys: at most two steps of
+    // descent before the floor, which at two readings per step is seconds, not half a minute.
+    expect(DEFAULT_QUALITY_LEVEL).toBeLessThanOrEqual(2);
   });
 
   it('keeps the levels ordered and bounded, since pixelRatio is used as given', () => {
@@ -30,9 +41,16 @@ describe('adaptive render resolution', () => {
   it('does not react to one bad reading', () => {
     // A floor loading or a tab being refocused is not a reason to lose
     // resolution permanently, so a single slow reading must be absorbed.
-    const one = run([TARGET_LOW_FPS - 5, 60, 60]);
+    //
+    // Asserted as "the level did not fall" rather than "nothing changed at all": starting
+    // mid-scale means a run of comfortable readings legitimately climbs, and a test that
+    // forbade any movement was really re-asserting the old starting point.
+    const one = run([TARGET_LOW_FPS - 5]);
     expect(one.level).toBe(DEFAULT_QUALITY_LEVEL);
     expect(one.changes).toBe(0);
+    // Absorbed, not replaced: a good reading after it leaves the level at or above the start.
+    const after = run([TARGET_LOW_FPS - 5, 60, 60]);
+    expect(after.level).toBeGreaterThanOrEqual(DEFAULT_QUALITY_LEVEL);
   });
 
   it('climbs back up when the frame rate is comfortable', () => {
