@@ -6,7 +6,7 @@
 参赛作品，**Manycore Aholo Global 3D AI Hackathon**。
 
 **▶ 在线试玩：https://cyn-nya.github.io/foreign/** ——
-⚠️ **当前 404**：仓库是私有的，而私有仓库不能开 GitHub Pages（见文末「线上地址当前是 404」）。
+**线上地址已上线：<https://cyn-nya.github.io/foreign/>**（见文末「线上地址已经上线，但它教了同一课第三次」）。
 `gh-pages` 分支已部署且产物经验收通过，把仓库改为公开后再跑一次 `npm run deploy` 即可生效。
 在此之前请用本地运行：
 
@@ -426,7 +426,7 @@ npm run verify
 | `voxel:check` | 10 项，体素场与官方文件逐字节核对 |
 | `test` | 172 个单测：种子可复现、难度曲线、锚点合法性、判定与计分、自适应画质、帧率计数器、脚步节律、第 1 层的可发现性 |
 | `splat:check` | 5 项，splat 加载与拾取 |
-| `splat:shoot` | **82 项**，真实房间：默认入口、行走、碰撞对照、玩法闭环、注视者、音效、脚步、音乐床、冲锋、异常类型、家具/入侵者分野、自适应画质、通关与对照 |
+| `splat:shoot` | **84 项**，真实房间：默认入口、行走、碰撞对照、玩法闭环、注视者、音效、脚步、音乐床、冲锋、异常类型、家具/入侵者分野、自适应画质、通关与对照 |
 | `shoot` | 15 项，程序化房间：每个视角确实渲染出家具、每件家具都看得到 |
 | `assets:scale` | 55 个模型的**归一化后占地尺寸**。加载器按 `height / size.y` 等比缩放，所以「躺平」的模型会被放大到离谱的占地 —— 这一项是唯一会看这件事的检查 |
 | `demo:stills` | 10 张演示截图逐张做像素统计：一帧画面不能是一堵墙 |
@@ -559,44 +559,60 @@ scene.scale.setScalar(scale);
 画面高度 > 72 px、载荷必须是 `mundane_` 开头的家用物件。**这些都测的是玩家看到的东西，
 不是数据表里的声明。**
 
-### 线上地址当前是 404，原因是**两件**没人做过的事
+### 线上地址已经上线，但它教了同一课第三次
 
-**`https://cyn-nya.github.io/foreign/` 返回 404，而 `gh-pages` 分支本身是好的。**
-推送的树完整（`.nojekyll` / `assets/` / `index.html` / `classic.html`），
-`deploy:check` 对着同一份产物跑是 **7/7 全绿**。所以问题不在构建，在托管：
+**`https://cyn-nya.github.io/foreign/` 现在是 200。**
 
-    gh api repos/cyn-nya/foreign --jq '{private,has_pages}'
-    → {"private":true,"has_pages":false}
-
-    gh api repos/cyn-nya/foreign/pages
-    → Not Found (HTTP 404)
-
-**`has_pages: false` 是关键。** 它不只是「私有仓库不能开 Pages」——
-而是 **这个仓库从来没有开过 Pages**，一次都没有。所以有两个独立的前置条件，
-两个都得做，只做第一个仍然是 404：
+站点不是「部署上去的」，而是**两步手工操作**之后才存在的，而它们各自失败过一次：
 
 ```bash
-# 1. 让 Pages 有可能存在：私有仓库（免费计划）不能开 Pages
+# 1. 私有仓库（免费计划）不能开 Pages
 gh repo edit cyn-nya/foreign --visibility public --accept-visibility-change-consequences
+# → ✓ Edited repository
 
-# 2. 第一次发布必须手工开启一次。这一步不能用 npm run deploy 代替 ——
-#    推送 gh-pages 分支不会自动创建站点。
-gh api -X POST repos/cyn-nya/foreign/pages \
-  -f 'source[branch]=gh-pages' -f 'source[path]=/'
-
-npm run deploy          # 重新推送一次，触发第一次构建
-npm run deploy:check:live
+# 2. 第一次发布必须手工开启一次。推送 gh-pages 分支不会自动创建站点。
+gh api -X POST repos/cyn-nya/foreign/pages -f 'source[branch]=gh-pages' -f 'source[path]=/'
+# → 422 Invalid request. Invalid input: data matches no possible input.
 ```
 
-> 之所以把这一步单独写出来：`tools/deploy-ghpages.mjs` 每次运行都会在末尾打印
-> 「If this is the first publish, enable Pages once」以及上面那行 `gh api` 命令，
-> 但它只是**打印**，不做。而 `deploy:check:live` 之外没有任何检查能发现站点不存在 ——
-> `deploy:check` 验的是构建产物，构建产物从来就没有问题。这是本项目第二次
-> 遇到同一个形状的失效：**检查通过，而它检查的东西和真正起作用的东西不是一回事。**
+**第 2 步第一次是失败的，而失败的原因值得记下来。** `gh api -f` 发的是**扁平的
+表单编码**，撑不起 `source.branch` 这种嵌套对象；GitHub 需要真正的 JSON body。
+把 `-f` 换成 `--input` 加一段 JSON 就成了：
 
-改可见性是仓库所有者的决定，不是部署脚本能代劳的。在那之前，本地就是唯一能跑
-demo 的地方（`npm run dev`，需要联网取 63 MB 房间）。
-`deploy:check:live` 会一直红着，而**它是唯一能发现这件事的检查**。
+```bash
+printf '%s' '{"source":{"branch":"gh-pages","path":"/"}}'   | gh api -X POST repos/cyn-nya/foreign/pages --input -
+# → {"status":"building","html_url":"https://cyn-nya.github.io/foreign/"}
+```
+
+> 这一步之所以能拖到很晚才被发现：`deploy:check` 验的是构建产物，而构建产物从来就没有
+> 问题 —— 它 **7/7 全绿**，同时线上是 404。`deploy:check:live` 是唯一能发现这件事的检查，
+> 而它需要站点先存在。**这是本项目第三次遇到同一个形状：检查通过，而它检查的东西和真正
+> 起作用的东西不是一回事**（前两次是「文件存在 = 已生成」和 `height` 字段）。
+
+### 线上站点是对的，但 `deploy:check:live` 在本机会红——因为这台机器的带宽
+
+站点上线后 `deploy:check:live` 报 `0 loaded, 55 missing`，同时 **`no request 404s`**。
+这两条互相矛盾，而这个矛盾就是答案：页面没有下载成功任何资产，却没有任何请求 404 ——
+路径是对的，**下载根本没跑完**。
+
+    curl -o /dev/null -w '%{http_code} %{size_download}B in %{time_total}s'       https://cyn-nya.github.io/foreign/assets/foreign/mundane_floor_lamp.glb
+    → 200 2781100B in 90.009s        # 90 秒是 --max-time，是被截断的
+    → 约 31 KB/s
+
+单个约 2.8 MB 的 GLB 在这台机器上**九十秒都下不完**。全部 55 个、254 MB，按这个速度
+要两个多小时。两次运行的计数还不同（1 然后 0），这正是超时的形状而不是路径错误。
+直接抓文件可以证明站点是对的：
+
+    assets/foreign/mundane_floor_lamp.glb → 200, 884736 B
+    assets/foreign/anomaly_mirror.glb     → 200, 867073 B
+    线上 index.html 引用 assets/index-DThro4s-.js，与本地完全一致
+
+> **这暴露了一个真实的交付风险，而且是关于玩家的不是一个关于检查的。**
+> 游戏在启动时一次性加载全部 55 个模型（`main.ts` 的 `room.loadAssets(ASSET_KEYS)`），
+> 也就是 **254 MB 才能开始玩**。缺资产时游戏会退回烘焙占位模型、不会崩，所以
+> 「先加载第一层需要的、其余后台流式加载」在机制上已经可行 —— 但那会改变 `ready`
+> 的含义，`deploy:check` 的「55 loaded」也要跟着改。这件事被留在这里而不是在
+> 最后一轮做，因为它需要重跑全部实机验收。
 
 > 不用 GitHub Actions 是因为 GitHub 不允许 OAuth app 在没有 `workflow`
 > scope 的情况下推送 `.github/workflows/`。若要改用 Actions，见
