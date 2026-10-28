@@ -1002,7 +1002,45 @@ try {
       `louder near (per-pair ${sound.spread} — reported, not gated)`,
   );
 
-  /* ------------------------------------------------------- footsteps ------ */
+  /* ------------------------------- floor one ------------------------------- */
+
+  // The only complaint that has come back from a real player, twice: "I walked the whole
+  // first floor and found nothing suspicious."
+  //
+  // Everything upstream of this already passes. The asset exists and is 4 MB. A scale check
+  // reads its POSITION bounds and finds 1.50 m of geometry against a claimed 1.59 m. The
+  // generator puts it 1.65 m from the way in, floating, at 340-530 px tall on a 720p frame.
+  // So none of the explanations about size, units or placement survive measurement, and the
+  // only one left is that it is not in the room at all.
+  //
+  // This stands exactly where the player starts, does not walk, aims at the anomaly, and asks
+  // the crosshair what is there. If the answer is not the anomaly, the first floor cannot be
+  // taught, because there is nothing on it to teach with.
+  const firstFloor = await page.evaluate(async () => {
+    const s = window.__splat;
+    // The same seed the game uses for floor one: `seed ?? floor * 7919`.
+    await s.start(1, 7919, false);
+    s.renderOnce();
+    const placed = s.placed;
+    const aimed = s.aimAt(0);
+    s.renderOnce();
+    const marked = s.crosshair();
+    return {
+      placed,
+      aimed,
+      marked,
+      bystanders: s.bystanderCount,
+      anomalies: s.anomalyCount,
+    };
+  });
+  check(
+    'floor one puts its anomaly where a player is already standing',
+    firstFloor.aimed !== null && firstFloor.marked === firstFloor.aimed,
+    `from the way in, without walking: aimed at ${firstFloor.aimed}, crosshair says ` +
+      `${firstFloor.marked} (${firstFloor.anomalies} anomalies, ${firstFloor.bystanders} bystanders ` +
+      `placed in a room of ${firstFloor.placed})`,
+  );
+
 
   // A footstep is a distance, not a timer, and the half of that worth gating is the half a
   // timer gets wrong: a player standing still must make no sound. Both halves are checked
