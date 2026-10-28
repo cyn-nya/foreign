@@ -315,13 +315,17 @@ def build():
          "先猜瓶颈在 CPU 排序 —— 方法不可靠。改用每档 90 秒重测：重建占 99%，"
          "分辨率 0.40x 省 29%。但同一套方法又报了四个「有效旋钮」，重跑全部落空"
          "（基线自己漂了 60%）；工具这次拒绝出结论，四个都没进代码。"),
+        ("开局那二十秒也是性能问题",
+         "画质控制器原本从满分辨率起步，注释自己写着代价是「二十秒的幻灯片」。"
+         "唯一玩过的人报的正是这个。改成从中间档起步：最坏下降从四步减到两步，"
+         "快机器一两秒内爬回去。"),
     ]):
-        # Five rows now, so the rhythm tightens. The slide is 7.5 in tall and the block has to
-        # end above it -- at the old 0.80 in pitch the fifth row landed at 7.64.
-        by = Inches(3.18) + Inches(i * 0.76)
-        panel(s, MARGIN, by, Inches(7.3), Inches(0.70))
-        text(s, MARGIN + Inches(0.22), by + Inches(0.06), Inches(6.9), Inches(0.60),
-             [(t, {"size": 11.5, "bold": True, "space": 2}), (d, {"size": 9.5, "color": DIM})], space=0)
+        # Six rows, and the block has to end above 7.5 in. At the original 0.80 in pitch the
+        # sixth landed at 8.3; this pitch puts the last panel's bottom edge at 7.22.
+        by = Inches(3.06) + Inches(i * 0.68)
+        panel(s, MARGIN, by, Inches(7.3), Inches(0.62))
+        text(s, MARGIN + Inches(0.22), by + Inches(0.04), Inches(6.9), Inches(0.56),
+             [(t, {"size": 11, "bold": True, "space": 1}), (d, {"size": 9, "color": DIM})], space=0)
     panel(s, Inches(8.4), Inches(2.5), Inches(4.2), Inches(3.6), RGBColor(0x1C, 0x12, 0x12))
     text(s, Inches(8.65), Inches(2.66), Inches(3.75), Inches(3.35),
          [("实测抓到的真 bug", {"size": 14, "bold": True, "color": ACCENT, "space": 5}),
