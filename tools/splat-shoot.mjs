@@ -1537,7 +1537,15 @@ try {
     // finding: the guard inside `showMenu` and the accessor the check reads must agree.
     const softwareBefore = s.softwareRenderer();
     const state = s.toMenu();
-    await new Promise((r) => setTimeout(r, 250));
+    // Poll for the panel instead of sleeping 250 ms. `showMenu` writes the DOM, and a fixed
+    // wait is a bet on how long that takes -- a bet this machine loses whenever a frame runs
+    // long, which is most of them. It lost here: `panels=0` with `state=menu`, so the check
+    // read an empty document and reported a missing warning that the build had already
+    // written. Fourth check in this file to fail on its own timing rather than on the game.
+    const deadline = performance.now() + 8_000;
+    while (!document.querySelector('.panel') && performance.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
     const panel = document.querySelector('.panel');
     const text = panel?.textContent ?? '';
     const renderer = s.rendererName() ?? '';
@@ -1549,6 +1557,7 @@ try {
       hasWarning: text.includes('软件渲染'),
       namesRenderer: renderer !== '' && text.includes(renderer),
       panels: document.querySelectorAll('.panel').length,
+      waitedMs: performance.now() - (deadline - 8_000),
       text: text.replace(/\s+/g, ' ').slice(0, 400),
     };
   });
@@ -1556,7 +1565,8 @@ try {
     'the menu names software rendering as the reason it is slow',
     menu.state === 'menu' && menu.software && menu.hasWarning,
     `state=${menu.state} software=${menu.software} (before=${menu.softwareBefore}) ` +
-      `warned=${menu.hasWarning} panels=${menu.panels} renderer=${menu.renderer}`,
+      `warned=${menu.hasWarning} panels=${menu.panels} waited=${Math.round(menu.waitedMs)}ms ` +
+      `renderer=${menu.renderer}`,
   );
   check(
     'and the warning names the actual renderer, so it can be acted on',

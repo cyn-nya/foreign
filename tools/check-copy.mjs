@@ -343,6 +343,14 @@ check(
         // because a guard that cries wolf gets switched off.
         const after = line.slice(m.index + m[0].length, m.index + m[0].length + 12);
         if (/^\s*(per|每|\/)/i.test(after)) continue;
+        // A before-and-after is a comparison, not a claim about the size now. "254.5 MB →
+        // 111.5 MB" names the old figure on the left, and it has to be sayable -- the whole
+        // point of recording that the assets were shrunk is the two numbers. Carved out the
+        // same way a rate is, and for the same reason the rule above gives: a guard that cries
+        // wolf gets switched off. Nothing is lost, because the number on the right is the
+        // current one and is checked on its own.
+        const transition = line.slice(m.index + m[0].length, m.index + m[0].length + 10);
+        if (/^\s*(→|->|=>|缩到|降到|减到|变为|变到)/.test(transition)) continue;
         const subject = SUBJECTS.find((s) => s.bytes && s.re.test(line));
         if (!subject) continue;
         checkedMb++;
