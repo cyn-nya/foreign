@@ -48,7 +48,42 @@ const BASE = `${import.meta.env.BASE_URL ?? '/'}assets/foreign/`;
  * floors run through a serial chain, the whole game stops between two of them with no
  * error shown.
  */
-const ASSET_TIMEOUT_MS = 20_000;
+const ASSET_TIMEOUT_MS = 180_000;
+
+/**
+ * How many assets may be in flight at once.
+ *
+ * They used to all start together, and on a slow link that is worse than slow -- it is a total
+ * failure. 55 parallel requests share one connection's bandwidth, so each of them crawls, and a
+ * per-asset deadline then expires on nearly all of them at the same time. The result was not a
+ * long load: it was a menu reporting 53 of 55 assets missing and a room full of placeholder
+ * boxes, because the deadline was measuring how much of the pipe this asset got rather than
+ * whether the server was alive.
+ *
+ * Six at a time gives each request a real share of the pipe, so the deadline means what it was
+ * always supposed to mean: the server went quiet.
+ */
+const ASSET_CONCURRENCY = 6;
+
+/**
+ * Run `run` over `items`, at most `limit` at a time.
+ *
+ * A fixed pool of workers pulling from a shared index, so a slow item delays one worker rather
+ * than the whole queue.
+ */
+async function pooled<T>(
+  items: readonly T[],
+  limit: number,
+  run: (item: T) => Promise<void>,
+): Promise<void> {
+  let next = 0;
+  const workers = Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, async () => {
+    for (let index = next++; index < items.length; index = next++) {
+      await run(items[index] as T);
+    }
+  });
+  await Promise.all(workers);
+}
 
 /** The caller's signal, plus a deadline. Either one aborts. */
 function withTimeout(signal?: AbortSignal): AbortSignal {
@@ -224,30 +259,28 @@ export class SplatRoom {
     // fetch does not return), so the fix has to come with a timeout on the fetch
     // itself rather than by removing the guard.
     const wanted = [...new Set(keys)].filter((key) => !this.bytes.has(key) && !this.missing.has(key));
-    await Promise.all(
-      wanted.map(async (key) => {
-        try {
-          const response = await fetch(`${BASE}${key}.glb`, { signal: withTimeout(signal) });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const buffer = await response.arrayBuffer();
-          // `ok` is not enough. A static host answers 200 with the app's own
-          // `index.html` for any path it does not have, so a missing asset arrives as
-          // a perfectly successful response containing a web page. That page was then
-          // handed to the model loader, which tried to parse it as a glTF header and
-          // threw -- killing the whole session, on a floor the player could otherwise
-          // have played, because one file was absent.
-          //
-          // A GLB starts with the ASCII magic `glTF`. Anything else is not one, and
-          // the honest response is the same as a 404: report it and fall back.
-          if (!hasGlbMagic(buffer)) throw new Error('not a GLB (served as a fallback page)');
-          this.bytes.set(key, buffer);
-        } catch {
-          // A missing asset is reported and skipped; the rest of the floor still
-          // has to be playable, so this must never reject.
-          this.missing.add(key);
-        }
-      }),
-    );
+    await pooled(wanted, ASSET_CONCURRENCY, async (key) => {
+      try {
+        const response = await fetch(`${BASE}${key}.glb`, { signal: withTimeout(signal) });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const buffer = await response.arrayBuffer();
+        // `ok` is not enough. A static host answers 200 with the app's own
+        // `index.html` for any path it does not have, so a missing asset arrives as
+        // a perfectly successful response containing a web page. That page was then
+        // handed to the model loader, which tried to parse it as a glTF header and
+        // threw -- killing the whole session, on a floor the player could otherwise
+        // have played, because one file was absent.
+        //
+        // A GLB starts with the ASCII magic `glTF`. Anything else is not one, and
+        // the honest response is the same as a 404: report it and fall back.
+        if (!hasGlbMagic(buffer)) throw new Error('not a GLB (served as a fallback page)');
+        this.bytes.set(key, buffer);
+      } catch {
+        // A missing asset is reported and skipped; the rest of the floor still
+        // has to be playable, so this must never reject.
+        this.missing.add(key);
+      }
+    });
     return this.report;
   }
 
