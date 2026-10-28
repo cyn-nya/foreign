@@ -278,6 +278,18 @@ try {
     const started = { state: s.state, marks: s.marksLeft, bystanders: s.bystanderCount };
     const before = s.scareCount();
     const audioBefore = s.audioScares();
+    // Whether the torch was lit *before* the fright is not a detail -- it is the precondition
+    // that decides whether restoring it is even the right behaviour. The blackout puts the
+    // torch out and restores it only if it was on to begin with, so a check that assumes it was
+    // on is asserting about the state an earlier check happened to leave behind. That is how
+    // this failed once: `torch after=false` on a build where nothing was wrong.
+    //
+    // Established here rather than excused. Forcing it on makes the assertion below
+    // unconditional, so a blackout that never restores is still caught -- which is the whole
+    // point, because a fright that leaves the player in the dark for the rest of the run is the
+    // worst failure this game can have.
+    s.setTorch(true);
+    const torchBefore = s.torchOn();
     await s.aimAtBystander(0);
     const report = s.mark();
     const during = {
@@ -316,6 +328,7 @@ try {
       after: s.scareFaceShowing(),
       clearMs: performance.now() - clearStarted,
       afterTorch: s.torchOn(),
+      torchBefore,
     };
   });
   check(
@@ -336,12 +349,14 @@ try {
   );
   check(
     'a fright that takes the torch gives it back',
-    // The blackout fright turns the torch off and only restores it after its own
-    // hold. A fright that forgot to restore would leave the player in the dark
-    // for the rest of the run, which is the worst failure this game can have.
-    fright.afterTorch === true &&
+    // The blackout turns the torch off and only restores it after its own hold, so a fright
+    // that forgot would leave the player in the dark for the rest of the run -- the worst
+    // failure this game can have. That is the invariant, and the torch is forced on above so
+    // this is asserted rather than excused.
+    fright.torchBefore === true &&
+      fright.afterTorch === true &&
       (fright.during.kind !== 'blackout' || fright.during.torch === false),
-    `kind=${fright.during.kind} torch during=${fright.during.torch} after=${fright.afterTorch}`,
+    `kind=${fright.during.kind} torch before=${fright.torchBefore} during=${fright.during.torch} after=${fright.afterTorch}`,
   );
   check(
     'the fright makes a sound',
@@ -1697,7 +1712,15 @@ try {
     const before = s.charges().defused;
     // A click anywhere is the answer -- the thing fills the screen and the player is
     // being rushed, so hitting a pixel is not the skill being tested.
-    document.querySelector('canvas')?.click();
+    //
+    // Aimed at the element the listener is actually on. This clicked
+    // `document.querySelector('canvas')`, which is the *first* canvas in the document and not
+    // necessarily the viewer's -- the page has several. Whether the click then bubbled to the
+    // listener depended on DOM order, so the check failed intermittently for a reason that had
+    // nothing to do with the charge. This project has already been bitten by exactly this: a
+    // resolution check read the first canvas and could not tell "the renderer ignored the
+    // setting" from "the check read the wrong element".
+    document.getElementById('view')?.click();
     await new Promise((r) => setTimeout(r, 120));
     return {
       live,

@@ -1,5 +1,5 @@
 {
-  "url": "http://127.0.0.1:7458",
+  "url": "http://127.0.0.1:9521",
   "views": [
     {
       "name": "01-hall-into-apartment",
@@ -52,11 +52,11 @@
       "name": "05-bedroom",
       "raysHit": "45/45",
       "seen": [
-        "upper_cabinet",
-        "counter",
-        "fridge",
-        "stove",
-        "kettle"
+        "wardrobe",
+        "bed",
+        "nightstand",
+        "desk_chair",
+        "mirror"
       ]
     },
     {
@@ -100,7 +100,7 @@
     {
       "name": "05-bedroom: renders a furnished view",
       "ok": true,
-      "detail": "rays 45/45, 5 distinct props: upper_cabinet, counter, fridge, stove, kettle"
+      "detail": "rays 45/45, 5 distinct props: wardrobe, bed, nightstand, desk_chair, mirror"
     },
     {
       "name": "06-hall-and-entry: renders a furnished view",
@@ -120,12 +120,12 @@
     {
       "name": "a wrong mark costs time and does not score",
       "ok": true,
-      "detail": "score 0 -> 0, time 229.3 -> 221.2"
+      "detail": "score 0 -> 0, time 233.1 -> 225.0"
     },
     {
       "name": "marking the anomaly scores and clears the floor",
       "ok": true,
-      "detail": "state=floorClear score=1076 found=1"
+      "detail": "state=floorClear score=1088 found=1"
     },
     {
       "name": "a wrong mark spends exactly one of the limited marks",
