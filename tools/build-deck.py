@@ -308,15 +308,20 @@ def build():
         ("静默失效比崩溃更危险",
          "「文件存在 = 已生成」让整个 Lux3D 环节变成空操作，且不报错。"
          "现在由来源记录判定，并配一条「真资产必须被跳过」的反向断言。"),
+        ("同一症状出现两次，就该去量而不是再猜",
+         "玩家两遍都说「第一关走完了没找到东西」。四个假设全被测量否掉，最后指向 height："
+         "渲染器当它是缩放目标所以永远对，过滤器却当它是真实尺寸。"),
         ("性能也要被量，而且量错了两次",
          "先猜瓶颈在 CPU 排序 —— 方法不可靠。改用每档 90 秒重测：重建占 99%，"
          "分辨率 0.40x 省 29%。但同一套方法又报了四个「有效旋钮」，重跑全部落空"
          "（基线自己漂了 60%）；工具这次拒绝出结论，四个都没进代码。"),
     ]):
-        by = Inches(3.72) + Inches(i * 0.80)
-        panel(s, MARGIN, by, Inches(7.3), Inches(0.72))
-        text(s, MARGIN + Inches(0.22), by + Inches(0.08), Inches(6.9), Inches(0.6),
-             [(t, {"size": 12, "bold": True, "space": 2}), (d, {"size": 10, "color": DIM})], space=0)
+        # Five rows now, so the rhythm tightens. The slide is 7.5 in tall and the block has to
+        # end above it -- at the old 0.80 in pitch the fifth row landed at 7.64.
+        by = Inches(3.18) + Inches(i * 0.76)
+        panel(s, MARGIN, by, Inches(7.3), Inches(0.70))
+        text(s, MARGIN + Inches(0.22), by + Inches(0.06), Inches(6.9), Inches(0.60),
+             [(t, {"size": 11.5, "bold": True, "space": 2}), (d, {"size": 9.5, "color": DIM})], space=0)
     panel(s, Inches(8.4), Inches(2.5), Inches(4.2), Inches(3.6), RGBColor(0x1C, 0x12, 0x12))
     text(s, Inches(8.65), Inches(2.66), Inches(3.75), Inches(3.35),
          [("实测抓到的真 bug", {"size": 14, "bold": True, "color": ACCENT, "space": 5}),
