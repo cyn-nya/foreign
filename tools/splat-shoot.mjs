@@ -191,6 +191,14 @@ try {
 
   // --- the game loop, in the real room --------------------------------------
   await page.evaluate(() => window.__splat.start(1));
+  // The catalogue preload is started, not awaited, so the game is playable before it finishes.
+  // Wait for `settled` rather than reading `missing` straight away: `missing` means "failed" and
+  // reads as empty whether the preload has finished or has not begun, so asserting on it here
+  // would pass while nothing had been attempted -- a check that cannot fail.
+  const settled = await page
+    .waitForFunction(() => window.__splat.assets.settled, null, { timeout: 300_000 })
+    .then(() => true)
+    .catch(() => false);
   const floorStart = await page.evaluate(() => {
     const s = window.__splat;
     return {
@@ -201,8 +209,14 @@ try {
       marks: s.marksLeft,
       loaded: s.assets.loaded,
       missing: s.assets.missing,
+      settled: s.assets.settled,
     };
   });
+  check(
+    'the catalogue preload finishes, so a missing asset means missing',
+    settled && floorStart.settled,
+    `settled=${floorStart.settled} loaded=${floorStart.loaded} missing=${floorStart.missing.length}`,
+  );
   check(
     'floor 1 puts a foreign object in the reconstructed room',
     floorStart.state === 'playing' && floorStart.placed >= 1 && floorStart.anomalies >= 1,

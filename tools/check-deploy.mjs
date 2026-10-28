@@ -154,6 +154,12 @@ try {
     timeout: 60_000,
   });
   await page.waitForFunction(() => window.__splat && window.__splat.ready, null, { timeout: 240_000 });
+  // The catalogue preload is started, not awaited, so the game is playable before it finishes.
+  // `missing` means "failed" and would read as empty either way, so the wait is on `settled`:
+  // without it this check passes while nothing has been attempted, which is the shape of a
+  // check that cannot fail. The timeout is generous because the point of this assertion is the
+  // slow connection, and a slow connection is exactly where it must still be able to conclude.
+  await page.waitForFunction(() => window.__splat.assets.settled, null, { timeout: 300_000 });
   state = await page.evaluate(() => {
     const s = window.__splat;
     return {

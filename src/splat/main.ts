@@ -104,7 +104,14 @@ interface SplatDebug {
   /** How many objects are actually in the room this floor. */
   placed: number;
   anchorCount: number;
-  assets: { loaded: number; missing: string[] };
+  /**
+   * Catalogue preload state.
+   *
+   * `missing` is failures, not "not yet tried". `settled` says the preload has finished, so a
+   * harness can tell "nothing failed" from "nothing has been attempted yet" -- which are the
+   * same reading otherwise, and only one of them is good news.
+   */
+  assets: { loaded: number; missing: string[]; settled: boolean };
   player: {
     x: number;
     y: number;
@@ -298,7 +305,7 @@ const debug: SplatDebug = {
   anomalyCount: 0,
   placed: 0,
   anchorCount: ROOM_ANCHORS.length,
-  assets: { loaded: 0, missing: [] },
+  assets: { loaded: 0, missing: [], settled: false },
   player: { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, speed: 0, locked: false },
   frames: 0,
   setKey: () => undefined,
@@ -1229,20 +1236,26 @@ async function main(): Promise<void> {
   player.respawn();
 
   // Preload every asset a floor could ask for, so a floor never stalls halfway.
+  //
+  // Started, not awaited. Every floor awaits its own keys in `startFloor` before it builds
+  // anything, so this preload is a warm-up and never a prerequisite -- and awaiting it here put
+  // all 111 MB between a judge and the first frame. On a slow connection that is not a slow
+  // start; it is a progress bar that reads as a hang, and the fixing of the asset timeout made
+  // it a *successful* 111 MB wait rather than a failed one.
+  //
+  // `settled` is what makes this safe to assert on. `missing` means "failed"; it never meant
+  // "not yet asked for", and a harness that reads it while the preload is still running would
+  // otherwise see an empty list and conclude everything is fine, or a partial one and conclude
+  // the opposite. Both checks wait for `settled` now.
   debug.stage = 'assets';
   showProgress(1, '载入异物');
-  const report = await room.loadAssets(ASSET_KEYS);
-  debug.assets = { loaded: report.loaded.length, missing: report.missing };
-
-  // Neither `ready` nor `stage === 'ready'` is announced here — both mean "a
-  // harness can drive the game now", and it cannot yet. `debug.start`,
-  // `debug.watchers` and `debug.anchors` are still the stubs declared with the
-  // debug object, so a check that waits on `ready` and then calls `s.start(...)`
-  // gets a function that quietly does nothing and reads back the empty room from
-  // before the first floor was built. Both flags are set at the end of the boot.
-  const assetLine = report.missing.length
-    ? `未检测到 ${report.missing.length} 个资产的 Lux3D 原模型 · 正在使用烘焙占位模型`
-    : `已载入 ${report.loaded.length} 个异物模型`;
+  let assetLine = '正在载入异物模型…';
+  void room.loadAssets(ASSET_KEYS).then((report) => {
+    debug.assets = { loaded: report.loaded.length, missing: report.missing, settled: true };
+    assetLine = report.missing.length
+      ? `未检测到 ${report.missing.length} 个资产的 Lux3D 原模型 · 正在使用烘焙占位模型`
+      : `已载入 ${report.loaded.length} 个异物模型`;
+  });
 
   /**
    * The current floor's plan.
