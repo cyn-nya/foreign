@@ -288,9 +288,24 @@ try {
     };
     // Frights are not all the same length any more: a blackout holds for 620 ms
     // and takes the torch with it, so waiting 600 ms -- which is what this did
-    // when a flash was the only fright -- left it on screen and failed. Wait past
-    // the longest fright there is.
-    await new Promise((r) => setTimeout(r, 950));
+    // when a flash was the only fright -- left it on screen and failed.
+    //
+    // A fixed wait is still the wrong shape, and this run proved it: the clear is a
+    // `setTimeout`, and a timeout is only as punctual as the thread it runs on. This machine
+    // spends 1.4-2.0 s inside a single frame, so the 620 ms timer fires *after* the frame that
+    // was already in flight and a 950 ms sleep reports the face still showing on a build where
+    // it clears correctly. That is a false failure, and one that only appears on slow machines
+    // -- the same "measured the renderer, not the game" mistake this suite has made before.
+    //
+    // So poll to a bound instead. The bound is six seconds, an order of magnitude past the
+    // longest fright, which keeps the check able to fail: a fright that is never taken away
+    // still trips it. How long it actually took is reported, so a slow machine is visible in
+    // the output rather than silently absorbed.
+    const clearStarted = performance.now();
+    const clearDeadline = clearStarted + 6_000;
+    while (s.scareFaceShowing() && performance.now() < clearDeadline) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
     return {
       started,
       before,
@@ -299,6 +314,7 @@ try {
       result: report.result,
       during,
       after: s.scareFaceShowing(),
+      clearMs: performance.now() - clearStarted,
       afterTorch: s.torchOn(),
     };
   });
@@ -316,7 +332,7 @@ try {
   check(
     'the fright is taken away again rather than left on screen',
     fright.after === false,
-    `face showing 950ms after a ${fright.during.kind} = ${fright.after}`,
+    `face showing ${Math.round(fright.clearMs)}ms after a ${fright.during.kind} = ${fright.after}`,
   );
   check(
     'a fright that takes the torch gives it back',
@@ -1602,6 +1618,73 @@ try {
     'resuming restarts the clock',
     thawed.state === 'playing' && thawed.spent.after < thawed.spent.before - 9,
     `${thawed.state} ${thawed.spent.before.toFixed(2)} -> ${thawed.spent.after.toFixed(2)} over 10 s of resumed play`,
+  );
+
+  // A refused pointer lock must not look like a broken game.
+  //
+  // Chrome rejects `requestPointerLock()` for about a second after `exitPointerLock()`, and Esc
+  // is the only way out of the lock here -- so Esc then "回到游戏" lands in that window and is
+  // dropped with no visible error. The player is left with a running game, a loose cursor, and
+  // no camera control, which is what the one person who played this described. The recovery
+  // (clicking the view re-requests the lock) already existed; what did not was any indication
+  // that recovery was needed.
+  //
+  // Simulated by firing the event the browser fires, because the cooldown cannot be provoked
+  // on demand. That tests the wiring rather than Chrome, which is the part that was missing:
+  // the handler is the only thing that knows the lock is not held.
+  //
+  // Read synchronously, with no sleep. Dispatching an event runs its listeners inline, so the
+  // result is deterministic -- and it has to be, because this check raced a real lock
+  // acquisition twice: an earlier resume's `requestLock()` can succeed once Chrome's cooldown
+  // expires, and the `pointerlockchange` that follows hides the prompt. Both runs failed on the
+  // race rather than on the game, in opposite directions. A wait here measures the browser's
+  // timing; no wait measures the handler.
+  const lockFailed = await page.evaluate(() => {
+    const s = window.__splat;
+    const prompt = document.getElementById('look-prompt');
+    const read = () => ({
+      hidden: prompt?.classList.contains('hidden') ?? null,
+      state: s.state,
+      locked: document.pointerLockElement !== null,
+    });
+    document.dispatchEvent(new Event('pointerlockerror'));
+    return { after: read() };
+  });
+  check(
+    'a refused mouse capture is announced rather than silently broken',
+    // The contract, not a transition: with the mouse loose and the game running the prompt is
+    // shown. Asserted this way so a concurrent real lock event cannot invert it -- if the lock
+    // was genuinely re-acquired, hidden is the correct answer and the check says so.
+    lockFailed.after.locked || lockFailed.after.state !== 'playing'
+      ? lockFailed.after.hidden === true
+      : lockFailed.after.hidden === false,
+    `state=${lockFailed.after.state} locked=${lockFailed.after.locked} prompt hidden=${lockFailed.after.hidden}`,
+  );
+  // And it must not survive on top of the pause screen. The lock-change handler shows the
+  // prompt *before* it decides to pause, so this is the ordering that a single entry point
+  // would have hidden -- and the failure mode is a "click to look" bubble sitting over the
+  // menu, telling the player to do the thing the menu is already offering.
+  const promptOverMenu = await page.evaluate(() => {
+    const s = window.__splat;
+    const prompt = document.getElementById('look-prompt');
+    document.dispatchEvent(new Event('pointerlockchange'));
+    return {
+      hidden: prompt?.classList.contains('hidden') ?? null,
+      state: s.state,
+      locked: document.pointerLockElement !== null,
+    };
+  });
+  check(
+    'the prompt does not sit on top of the pause screen',
+    // The contract, written out rather than sampled: the prompt is hidden exactly when the
+    // mouse is captured or the game is not running. The first version of this asserted the
+    // single branch "not playing implies hidden" and fired on a run where the lock happened to
+    // be *held*, which is a state the check never considered -- the assertion was wrong, not
+    // the code, and it would have failed identically on a perfect build.
+    promptOverMenu.locked || promptOverMenu.state !== 'playing'
+      ? promptOverMenu.hidden === true
+      : promptOverMenu.hidden === false,
+    `state=${promptOverMenu.state} locked=${promptOverMenu.locked} prompt hidden=${promptOverMenu.hidden}`,
   );
 
   /* --------------------------------------------------------- the charge --- */

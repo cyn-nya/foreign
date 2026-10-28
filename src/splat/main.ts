@@ -259,7 +259,26 @@ const el = {
   marks: document.getElementById('hud-marks') as HTMLElement,
   toast: document.getElementById('hud-toast') as HTMLElement,
   perf: document.getElementById('hud-perf') as HTMLElement,
+  lookPrompt: document.getElementById('look-prompt') as HTMLElement,
 };
+
+/**
+ * Say so when the game is running but the mouse is not captured.
+ *
+ * A running game with a loose cursor is indistinguishable from a broken one, and the state is
+ * reachable through ordinary play: Chrome rejects `requestPointerLock()` for about a second
+ * after `exitPointerLock()`, and Esc is the only way out of the lock here, so Esc followed
+ * promptly by "回到游戏" is dropped silently. That is not a hypothetical -- it is the exact
+ * sequence the one person who played this reported, in the words "鼠标就没办法再隐藏回去控制
+ * 视角了".
+ *
+ * The recovery already existed (clicking the view re-requests the lock) but nothing announced
+ * it, so the player had to guess. This is the announcement.
+ */
+function syncLookPrompt(locked: boolean): void {
+  if (!el.lookPrompt) return;
+  el.lookPrompt.classList.toggle('hidden', locked || debug.state !== 'playing');
+}
 
 const debug: SplatDebug = {
   ready: false,
@@ -1338,6 +1357,12 @@ async function main(): Promise<void> {
     if (debug.state !== 'playing') return;
     debug.state = 'paused';
     player.releaseLock();
+    // The pause overlay owns the screen now, so the "click to look" prompt must go even though
+    // the mouse is still loose. Without this the prompt survives into the pause screen, because
+    // the lock-change handler shows it *before* calling this -- the ordering that a single
+    // entry point would have hidden. The honest argument is passed and the state check is what
+    // hides it, so this stays correct if the ordering ever changes.
+    syncLookPrompt(player.isLocked);
     showPause({
       onResume: resumeFromPause,
       onMenu: () => {
@@ -1369,6 +1394,10 @@ async function main(): Promise<void> {
   function resumeFromPause(): void {
     if (debug.state === 'paused') debug.state = 'playing';
     player.requestLock();
+    // Not awaited, because there is nothing to await: `requestLock` resolves when the browser
+    // answers, and the answer arrives as one of the two events above. This call only covers
+    // the case where the lock was *already* held, in which case no event fires at all.
+    syncLookPrompt(player.isLocked);
     hidePanel();
   }
 
@@ -1604,7 +1633,30 @@ async function main(): Promise<void> {
    * deliver a keydown. So the pause is driven by the lock being lost, which is the
    * event that always arrives and always means the same thing.
    */
+  /**
+   * The other half, and the one that actually carries the user's complaint.
+   *
+   * A *refused* `requestPointerLock()` does not fire `pointerlockchange` -- it fires this. So
+   * listening only for the change event would show the prompt on exactly the paths that
+   * already work and stay silent on the one that does not. Found by asking which event the
+   * failure produces rather than assuming the success event has a failure twin.
+   *
+   * It re-reads `document.pointerLockElement` rather than asserting "no lock". The event means
+   * "that request was refused", which is not the same as "no lock is held" -- a request can be
+   * refused while a lock from an earlier one is already in place, and passing `false` there put
+   * a "click to look" bubble over a game whose mouse was captured. The acceptance check caught
+   * exactly that, with `locked=true prompt hidden=false`. The event is the trigger; the
+   * document is the truth.
+   */
+  document.addEventListener('pointerlockerror', () => {
+    syncLookPrompt(document.pointerLockElement !== null);
+  });
+
   document.addEventListener('pointerlockchange', () => {
+    // Fires on both edges, so it is also where the "click to look" prompt is kept honest: a
+    // request that Chrome refused produces no `pointerlockchange` at all, but it does leave
+    // this handler as the only thing that knows the lock is not held.
+    syncLookPrompt(document.pointerLockElement !== null);
     if (document.pointerLockElement) return;
     if (debug.state !== 'playing') return;
     pauseGame();

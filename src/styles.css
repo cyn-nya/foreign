@@ -107,6 +107,28 @@ html, body {
 .toast.bad { color: var(--warn); }
 .toast.info { color: var(--gold); }
 
+/* The pointer lock can fail, and it does so silently.
+   Chrome refuses `requestPointerLock()` for roughly a second after `exitPointerLock()`, and
+   the only way out of the lock in this game is Esc. So the sequence a player actually performs
+   -- Esc, then click "回到游戏" -- can land inside that window, and the request is dropped
+   without an error the player can see. The result is a running game with a visible cursor and
+   no camera control, which reads as "the game is broken" rather than "click once more".
+   Clicking the view already re-requests the lock; this makes that recovery visible instead of
+   leaving the player to guess it. */
+.look-prompt {
+  position: absolute; left: 50%; top: calc(50% + 64px);
+  transform: translateX(-50%);
+  padding: 7px 16px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: rgba(5, 7, 10, 0.72);
+  font-size: 13px; letter-spacing: 0.06em;
+  color: var(--fg);
+  white-space: nowrap;
+  animation: breathe 2.2s ease-in-out infinite;
+}
+@keyframes breathe { 50% { opacity: 0.55; } }
+
 /* Remaining wrong-mark budget. Turns red on the last one so the cost of a
    careless click is visible before it is paid. */
 .stat .value.marks { font-size: 15px; letter-spacing: 0.18em; color: var(--accent); }
