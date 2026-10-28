@@ -1,0 +1,338 @@
+{
+  "source": "aholo-lux3d-text-to-3d",
+  "generatedWith": "Aholo Lux3D text-to-3D (G1)",
+  "endpoint": "https://api.aholo3d.cn/lux3d/v1/generate/text-to-3d/task/create",
+  "generatedAt": "2026-10-27T09:30:24.673Z",
+  "assets": [
+    {
+      "key": "duck",
+      "name": "巨型橡皮鸭",
+      "prompt": "a giant yellow rubber duck, glossy plastic toy, full body, product photo, white background",
+      "height": 1.05
+    },
+    {
+      "key": "cone",
+      "name": "交通锥",
+      "prompt": "an orange traffic cone with two reflective white stripes, full body",
+      "height": 0.72
+    },
+    {
+      "key": "gnome",
+      "name": "花园地精",
+      "prompt": "a ceramic garden gnome statue with a tall red pointed hat and white beard",
+      "height": 0.68
+    },
+    {
+      "key": "milk",
+      "name": "牛奶盒",
+      "prompt": "a one litre carton of milk, gable top, studio product shot, white background",
+      "height": 0.26
+    },
+    {
+      "key": "cactus",
+      "name": "仙人掌",
+      "prompt": "a potted saguaro cactus in a terracotta pot",
+      "height": 0.85
+    },
+    {
+      "key": "vending",
+      "name": "自动贩卖机",
+      "prompt": "a japanese vending machine, red and white, full body, front view",
+      "height": 1.85
+    },
+    {
+      "key": "washer",
+      "name": "洗衣机",
+      "prompt": "a front-loading washing machine, white enamel, closed round door",
+      "height": 0.88
+    },
+    {
+      "key": "toilet",
+      "name": "马桶",
+      "prompt": "a white ceramic toilet with cistern, isolated on white background",
+      "height": 0.78
+    },
+    {
+      "key": "flamingo",
+      "name": "塑料火烈鸟",
+      "prompt": "a pink plastic flamingo lawn ornament on thin metal legs",
+      "height": 0.95
+    },
+    {
+      "key": "astronaut",
+      "name": "宇航员头盔",
+      "prompt": "an astronaut helmet with a gold mirrored visor",
+      "height": 0.45
+    },
+    {
+      "key": "shark",
+      "name": "鲨鱼",
+      "prompt": "a great white shark, full body, side view, mouth closed",
+      "height": 1.5
+    },
+    {
+      "key": "horse",
+      "name": "木马",
+      "prompt": "a wooden carousel horse on a metal stand, painted, nostalgic",
+      "height": 1.35
+    },
+    {
+      "key": "piano",
+      "name": "三角钢琴",
+      "prompt": "a black grand piano with the lid open, polished lacquer",
+      "height": 1
+    },
+    {
+      "key": "mannequin",
+      "name": "人台模特",
+      "prompt": "a featureless white mannequin torso on a slim metal stand, no head",
+      "height": 1.65
+    },
+    {
+      "key": "eye",
+      "name": "巨型眼球",
+      "prompt": "a giant realistic human eyeball, detailed blue iris, glossy sclera",
+      "height": 0.75
+    },
+    {
+      "key": "face",
+      "name": "一张脸",
+      "prompt": "a pale human face mask with hollow black eye sockets and the mouth slightly open, horror prop, front view, isolated on white",
+      "height": 0.34
+    },
+    {
+      "key": "figure",
+      "name": "站着的人影",
+      "prompt": "a tall featureless matte black human silhouette standing upright, no face, no details, horror prop",
+      "height": 1.85
+    },
+    {
+      "key": "hand",
+      "name": "一只人手",
+      "prompt": "a severed pale human hand, fingers spread wide, wrist stump, horror prop, isolated on white",
+      "height": 0.22
+    },
+    {
+      "key": "doll",
+      "name": "裂开的玩偶",
+      "prompt": "a cracked porcelain doll with black button eyes and a dirty lace dress, horror prop",
+      "height": 0.58
+    },
+    {
+      "key": "teeth",
+      "name": "一圈牙齿",
+      "prompt": "a ring of human teeth arranged in a circle, dental specimen, bone white, isolated on white",
+      "height": 0.14
+    },
+    {
+      "key": "stain",
+      "name": "一滩暗红",
+      "prompt": "a flat pool of dark red liquid spreading on a floor, top down, isolated",
+      "height": 0.05
+    },
+    {
+      "key": "mundane_plant",
+      "name": "盆栽",
+      "prompt": "a leafy potted houseplant in a plain ceramic pot",
+      "height": 0.9
+    },
+    {
+      "key": "mundane_trash_bin",
+      "name": "垃圾桶",
+      "prompt": "a small stainless steel kitchen trash bin with a foot pedal",
+      "height": 0.61
+    },
+    {
+      "key": "mundane_side_table",
+      "name": "边桌",
+      "prompt": "a small square wooden side table with four straight legs",
+      "height": 0.55
+    },
+    {
+      "key": "mundane_dining_chair",
+      "name": "餐椅",
+      "prompt": "a wooden dining chair with a padded seat, front view",
+      "height": 0.98
+    },
+    {
+      "key": "mundane_desk_chair",
+      "name": "书桌椅",
+      "prompt": "an office desk chair with a black mesh back and five castors",
+      "height": 0.96
+    },
+    {
+      "key": "mundane_floor_lamp",
+      "name": "落地灯",
+      "prompt": "a tall floor lamp with a beige fabric shade on a thin metal pole",
+      "height": 1.59
+    },
+    {
+      "key": "mundane_table_lamp",
+      "name": "台灯",
+      "prompt": "a small bedside table lamp with a beige fabric shade",
+      "height": 0.47
+    },
+    {
+      "key": "mundane_kettle",
+      "name": "水壶",
+      "prompt": "a stainless steel electric kettle with a black handle",
+      "height": 0.2
+    },
+    {
+      "key": "mundane_microwave",
+      "name": "微波炉",
+      "prompt": "a white countertop microwave oven with a black glass door",
+      "height": 0.3
+    },
+    {
+      "key": "mundane_key_bowl",
+      "name": "钥匙碗",
+      "prompt": "a small round ceramic bowl, empty, seen from slightly above",
+      "height": 0.07
+    },
+    {
+      "key": "mundane_umbrella_stand",
+      "name": "伞架",
+      "prompt": "a tall cylindrical metal umbrella stand, empty",
+      "height": 1.05
+    },
+    {
+      "key": "mundane_shoe_rack",
+      "name": "鞋架",
+      "prompt": "a small wooden shoe rack with three shelves, empty",
+      "height": 0.49
+    },
+    {
+      "key": "mundane_nightstand",
+      "name": "床头柜",
+      "prompt": "a small wooden nightstand with one drawer and a round knob",
+      "height": 0.52
+    },
+    {
+      "key": "charge_pale",
+      "name": "惨白高影",
+      "prompt": "a tall thin pale plaster statue of a gaunt figure in a horror film prop workshop, faceless smooth head, elongated arms",
+      "height": 2.05
+    },
+    {
+      "key": "charge_crawl",
+      "name": "爬行影",
+      "prompt": "a twisted human silhouette crawling low along the floor on all fours, head turned backwards",
+      "height": 0.85
+    },
+    {
+      "key": "charge_doll",
+      "name": "走动的玩偶",
+      "prompt": "a life size cracked porcelain doll with a hinged jaw and empty eye sockets, standing",
+      "height": 1.35
+    },
+    {
+      "key": "charge_hair",
+      "name": "长发团",
+      "prompt": "a horror film prop of a tall dark shape covered in long black strands of fake hair on a metal stand",
+      "height": 1.6
+    },
+    {
+      "key": "charge_grin",
+      "name": "笑脸",
+      "prompt": "a huge disembodied grinning mouth with far too many teeth floating in mid air",
+      "height": 1.1
+    },
+    {
+      "key": "charge_doppel",
+      "name": "睡衣的自己",
+      "prompt": "a pale human figure wearing wrinkled pyjamas standing perfectly still with its head tilted too far to one side",
+      "height": 1.78
+    },
+    {
+      "key": "charge_legs",
+      "name": "倒走的腿",
+      "prompt": "a pair of bare human legs walking on the ceiling upside down, cut off above the waist",
+      "height": 1.5
+    },
+    {
+      "key": "ghost_sheet",
+      "name": "白布",
+      "prompt": "a tall white bedsheet draped over something standing upright, human shaped with no face",
+      "height": 1.7
+    },
+    {
+      "key": "ghost_float",
+      "name": "悬空人形",
+      "prompt": "a human figure hovering just above the floor with its toes pointing down and arms hanging limp",
+      "height": 1.9
+    },
+    {
+      "key": "ghost_hanging",
+      "name": "倒吊人形",
+      "prompt": "a human figure hanging upside down from the ceiling by its ankles, arms dangling",
+      "height": 1.8
+    },
+    {
+      "key": "ghost_thin",
+      "name": "细长人",
+      "prompt": "an impossibly thin human figure with elongated arms reaching the floor, standing in a corner",
+      "height": 2.2
+    },
+    {
+      "key": "doppel_neighbour",
+      "name": "邻居",
+      "prompt": "an ordinary middle aged neighbour standing rigidly upright in a doorway wearing a cardigan, face slightly wrong",
+      "height": 1.75
+    },
+    {
+      "key": "doppel_child",
+      "name": "背对的小孩",
+      "prompt": "a small child standing with their back turned wearing a nightgown, head facing away",
+      "height": 1.15
+    },
+    {
+      "key": "doppel_suit",
+      "name": "空白脸西装",
+      "prompt": "a person in a business suit whose face is completely blank and smooth with no features",
+      "height": 1.8
+    },
+    {
+      "key": "anomaly_door",
+      "name": "多出来的门",
+      "prompt": "a freestanding wooden door in a frame standing alone in the middle of a room, closed",
+      "height": 2
+    },
+    {
+      "key": "anomaly_mirror",
+      "name": "立镜",
+      "prompt": "an old oval standing mirror on a wooden frame, the glass reflecting nothing",
+      "height": 1.6
+    },
+    {
+      "key": "anomaly_portrait",
+      "name": "歪斜肖像",
+      "prompt": "a large ornate framed portrait painting hanging crooked, the face in it obscured and blurred",
+      "height": 1
+    },
+    {
+      "key": "anomaly_hole",
+      "name": "墙上的洞",
+      "prompt": "a jagged dark hole broken through a section of white plaster wall, edges crumbling",
+      "height": 1.2
+    },
+    {
+      "key": "anomaly_stairs",
+      "name": "向上消失的楼梯",
+      "prompt": "a short wooden staircase that ends abruptly in mid air after four steps",
+      "height": 1.3
+    },
+    {
+      "key": "anomaly_chairstack",
+      "name": "堆叠的椅子",
+      "prompt": "a precarious stack of seven wooden dining chairs balanced on top of each other",
+      "height": 2.1
+    },
+    {
+      "key": "anomaly_teethfloor",
+      "name": "地上的牙",
+      "prompt": "a scattered pile of human teeth and small bones lying on the floor",
+      "height": 0.15
+    }
+  ]
+}
